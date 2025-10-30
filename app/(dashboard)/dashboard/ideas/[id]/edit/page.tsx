@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export default async function EditIdeaPage({ params }: PageProps) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: idea } = await supabase
     .from('ideas')
