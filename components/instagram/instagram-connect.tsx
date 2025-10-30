@@ -1,12 +1,28 @@
 'use client'
 
-import { useState } from 'react'
-import { Instagram, CheckCircle2, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Instagram, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
 
 export default function InstagramConnect() {
   const [loading, setLoading] = useState(false)
+  const [isConfigured, setIsConfigured] = useState(true)
+
+  useEffect(() => {
+    // Verificar se as variáveis de ambiente estão configuradas
+    const appId = process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID
+    const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI
+
+    if (!appId || !redirectUri) {
+      setIsConfigured(false)
+    }
+  }, [])
 
   const handleConnect = async () => {
+    if (!isConfigured) {
+      alert('Instagram não está configurado. Verifique o arquivo INSTAGRAM_SETUP.md')
+      return
+    }
+
     setLoading(true)
     try {
       // Redirecionar para a API de autenticação do Instagram
@@ -19,6 +35,22 @@ export default function InstagramConnect() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8">
+      {/* Aviso de configuração */}
+      {!isConfigured && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-semibold text-yellow-900 mb-1">Instagram não configurado</h4>
+            <p className="text-sm text-yellow-800 mb-2">
+              As variáveis de ambiente do Instagram não estão configuradas.
+            </p>
+            <p className="text-xs text-yellow-700">
+              Consulte o arquivo <code className="bg-yellow-100 px-1 py-0.5 rounded">INSTAGRAM_SETUP.md</code> para instruções completas.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="text-center max-w-2xl mx-auto">
         {/* Icon */}
         <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
@@ -72,6 +104,20 @@ export default function InstagramConnect() {
           Ao conectar, você autoriza o Leadgram a acessar suas métricas públicas do Instagram.
           Seus dados estão seguros e nunca serão compartilhados.
         </p>
+
+        {/* Debug Info - Apenas em desenvolvimento */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-6 p-3 bg-gray-50 rounded-lg text-left">
+            <p className="text-xs font-mono text-gray-600 mb-1">🔧 Debug Info:</p>
+            <div className="text-xs font-mono text-gray-500 space-y-1">
+              <div>App ID: {process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID ? '✅ Configurado' : '❌ Não configurado'}</div>
+              <div>Redirect URI: {process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI ? '✅ Configurado' : '❌ Não configurado'}</div>
+              <div className="mt-2 text-gray-400">
+                Se aparecer "❌", configure o .env.local
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
