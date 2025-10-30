@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { Loader2, CheckCircle2, Video } from 'lucide-react'
 import type { IdeaFormData, Idea, Platform } from '@/types/idea.types'
 
 interface IdeaFormProps {
@@ -14,6 +14,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const [formData, setFormData] = useState<IdeaFormData>({
     title: idea?.title || '',
@@ -46,8 +47,20 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
       }
 
       const data = await response.json()
-      router.push(`/dashboard/ideas/${data.id}`)
-      router.refresh()
+
+      // Mostrar tela de sucesso apenas ao criar
+      if (mode === 'create') {
+        setSuccess(true)
+        // Redirecionar após 3 segundos
+        setTimeout(() => {
+          router.push('/dashboard/ideas')
+          router.refresh()
+        }, 3000)
+      } else {
+        // No modo edição, redirecionar direto
+        router.push(`/dashboard/ideas/${data.id}`)
+        router.refresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar ideia')
     } finally {
@@ -62,6 +75,39 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
         ? prev.platforms.filter(p => p !== platform)
         : [...prev.platforms, platform],
     }))
+  }
+
+  // Tela de sucesso
+  if (success) {
+    const motivationalMessages = [
+      "Sua ideia foi salva! Agora é hora de dar vida a ela. Bora gravar? 🎬",
+      "Ideia criada com sucesso! O mundo está esperando para ver seu conteúdo. Vamos gravar? 🚀",
+      "Perfeito! Sua ideia está salva. Que tal transformá-la em realidade agora? 🎥",
+      "Ideia registrada! Seu público está ansioso pelo próximo conteúdo. Hora de gravar! 💪",
+      "Sucesso! Essa ideia tem potencial. Não deixe ela esperando, bora gravar! ⭐",
+    ]
+    const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)]
+
+    return (
+      <div className="text-center py-12">
+        <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce">
+          <CheckCircle2 className="w-10 h-10 text-white" />
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-3">
+          Ideia criada com sucesso!
+        </h3>
+        <p className="text-lg text-gray-600 mb-6 max-w-md mx-auto">
+          {randomMessage}
+        </p>
+        <div className="flex items-center justify-center gap-2 text-blue-600 mb-4">
+          <Video className="w-5 h-5 animate-pulse" />
+          <span className="font-medium">Redirecionando para suas ideias...</span>
+        </div>
+        <div className="w-48 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-[loading_3s_ease-in-out]" />
+        </div>
+      </div>
+    )
   }
 
   return (
