@@ -23,7 +23,7 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
 
-      // Criar usuário
+      // Criar usuário (o trigger handle_new_user() criará o perfil automaticamente)
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -31,29 +31,34 @@ export default function RegisterPage() {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
       if (signUpError) throw signUpError
 
-      // Criar perfil
-      if (data.user) {
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          full_name: fullName,
-        })
-
-        if (profileError) throw profileError
+      // Verificar se o usuário foi criado
+      if (!data.user) {
+        throw new Error('Erro ao criar usuário')
       }
 
-      setSuccess(true)
-
-      // Redirecionar após 2 segundos
-      setTimeout(() => {
-        router.push('/dashboard')
-        router.refresh()
-      }, 2000)
+      // Verificar se há sessão (auto-login)
+      if (data.session) {
+        // Login automático funcionou
+        setSuccess(true)
+        setTimeout(() => {
+          router.push('/dashboard')
+          router.refresh()
+        }, 1500)
+      } else {
+        // Email confirmation está ativado - mostrar mensagem
+        setError('Conta criada! Por favor, verifique seu email para confirmar.')
+        setTimeout(() => {
+          router.push('/login')
+        }, 3000)
+      }
     } catch (err) {
+      console.error('Erro ao criar conta:', err)
       setError(err instanceof Error ? err.message : 'Erro ao criar conta')
     } finally {
       setLoading(false)
