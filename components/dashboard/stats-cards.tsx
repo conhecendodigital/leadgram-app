@@ -1,105 +1,111 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Lightbulb, Video, CheckCircle2 } from 'lucide-react'
+import { Lightbulb, Video, CheckCircle, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react'
+import { motion } from 'framer-motion'
 
-interface Stats {
-  total: number
-  recorded: number
-  posted: number
+interface StatsCardsProps {
+  totalIdeas: number
+  recordedIdeas: number
+  postedIdeas: number
 }
 
-export default function StatsCards() {
-  const [stats, setStats] = useState<Stats>({ total: 0, recorded: 0, posted: 0 })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-
-        if (!user) return
-
-        // Buscar todas as ideias
-        const { data: ideas } = await supabase
-          .from('ideas')
-          .select('status')
-          .eq('user_id', user.id)
-
-        if (ideas) {
-          setStats({
-            total: ideas.length,
-            recorded: ideas.filter(i => i.status === 'recorded').length,
-            posted: ideas.filter(i => i.status === 'posted').length,
-          })
-        }
-      } catch (error) {
-        console.error('Error fetching stats:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchStats()
-  }, [])
-
-  const cards = [
+export default function StatsCards({
+  totalIdeas,
+  recordedIdeas,
+  postedIdeas,
+}: StatsCardsProps) {
+  const stats = [
     {
-      title: 'Total de Ideias',
-      value: stats.total,
+      name: 'Total de Ideias',
+      value: totalIdeas,
       icon: Lightbulb,
-      gradient: 'from-yellow-500 to-orange-500',
-      bgColor: 'bg-yellow-50',
+      gradient: 'from-yellow-400 to-orange-500',
+      bgGradient: 'from-yellow-50 to-orange-50',
+      change: '+12%',
+      trend: 'up' as const,
     },
     {
-      title: 'Vídeos Gravados',
-      value: stats.recorded,
+      name: 'Vídeos Gravados',
+      value: recordedIdeas,
       icon: Video,
-      gradient: 'from-blue-500 to-cyan-500',
-      bgColor: 'bg-blue-50',
+      gradient: 'from-blue-500 to-purple-600',
+      bgGradient: 'from-blue-50 to-purple-50',
+      change: '+8%',
+      trend: 'up' as const,
     },
     {
-      title: 'Conteúdos Postados',
-      value: stats.posted,
-      icon: CheckCircle2,
-      gradient: 'from-green-500 to-emerald-500',
-      bgColor: 'bg-green-50',
+      name: 'Vídeos Postados',
+      value: postedIdeas,
+      icon: CheckCircle,
+      gradient: 'from-green-400 to-emerald-600',
+      bgGradient: 'from-green-50 to-emerald-50',
+      change: '+23%',
+      trend: 'up' as const,
     },
   ]
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-2xl shadow-sm p-6 animate-pulse">
-            <div className="h-12 bg-gray-200 rounded-full w-12 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-            <div className="h-8 bg-gray-200 rounded w-16"></div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {cards.map((card, index) => {
-        const Icon = card.icon
-        return (
-          <div
-            key={index}
-            className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6"
-          >
-            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4`}>
-              <Icon className="w-6 h-6 text-white" />
-            </div>
-            <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-            <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+    <div className="grid gap-6 md:grid-cols-3">
+      {stats.map((stat, index) => (
+        <motion.div
+          key={stat.name}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+          className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.bgGradient} p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-white`}
+        >
+          {/* Background Pattern */}
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+            <div className={`w-full h-full bg-gradient-to-br ${stat.gradient} rounded-full blur-3xl`} />
           </div>
-        )
-      })}
+
+          <div className="relative">
+            <div className="flex items-start justify-between mb-4">
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                <stat.icon className="h-6 w-6 text-white" />
+              </div>
+
+              {/* Trend Badge */}
+              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                stat.trend === 'up'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {stat.trend === 'up' ? (
+                  <ArrowUp className="h-3 w-3" />
+                ) : (
+                  <ArrowDown className="h-3 w-3" />
+                )}
+                {stat.change}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                {stat.name}
+              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-4xl font-bold text-gray-900">
+                  {stat.value}
+                </p>
+                <TrendingUp className="h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-4">
+              <div className="h-1.5 bg-white/50 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${totalIdeas > 0 ? (stat.value / totalIdeas) * 100 : 0}%` }}
+                  transition={{ delay: index * 0.2, duration: 1 }}
+                  className={`h-full bg-gradient-to-r ${stat.gradient}`}
+                />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      ))}
     </div>
   )
 }
