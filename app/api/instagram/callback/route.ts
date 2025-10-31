@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import type { Database } from '@/types/database.types'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Para cada página, verificar se tem Instagram Business conectado
-    let instagramAccountData = null
+    let instagramAccountData: any = null
 
     for (const page of pagesData.data) {
       const igResponse = await fetch(
@@ -89,20 +90,24 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Salvar no banco de dados
-    const { error: dbError } = await supabase.from('instagram_accounts').upsert({
+    const insertData: Database['public']['Tables']['instagram_accounts']['Insert'] = {
       user_id: session.user.id,
-      instagram_user_id: instagramAccountData.id,
+      instagram_user_id: String(instagramAccountData.id),
       username: instagramAccountData.username,
       access_token: instagramAccountData.access_token,
       account_type: 'BUSINESS',
-      followers_count: instagramAccountData.followers_count,
-      follows_count: instagramAccountData.follows_count,
-      media_count: instagramAccountData.media_count,
-      profile_picture_url: instagramAccountData.profile_picture_url,
+      followers_count: Number(instagramAccountData.followers_count) || 0,
+      follows_count: Number(instagramAccountData.follows_count) || 0,
+      media_count: Number(instagramAccountData.media_count) || 0,
+      profile_picture_url: instagramAccountData.profile_picture_url || null,
       connected_at: new Date().toISOString(),
       last_sync_at: new Date().toISOString(),
       is_active: true,
-    })
+    }
+
+    const { error: dbError } = await (supabase
+      .from('instagram_accounts') as any)
+      .upsert(insertData)
 
     if (dbError) {
       console.error('Database error:', dbError)
