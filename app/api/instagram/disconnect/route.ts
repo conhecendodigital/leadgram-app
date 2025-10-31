@@ -12,8 +12,8 @@ export async function POST() {
     }
 
     // Desativar conta Instagram
-    const { error } = await supabase
-      .from('instagram_accounts')
+    const { error } = await (supabase
+      .from('instagram_accounts') as any)
       .update({ is_active: false })
       .eq('user_id', user.id)
 

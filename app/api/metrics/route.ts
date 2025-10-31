@@ -37,8 +37,8 @@ export async function POST(request: Request) {
     const engagement_rate = impressions > 0 ? (totalEngagement / impressions) * 100 : 0
 
     // Criar métrica
-    const { data: metric, error } = await supabase
-      .from('metrics')
+    const { data: metric, error } = await (supabase
+      .from('metrics') as any)
       .insert({
         idea_platform_id,
         views,

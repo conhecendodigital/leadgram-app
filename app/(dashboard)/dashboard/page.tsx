@@ -7,6 +7,13 @@ import RecentIdeas from '@/components/dashboard/recent-ideas'
 import QuickActions from '@/components/dashboard/quick-actions'
 import ActivityFeed from '@/components/dashboard/activity-feed'
 import { Sparkles } from 'lucide-react'
+import type { Database } from '@/types/database.types'
+
+type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
+  idea_platforms?: Array<Database['public']['Tables']['idea_platforms']['Row'] & {
+    metrics?: Array<any>
+  }>
+}
 
 export default async function DashboardPage() {
   const supabase = await createServerClient()
@@ -19,11 +26,13 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const { data: ideas } = await supabase
+  const { data } = await supabase
     .from('ideas')
     .select('*, idea_platforms(*, metrics(*))')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
+  
+  const ideas = data as IdeaWithRelations[] | null
 
   const totalIdeas = ideas?.length || 0
   const recordedIdeas = ideas?.filter((i) => i.status === 'recorded').length || 0

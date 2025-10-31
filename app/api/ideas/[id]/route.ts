@@ -1,9 +1,10 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import type { Database } from '@/types/database.types'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerClient()
@@ -13,6 +14,8 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { id } = await params
 
     const { data: idea, error } = await supabase
       .from('ideas')
@@ -28,7 +31,7 @@ export async function GET(
           metrics(*)
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -46,7 +49,7 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerClient()
@@ -57,22 +60,25 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { title, theme, script, editor_instructions, status, funnel_stage, platforms } = body
 
     // Atualizar ideia
-    const { data: idea, error: ideaError } = await supabase
-      .from('ideas')
-      .update({
-        title,
-        theme: theme || null,
-        script: script || null,
-        editor_instructions: editor_instructions || null,
-        status,
-        funnel_stage,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', params.id)
+    const updateData: Database['public']['Tables']['ideas']['Update'] = {
+      title,
+      theme: theme || null,
+      script: script || null,
+      editor_instructions: editor_instructions || null,
+      status,
+      funnel_stage,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data: idea, error: ideaError } = await (supabase
+      .from('ideas') as any)
+      .update(updateData)
+      .eq('id', id)
       .eq('user_id', user.id)
       .select()
       .single()
@@ -85,7 +91,7 @@ export async function PATCH(
       await supabase
         .from('idea_platforms')
         .delete()
-        .eq('idea_id', params.id)
+        .eq('idea_id', id)
 
       // Criar novas plataformas
       if (platforms.length > 0) {
@@ -111,7 +117,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerClient()
@@ -122,11 +128,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Deletar ideia (cascade vai deletar platforms e metrics)
     const { error } = await supabase
       .from('ideas')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
 
     if (error) throw error

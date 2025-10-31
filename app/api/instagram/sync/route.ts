@@ -12,8 +12,8 @@ export async function POST() {
     }
 
     // Buscar conta Instagram do usuário
-    const { data: account, error: accountError } = await supabase
-      .from('instagram_accounts')
+    const { data: account, error: accountError } = await (supabase
+      .from('instagram_accounts') as any)
       .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true)
@@ -69,7 +69,7 @@ export async function POST() {
         const engagement_rate = insights.impressions > 0 ? (totalEngagement / insights.impressions) * 100 : 0
 
         // Upsert post
-        await supabase.from('instagram_posts').upsert({
+        await (supabase.from('instagram_posts') as any).upsert({
           instagram_account_id: account.id,
           instagram_media_id: post.id,
           media_type: post.media_type,
@@ -90,8 +90,8 @@ export async function POST() {
     }
 
     // Atualizar last_sync_at
-    await supabase
-      .from('instagram_accounts')
+    await (supabase
+      .from('instagram_accounts') as any)
       .update({ last_sync_at: new Date().toISOString() })
       .eq('id', account.id)
 

@@ -1,23 +1,33 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  // Instagram OAuth configuration
-  const instagramAppId = process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID
-  const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/instagram/callback`
+  const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
+  const redirectUri = process.env.FACEBOOK_REDIRECT_URI
 
-  if (!instagramAppId) {
+  if (!appId || !redirectUri) {
     return NextResponse.json(
-      { error: 'Instagram App ID not configured' },
+      { error: 'Facebook credentials not configured' },
       { status: 500 }
     )
   }
 
-  // Construir URL de autorização do Instagram
-  const authUrl = new URL('https://api.instagram.com/oauth/authorize')
-  authUrl.searchParams.append('client_id', instagramAppId)
-  authUrl.searchParams.append('redirect_uri', redirectUri)
-  authUrl.searchParams.append('scope', 'user_profile,user_media')
-  authUrl.searchParams.append('response_type', 'code')
+  // Facebook Login OAuth URL
+  const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
+
+  authUrl.searchParams.set('client_id', appId)
+  authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set('response_type', 'code')
+
+  // Permissões necessárias para Instagram
+  authUrl.searchParams.set('scope', [
+    'instagram_basic',
+    'instagram_manage_insights',
+    'pages_show_list',
+    'pages_read_engagement',
+    'business_management'
+  ].join(','))
+
+  authUrl.searchParams.set('state', 'random_string_for_security')
 
   return NextResponse.redirect(authUrl.toString())
 }

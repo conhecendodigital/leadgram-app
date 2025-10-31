@@ -11,8 +11,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: ideas, error } = await supabase
-      .from('ideas')
+    const { data: ideas, error } = await (supabase
+      .from('ideas') as any)
       .select(`
         *,
         platforms:idea_platforms(
@@ -62,8 +62,8 @@ export async function POST(request: Request) {
     }
 
     // Criar ideia
-    const { data: idea, error: ideaError } = await supabase
-      .from('ideas')
+    const { data: idea, error: ideaError } = await (supabase
+      .from('ideas') as any)
       .insert({
         user_id: user.id,
         title,

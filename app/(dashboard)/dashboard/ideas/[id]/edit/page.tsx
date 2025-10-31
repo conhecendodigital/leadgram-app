@@ -3,17 +3,23 @@ import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase/server'
 import { ChevronRight } from 'lucide-react'
 import IdeaForm from '@/components/ideas/idea-form'
+import type { Database } from '@/types/database.types'
+
+type IdeaWithPlatforms = Database['public']['Tables']['ideas']['Row'] & {
+  platforms?: Array<Database['public']['Tables']['idea_platforms']['Row']>
+}
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function EditIdeaPage({ params }: PageProps) {
   const supabase = await createServerClient()
+  const { id } = await params
 
-  const { data: idea } = await supabase
+  const { data } = await supabase
     .from('ideas')
     .select(`
       *,
@@ -26,8 +32,10 @@ export default async function EditIdeaPage({ params }: PageProps) {
         is_posted
       )
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
+
+  const idea = data as IdeaWithPlatforms | null
 
   if (!idea) {
     notFound()
@@ -42,8 +50,8 @@ export default async function EditIdeaPage({ params }: PageProps) {
             Ideias
           </Link>
           <ChevronRight className="w-4 h-4" />
-          <Link href={`/dashboard/ideas/${idea.id}`} className="hover:text-blue-600 transition-colors">
-            {idea.title}
+          <Link href={`/dashboard/ideas/${idea!.id}`} className="hover:text-blue-600 transition-colors">
+            {idea!.title}
           </Link>
           <ChevronRight className="w-4 h-4" />
           <span className="text-gray-900 font-medium">Editar</span>
@@ -59,7 +67,7 @@ export default async function EditIdeaPage({ params }: PageProps) {
 
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-sm p-8">
-          <IdeaForm mode="edit" idea={idea} />
+          <IdeaForm mode="edit" idea={idea!} />
         </div>
       </div>
     </div>

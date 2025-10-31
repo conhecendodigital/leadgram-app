@@ -1,76 +1,123 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const code = searchParams.get('code')
+  const error = searchParams.get('error')
+
+  if (error) {
+    return NextResponse.redirect(
+      new URL(`/dashboard/instagram?error=${error}`, request.url)
+    )
+  }
+
+  if (!code) {
+    return NextResponse.redirect(
+      new URL('/dashboard/instagram?error=no_code', request.url)
+    )
+  }
+
   try {
     const supabase = await createServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    if (!user) {
+    if (!session) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    const searchParams = request.nextUrl.searchParams
-    const code = searchParams.get('code')
+    // 1. Trocar código por access token do Facebook
+    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    tokenUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!)
+    tokenUrl.searchParams.set('client_secret', process.env.FACEBOOK_APP_SECRET!)
+    tokenUrl.searchParams.set('redirect_uri', process.env.FACEBOOK_REDIRECT_URI!)
+    tokenUrl.searchParams.set('code', code)
 
-    if (!code) {
-      return NextResponse.redirect(new URL('/dashboard/instagram?error=no_code', request.url))
-    }
-
-    // Trocar code por access token
-    const tokenResponse = await fetch('https://api.instagram.com/oauth/access_token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        client_id: process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID!,
-        client_secret: process.env.INSTAGRAM_APP_SECRET!,
-        grant_type: 'authorization_code',
-        redirect_uri: process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/instagram/callback`,
-        code,
-      }),
-    })
+    const tokenResponse = await fetch(tokenUrl.toString())
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to exchange code for token')
+      const errorData = await tokenResponse.json()
+      console.error('Facebook token error:', errorData)
+      return NextResponse.redirect(
+        new URL('/dashboard/instagram?error=token_failed', request.url)
+      )
     }
 
     const tokenData = await tokenResponse.json()
-    const { access_token, user_id: instagram_user_id } = tokenData
+    const accessToken = tokenData.access_token
 
-    // Buscar informações do usuário
-    const userInfoResponse = await fetch(
-      `https://graph.instagram.com/${instagram_user_id}?fields=id,username,account_type,media_count&access_token=${access_token}`
+    // 2. Buscar páginas do Facebook conectadas
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`
     )
+    const pagesData = await pagesResponse.json()
 
-    if (!userInfoResponse.ok) {
-      throw new Error('Failed to fetch user info')
+    if (!pagesData.data || pagesData.data.length === 0) {
+      return NextResponse.redirect(
+        new URL('/dashboard/instagram?error=no_pages', request.url)
+      )
     }
 
-    const userInfo = await userInfoResponse.json()
+    // 3. Para cada página, verificar se tem Instagram Business conectado
+    let instagramAccountData = null
 
-    // Salvar no banco
-    const { error } = await supabase.from('instagram_accounts').upsert({
-      user_id: user.id,
-      instagram_user_id: instagram_user_id.toString(),
-      username: userInfo.username,
-      access_token,
-      account_type: userInfo.account_type,
-      followers_count: 0,
-      follows_count: 0,
-      media_count: userInfo.media_count || 0,
-      is_active: true,
+    for (const page of pagesData.data) {
+      const igResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
+      )
+      const igData = await igResponse.json()
+
+      if (igData.instagram_business_account) {
+        // 4. Buscar dados do Instagram
+        const igAccountResponse = await fetch(
+          `https://graph.facebook.com/v18.0/${igData.instagram_business_account.id}?fields=id,username,name,profile_picture_url,followers_count,follows_count,media_count&access_token=${page.access_token}`
+        )
+        instagramAccountData = await igAccountResponse.json()
+        instagramAccountData.access_token = page.access_token
+        instagramAccountData.page_id = page.id
+        break
+      }
+    }
+
+    if (!instagramAccountData) {
+      return NextResponse.redirect(
+        new URL('/dashboard/instagram?error=no_instagram_account', request.url)
+      )
+    }
+
+    // 5. Salvar no banco de dados
+    const { error: dbError } = await supabase.from('instagram_accounts').upsert({
+      user_id: session.user.id,
+      instagram_user_id: instagramAccountData.id,
+      username: instagramAccountData.username,
+      access_token: instagramAccountData.access_token,
+      account_type: 'BUSINESS',
+      followers_count: instagramAccountData.followers_count,
+      follows_count: instagramAccountData.follows_count,
+      media_count: instagramAccountData.media_count,
+      profile_picture_url: instagramAccountData.profile_picture_url,
       connected_at: new Date().toISOString(),
+      last_sync_at: new Date().toISOString(),
+      is_active: true,
     })
 
-    if (error) throw error
+    if (dbError) {
+      console.error('Database error:', dbError)
+      return NextResponse.redirect(
+        new URL('/dashboard/instagram?error=database', request.url)
+      )
+    }
 
-    return NextResponse.redirect(new URL('/dashboard/instagram', request.url))
+    return NextResponse.redirect(
+      new URL('/dashboard/instagram?success=true', request.url)
+    )
   } catch (error) {
-    console.error('Error in Instagram callback:', error)
-    return NextResponse.redirect(new URL('/dashboard/instagram?error=callback_failed', request.url))
+    console.error('Instagram callback error:', error)
+    return NextResponse.redirect(
+      new URL('/dashboard/instagram?error=unknown', request.url)
+    )
   }
 }

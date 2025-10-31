@@ -8,16 +8,25 @@ import StatusBadge from '@/components/ideas/status-badge'
 import FunnelBadge from '@/components/ideas/funnel-badge'
 import DeleteButton from './delete-button'
 
+import type { Database } from '@/types/database.types'
+
+type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
+  platforms?: Array<Database['public']['Tables']['idea_platforms']['Row'] & {
+    metrics?: Array<any>
+  }>
+}
+
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function IdeaDetailPage({ params }: PageProps) {
   const supabase = await createServerClient()
+  const { id } = await params
 
-  const { data: idea } = await supabase
+  const { data } = await supabase
     .from('ideas')
     .select(`
       *,
@@ -31,8 +40,10 @@ export default async function IdeaDetailPage({ params }: PageProps) {
         metrics(*)
       )
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
+
+  const idea = data as IdeaWithRelations | null
 
   if (!idea) {
     notFound()

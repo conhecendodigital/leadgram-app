@@ -1,81 +1,95 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createServerClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import InstagramConnect from '@/components/instagram/instagram-connect'
 import InstagramAccount from '@/components/instagram/instagram-account'
+import { CheckCircle } from 'lucide-react'
 
-interface InstagramAccountData {
-  id: string
-  username: string
-  followers_count: number
-  follows_count: number
-  media_count: number
-  profile_picture_url: string | null
-  last_sync_at: string | null
+const errorMessages: Record<string, string> = {
+  no_code: 'Código de autorização não recebido',
+  token_failed: 'Falha ao obter token de acesso',
+  no_pages: 'Nenhuma página do Facebook encontrada. Você precisa ter uma página conectada.',
+  no_instagram_account: 'Nenhuma conta Instagram Business conectada à sua página do Facebook',
+  database: 'Erro ao salvar dados no banco',
+  unknown: 'Erro desconhecido ao conectar',
 }
 
-export default function InstagramPage() {
-  const [account, setAccount] = useState<InstagramAccountData | null>(null)
-  const [loading, setLoading] = useState(true)
+export default async function InstagramPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; error?: string }>
+}) {
+  const supabase = await createServerClient()
+  const resolvedSearchParams = await searchParams
 
-  useEffect(() => {
-    fetchAccount()
-  }, [])
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  const fetchAccount = async () => {
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) return
-
-      const { data } = await supabase
-        .from('instagram_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .single()
-
-      if (data) {
-        setAccount(data)
-      }
-    } catch (error) {
-      console.error('Error fetching Instagram account:', error)
-    } finally {
-      setLoading(false)
-    }
+  if (!session) {
+    redirect('/login')
   }
 
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-6 animate-pulse"></div>
-          <div className="bg-white rounded-2xl shadow-sm p-8 animate-pulse">
-            <div className="h-64 bg-gray-100 rounded"></div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const { data: instagramAccount } = await supabase
+    .from('instagram_accounts')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .eq('is_active', true)
+    .single()
 
   return (
-    <div className="p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Integração Instagram</h1>
-          <p className="text-gray-600">
-            Conecte sua conta do Instagram para sincronizar métricas automaticamente
-          </p>
-        </div>
-
-        {account ? (
-          <InstagramAccount account={account} onDisconnect={() => setAccount(null)} />
-        ) : (
-          <InstagramConnect />
-        )}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Instagram</h1>
+        <p className="text-gray-600">
+          Conecte sua conta Instagram Business para sincronizar posts e métricas
+        </p>
       </div>
+
+      {/* Success Message */}
+      {resolvedSearchParams.success && (
+        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl flex items-center gap-2">
+          <CheckCircle className="h-5 w-5" />
+          Instagram conectado com sucesso!
+        </div>
+      )}
+
+      {/* Error Message */}
+      {resolvedSearchParams.error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
+          <p className="font-medium mb-1">Erro ao conectar</p>
+          <p className="text-sm">
+            {errorMessages[resolvedSearchParams.error] || 'Erro desconhecido'}
+          </p>
+
+          {resolvedSearchParams.error === 'no_pages' && (
+            <a
+              href="https://www.facebook.com/pages/creation"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm underline mt-2 inline-block"
+            >
+              Criar página do Facebook →
+            </a>
+          )}
+
+          {resolvedSearchParams.error === 'no_instagram_account' && (
+            <a
+              href="https://help.instagram.com/502981923235522"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm underline mt-2 inline-block"
+            >
+              Como conectar Instagram à Página →
+            </a>
+          )}
+        </div>
+      )}
+
+      {instagramAccount ? (
+        <InstagramAccount account={instagramAccount} />
+      ) : (
+        <InstagramConnect />
+      )}
     </div>
   )
 }

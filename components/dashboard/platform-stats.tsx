@@ -25,8 +25,8 @@ export default function PlatformStats() {
         if (!user) return
 
         // Buscar plataformas
-        const { data: ideas } = await supabase
-          .from('ideas')
+        const { data: ideas } = await (supabase
+          .from('ideas') as any)
           .select('id, platforms:idea_platforms(platform)')
           .eq('user_id', user.id)
 
@@ -34,7 +34,7 @@ export default function PlatformStats() {
           const platformCounts: Record<string, number> = {}
           let totalCount = 0
 
-          ideas.forEach((idea) => {
+          ideas.forEach((idea: any) => {
             if (idea.platforms) {
               idea.platforms.forEach((p: { platform: string }) => {
                 platformCounts[p.platform] = (platformCounts[p.platform] || 0) + 1

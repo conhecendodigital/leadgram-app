@@ -21,8 +21,8 @@ export default function FunnelChart() {
 
         if (!user) return
 
-        const { data: ideas } = await supabase
-          .from('ideas')
+        const { data: ideas } = await (supabase
+          .from('ideas') as any)
           .select('funnel_stage')
           .eq('user_id', user.id)
 
@@ -30,15 +30,15 @@ export default function FunnelChart() {
           const funnelData: FunnelData[] = [
             {
               name: 'Topo',
-              ideias: ideas.filter(i => i.funnel_stage === 'top').length,
+              ideias: ideas.filter((i: any) => i.funnel_stage === 'top').length,
             },
             {
               name: 'Meio',
-              ideias: ideas.filter(i => i.funnel_stage === 'middle').length,
+              ideias: ideas.filter((i: any) => i.funnel_stage === 'middle').length,
             },
             {
               name: 'Fundo',
-              ideias: ideas.filter(i => i.funnel_stage === 'bottom').length,
+              ideias: ideas.filter((i: any) => i.funnel_stage === 'bottom').length,
             },
           ]
 
