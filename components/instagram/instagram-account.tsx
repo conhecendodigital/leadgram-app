@@ -1,25 +1,24 @@
 'use client'
 
+import { Instagram, Users, Image, Calendar, RefreshCw, XCircle } from 'lucide-react'
 import { useState } from 'react'
-import Image from 'next/image'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Instagram, RefreshCw, LogOut, Users, UserPlus, FileImage, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface InstagramAccountProps {
   account: {
     id: string
     username: string
-    followers_count: number
-    follows_count: number
-    media_count: number
     profile_picture_url: string | null
+    followers_count: number | null
+    follows_count: number | null
+    media_count: number | null
+    connected_at: string
     last_sync_at: string | null
   }
-  onDisconnect: () => void
 }
 
-export default function InstagramAccount({ account, onDisconnect }: InstagramAccountProps) {
+export default function InstagramAccount({ account }: InstagramAccountProps) {
+  const router = useRouter()
   const [syncing, setSyncing] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
 
@@ -30,15 +29,14 @@ export default function InstagramAccount({ account, onDisconnect }: InstagramAcc
         method: 'POST',
       })
 
-      if (!response.ok) {
-        throw new Error('Erro ao sincronizar')
+      if (response.ok) {
+        router.refresh()
+      } else {
+        alert('Erro ao sincronizar. Tente novamente.')
       }
-
-      alert('Sincronização concluída com sucesso!')
-      window.location.reload()
     } catch (error) {
-      console.error('Error syncing:', error)
-      alert('Erro ao sincronizar conta')
+      console.error('Sync error:', error)
+      alert('Erro ao sincronizar. Tente novamente.')
     } finally {
       setSyncing(false)
     }
@@ -55,136 +53,120 @@ export default function InstagramAccount({ account, onDisconnect }: InstagramAcc
         method: 'POST',
       })
 
-      if (!response.ok) {
-        throw new Error('Erro ao desconectar')
+      if (response.ok) {
+        router.refresh()
+      } else {
+        alert('Erro ao desconectar. Tente novamente.')
       }
-
-      onDisconnect()
     } catch (error) {
-      console.error('Error disconnecting:', error)
-      alert('Erro ao desconectar conta')
+      console.error('Disconnect error:', error)
+      alert('Erro ao desconectar. Tente novamente.')
     } finally {
       setDisconnecting(false)
     }
   }
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    })
+  }
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-8 text-white">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            {account.profile_picture_url ? (
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                <Image
-                  src={account.profile_picture_url}
-                  alt={account.username}
-                  width={80}
-                  height={80}
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-white/20 border-4 border-white shadow-lg flex items-center justify-center">
-                <Instagram className="w-10 h-10" />
-              </div>
-            )}
-            <div>
-              <h2 className="text-2xl font-bold mb-1">@{account.username}</h2>
-              <p className="text-white/80">Conta conectada</p>
+    <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-4">
+          {/* Profile Picture */}
+          {account.profile_picture_url ? (
+            <img
+              src={account.profile_picture_url}
+              alt={account.username}
+              className="w-16 h-16 rounded-full border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+              <Instagram className="w-8 h-8 text-white" />
             </div>
+          )}
+
+          {/* Account Info */}
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              @{account.username}
+              <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                Conectado
+              </span>
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Conectado em {formatDate(account.connected_at)}
+            </p>
           </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Sincronizando...' : 'Sincronizar'}
+          </button>
 
           <button
             onClick={handleDisconnect}
             disabled={disconnecting}
-            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {disconnecting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Desconectando...
-              </>
-            ) : (
-              <>
-                <LogOut className="w-4 h-4" />
-                Desconectar
-              </>
-            )}
+            <XCircle className="w-4 h-4" />
+            {disconnecting ? 'Desconectando...' : 'Desconectar'}
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 divide-x divide-gray-200">
-        <div className="p-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-gray-400" />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-600 mb-2">
+            <Users className="w-4 h-4" />
+            <span className="text-sm font-medium">Seguidores</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mb-1">
-            {account.followers_count.toLocaleString('pt-BR')}
+          <p className="text-2xl font-bold text-gray-900">
+            {account.followers_count?.toLocaleString('pt-BR') || '0'}
           </p>
-          <p className="text-sm text-gray-600">Seguidores</p>
         </div>
-        <div className="p-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <UserPlus className="w-5 h-5 text-gray-400" />
+
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-600 mb-2">
+            <Users className="w-4 h-4" />
+            <span className="text-sm font-medium">Seguindo</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mb-1">
-            {account.follows_count.toLocaleString('pt-BR')}
+          <p className="text-2xl font-bold text-gray-900">
+            {account.follows_count?.toLocaleString('pt-BR') || '0'}
           </p>
-          <p className="text-sm text-gray-600">Seguindo</p>
         </div>
-        <div className="p-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <FileImage className="w-5 h-5 text-gray-400" />
+
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-600 mb-2">
+            <Image className="w-4 h-4" />
+            <span className="text-sm font-medium">Posts</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mb-1">
-            {account.media_count.toLocaleString('pt-BR')}
+          <p className="text-2xl font-bold text-gray-900">
+            {account.media_count?.toLocaleString('pt-BR') || '0'}
           </p>
-          <p className="text-sm text-gray-600">Posts</p>
         </div>
       </div>
 
-      {/* Sync Info */}
-      <div className="p-6 border-t border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-1">Sincronização</h3>
-            {account.last_sync_at ? (
-              <p className="text-sm text-gray-600">
-                Última sincronização: {format(new Date(account.last_sync_at), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-              </p>
-            ) : (
-              <p className="text-sm text-gray-600">Nenhuma sincronização realizada</p>
-            )}
-          </div>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            {syncing ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Sincronizando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-5 h-5" />
-                Sincronizar agora
-              </>
-            )}
-          </button>
+      {/* Last Sync */}
+      {account.last_sync_at && (
+        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+          <Calendar className="w-4 h-4" />
+          Última sincronização: {formatDate(account.last_sync_at)}
         </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm text-blue-900">
-            A sincronização importa as métricas dos seus posts mais recentes do Instagram.
-            As métricas são atualizadas automaticamente a cada 24 horas.
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

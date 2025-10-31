@@ -2,7 +2,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import InstagramConnect from '@/components/instagram/instagram-connect'
 import InstagramAccount from '@/components/instagram/instagram-account'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle } from 'lucide-react'
 
 const errorMessages: Record<string, string> = {
   no_code: 'Código de autorização não recebido',
@@ -56,32 +56,37 @@ export default async function InstagramPage({
       {/* Error Message */}
       {resolvedSearchParams.error && (
         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
-          <p className="font-medium mb-1">Erro ao conectar</p>
-          <p className="text-sm">
-            {errorMessages[resolvedSearchParams.error] || 'Erro desconhecido'}
-          </p>
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium mb-1">Erro ao conectar</p>
+              <p className="text-sm">
+                {errorMessages[resolvedSearchParams.error] || 'Erro desconhecido'}
+              </p>
 
-          {resolvedSearchParams.error === 'no_pages' && (
-            <a
-              href="https://www.facebook.com/pages/creation"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm underline mt-2 inline-block"
-            >
-              Criar página do Facebook →
-            </a>
-          )}
+              {resolvedSearchParams.error === 'no_pages' && (
+                <a
+                  href="https://www.facebook.com/pages/creation"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm underline mt-2 inline-block hover:text-red-900"
+                >
+                  Criar página do Facebook →
+                </a>
+              )}
 
-          {resolvedSearchParams.error === 'no_instagram_account' && (
-            <a
-              href="https://help.instagram.com/502981923235522"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm underline mt-2 inline-block"
-            >
-              Como conectar Instagram à Página →
-            </a>
-          )}
+              {resolvedSearchParams.error === 'no_instagram_account' && (
+                <a
+                  href="https://help.instagram.com/502981923235522"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm underline mt-2 inline-block hover:text-red-900"
+                >
+                  Como conectar Instagram à Página →
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
