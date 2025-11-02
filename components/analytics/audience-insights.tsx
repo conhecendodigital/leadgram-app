@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { Users, MapPin, Clock } from 'lucide-react'
 
-export default function AudienceInsights() {
+interface AudienceInsightsProps {
+  ideas?: any[]
+}
+
+export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) {
   const ageData = [
     { name: '18-24', value: 35, color: '#8B5CF6' },
     { name: '25-34', value: 45, color: '#EC4899' },

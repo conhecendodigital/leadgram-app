@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import { Eye, Heart, MessageCircle, Share2, TrendingUp } from 'lucide-react'
 import Image from 'next/image'
 
-export default function ContentPerformance() {
+interface ContentPerformanceProps {
+  ideas?: any[]
+}
+
+export default function ContentPerformance({ ideas = [] }: ContentPerformanceProps) {
   const topContent = [
     {
       id: 1,

@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { FaInstagram, FaTiktok, FaYoutube } from 'react-icons/fa'
 
-export default function PlatformComparison() {
+interface PlatformComparisonProps {
+  ideas?: any[]
+}
+
+export default function PlatformComparison({ ideas = [] }: PlatformComparisonProps) {
   const data = [
     {
       month: 'Jan',

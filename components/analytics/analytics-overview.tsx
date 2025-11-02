@@ -2,7 +2,11 @@
 
 import { TrendingUp, TrendingDown, Users, Eye, Heart, MessageCircle } from 'lucide-react'
 
-export default function AnalyticsOverview() {
+interface AnalyticsOverviewProps {
+  ideas?: any[]
+}
+
+export default function AnalyticsOverview({ ideas = [] }: AnalyticsOverviewProps) {
   const stats = [
     {
       label: 'Total de Visualizações',

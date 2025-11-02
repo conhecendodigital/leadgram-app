@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { TrendingUp, Users, Eye, Target } from 'lucide-react'
 
-export default function GrowthMetrics() {
+interface GrowthMetricsProps {
+  ideas?: any[]
+}
+
+export default function GrowthMetrics({ ideas = [] }: GrowthMetricsProps) {
   const growthData = [
     { date: '01 Mai', seguidores: 98000, visualizacoes: 450000, engajamento: 28000 },
     { date: '08 Mai', seguidores: 102000, visualizacoes: 520000, engajamento: 32000 },
