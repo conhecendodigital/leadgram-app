@@ -65,22 +65,26 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
     try {
       setLoading(planId)
 
-      // Call Mercado Pago API to create payment preference
-      const response = await fetch('/api/mercadopago/create-preference', {
+      // Call Checkout API to create payment preference
+      const response = await fetch('/api/checkout/create-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId })
+        body: JSON.stringify({ plan: planId.toLowerCase() })
       })
 
       const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao criar pagamento')
+      }
 
       if (data.init_point) {
         // Redirect to Mercado Pago checkout
         window.location.href = data.init_point
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating payment:', error)
-      alert('Erro ao processar pagamento. Tente novamente.')
+      alert(error.message || 'Erro ao processar pagamento. Tente novamente.')
     } finally {
       setLoading(null)
     }
