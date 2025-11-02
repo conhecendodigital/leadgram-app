@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) {
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       body: {
         items: [
           {
+            id: `leadgram-${plan}`,
             title: `Plano ${planNames[plan]} - Leadgram`,
             quantity: 1,
             unit_price: planPrices[plan],

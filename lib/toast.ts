@@ -1,8 +1,9 @@
 import toast from 'react-hot-toast'
 
 export const showToast = {
-  success: (message: string) => {
+  success: (message: string, options?: { id?: string }) => {
     toast.success(message, {
+      ...options,
       style: {
         background: '#10b981',
         color: '#fff',
@@ -15,8 +16,9 @@ export const showToast = {
     })
   },
 
-  error: (message: string) => {
+  error: (message: string, options?: { id?: string }) => {
     toast.error(message, {
+      ...options,
       style: {
         background: '#ef4444',
         color: '#fff',

@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Webhook do Mercado Pago para processar notificações de pagamento
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    // Log para debug
     console.log('Mercado Pago Webhook:', body)
 
-    // Verificar tipo de notificação
     if (body.type === 'payment') {
       const paymentId = body.data.id
 
-      // Buscar informações do pagamento
-      const { data: adminCreds } = await (createClient(
+      const supabaseAdmin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
-      ).from('admin_mercadopago') as any)
+      )
+
+      const { data: adminCreds } = await (supabaseAdmin
+        .from('admin_mercadopago') as any)
         .select('access_token')
         .eq('is_active', true)
         .single()
@@ -27,7 +25,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No credentials' }, { status: 500 })
       }
 
-      // Buscar detalhes do pagamento
       const paymentResponse = await fetch(
         `https://api.mercadopago.com/v1/payments/${paymentId}`,
         {
@@ -44,19 +41,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true })
       }
 
-      // External reference: userId-planType
       const [userId, planType] = payment.external_reference.split('-')
 
-      // Criar cliente Supabase com service role
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-
-      // Se pagamento aprovado
       if (payment.status === 'approved') {
-        // Atualizar ou criar assinatura
-        const { data: existingSub } = await (supabase
+        const { data: existingSub } = await (supabaseAdmin
           .from('user_subscriptions') as any)
           .select('*')
           .eq('user_id', userId)
@@ -66,8 +54,7 @@ export async function POST(request: NextRequest) {
         const periodEnd = new Date(now.setMonth(now.getMonth() + 1))
 
         if (existingSub) {
-          // Atualizar existente
-          await (supabase
+          await (supabaseAdmin
             .from('user_subscriptions') as any)
             .update({
               plan_type: planType,
@@ -78,8 +65,7 @@ export async function POST(request: NextRequest) {
             })
             .eq('user_id', userId)
         } else {
-          // Criar nova
-          await (supabase
+          await (supabaseAdmin
             .from('user_subscriptions') as any)
             .insert({
               user_id: userId,
@@ -91,8 +77,7 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        // Registrar pagamento
-        await (supabase
+        await (supabaseAdmin
           .from('payments') as any)
           .insert({
             user_id: userId,
@@ -103,9 +88,8 @@ export async function POST(request: NextRequest) {
           })
       }
 
-      // Se pagamento rejeitado ou cancelado
       if (payment.status === 'rejected' || payment.status === 'cancelled') {
-        await (supabase
+        await (supabaseAdmin
           .from('user_subscriptions') as any)
           .update({
             status: 'failed',

@@ -5,7 +5,7 @@ import RecentCustomers from '@/components/admin/recent-customers'
 import PlanDistribution from '@/components/admin/plan-distribution'
 
 export default async function AdminDashboardPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // Buscar estatísticas
   const { count: totalUsers } = await (supabase

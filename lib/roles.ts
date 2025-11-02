@@ -10,7 +10,7 @@ export function isAdmin(email: string): boolean {
 }
 
 export async function getUserRole(userId: string): Promise<UserRole> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: profile } = await (supabase
     .from('profiles') as any)

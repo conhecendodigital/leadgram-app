@@ -4,7 +4,7 @@ import CustomersStats from '@/components/admin/customers-stats'
 import { Users } from 'lucide-react'
 
 export default async function AdminCustomersPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // Buscar todos os usuários (exceto admin)
   const { data: users } = await (supabase

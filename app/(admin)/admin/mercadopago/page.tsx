@@ -3,7 +3,7 @@ import MercadoPagoConnection from '@/components/admin/mercadopago-connection'
 import { CreditCard } from 'lucide-react'
 
 export default async function AdminMercadoPagoPage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   // Buscar conexão do admin
   const { data: connection } = await (supabase
