@@ -1,18 +1,20 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import StatsCards from '@/components/dashboard/stats-cards'
-import FunnelChart from '@/components/dashboard/funnel-chart'
-import PlatformStats from '@/components/dashboard/platform-stats'
-import RecentIdeas from '@/components/dashboard/recent-ideas'
+import StatsOverview from '@/components/dashboard/stats-overview'
+import ContentGrid from '@/components/dashboard/content-grid'
+import PerformanceChart from '@/components/dashboard/performance-chart'
 import QuickActions from '@/components/dashboard/quick-actions'
+import StoriesCarousel from '@/components/dashboard/stories-carousel'
 import ActivityFeed from '@/components/dashboard/activity-feed'
-import { Sparkles } from 'lucide-react'
+import TopContent from '@/components/dashboard/top-content'
 import type { Database } from '@/types/database.types'
 
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
-  idea_platforms?: Array<Database['public']['Tables']['idea_platforms']['Row'] & {
-    metrics?: Array<any>
-  }>
+  idea_platforms?: Array<
+    Database['public']['Tables']['idea_platforms']['Row'] & {
+      metrics?: Array<any>
+    }
+  >
 }
 
 export default async function DashboardPage() {
@@ -26,55 +28,97 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
+  // Buscar perfil
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single()
+
+  const profile = profileData as Database['public']['Tables']['profiles']['Row'] | null
+
+  // Buscar ideias com métricas
   const { data } = await supabase
     .from('ideas')
     .select('*, idea_platforms(*, metrics(*))')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
-  
+
   const ideas = data as IdeaWithRelations[] | null
 
+  // Calcular métricas totais
   const totalIdeas = ideas?.length || 0
-  const recordedIdeas = ideas?.filter((i) => i.status === 'recorded').length || 0
-  const postedIdeas = ideas?.filter((i) => i.status === 'posted').length || 0
+  const postedIdeas = ideas?.filter((i) => i.status === 'posted') || []
+
+  const totalViews = postedIdeas.reduce((sum, idea) => {
+    const views = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+      const latestMetric = platform.metrics?.[0]
+      return pSum + (latestMetric?.views || 0)
+    }, 0) || 0
+    return sum + views
+  }, 0)
+
+  const totalLikes = postedIdeas.reduce((sum, idea) => {
+    const likes = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+      const latestMetric = platform.metrics?.[0]
+      return pSum + (latestMetric?.likes || 0)
+    }, 0) || 0
+    return sum + likes
+  }, 0)
+
+  const totalComments = postedIdeas.reduce((sum, idea) => {
+    const comments = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+      const latestMetric = platform.metrics?.[0]
+      return pSum + (latestMetric?.comments || 0)
+    }, 0) || 0
+    return sum + comments
+  }, 0)
+
+  const engagementRate = totalViews > 0
+    ? ((totalLikes + totalComments) / totalViews * 100).toFixed(2)
+    : '0.00'
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Stats Cards */}
-      <StatsCards
-        totalIdeas={totalIdeas}
-        recordedIdeas={recordedIdeas}
-        postedIdeas={postedIdeas}
-      />
-
-      {/* Charts Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <FunnelChart />
-        <PlatformStats />
-      </div>
-
-      {/* Quick Actions Banner */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="h-6 w-6" />
-            <h3 className="text-2xl font-bold">Ações Rápidas</h3>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 lg:p-8">
+      {/* Header Premium */}
+      <div className="mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent">
+              Olá, {profile?.full_name || 'Criador'}! 👋
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
+              Acompanhe seu desempenho e gerencie seu conteúdo
+            </p>
           </div>
-          <p className="text-white/90 mb-6 max-w-2xl">
-            Acelere seu workflow com atalhos inteligentes
-          </p>
           <QuickActions />
         </div>
       </div>
 
-      {/* Bottom Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <RecentIdeas />
+      {/* Stats Overview */}
+      <StatsOverview
+        totalIdeas={totalIdeas}
+        totalViews={totalViews}
+        totalLikes={totalLikes}
+        totalComments={totalComments}
+        engagementRate={engagementRate}
+      />
+
+      {/* Stories Carousel - Suas Ideias em Progresso */}
+      <StoriesCarousel ideas={ideas?.slice(0, 10) || []} />
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6">
+        {/* Left Column - 2/3 */}
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
+          <PerformanceChart ideas={ideas || []} />
+          <ContentGrid ideas={postedIdeas.slice(0, 9)} />
         </div>
-        <div>
-          <ActivityFeed />
+
+        {/* Right Column - 1/3 */}
+        <div className="space-y-4 md:space-y-6">
+          <TopContent ideas={postedIdeas.slice(0, 5)} />
+          <ActivityFeed ideas={ideas?.slice(0, 5) || []} />
         </div>
       </div>
     </div>

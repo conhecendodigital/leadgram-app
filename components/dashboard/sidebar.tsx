@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Sparkles, LayoutDashboard, Lightbulb, BarChart3, Instagram, Settings } from 'lucide-react'
+import { Sparkles, LayoutDashboard, Lightbulb, BarChart3, Instagram, Settings, Search } from 'lucide-react'
 
 const navItems = [
   {
@@ -14,6 +14,11 @@ const navItems = [
     name: 'Ideias',
     href: '/dashboard/ideas',
     icon: Lightbulb,
+  },
+  {
+    name: 'Explorar',
+    href: '/dashboard/explore',
+    icon: Search,
   },
   {
     name: 'Analytics',

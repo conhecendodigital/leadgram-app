@@ -1,108 +1,141 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    // Verificar autenticação
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Não autenticado' },
+        { status: 401 }
+      )
     }
 
-    // Buscar conta Instagram do usuário
+    // Buscar conta do Instagram conectada
     const { data: account, error: accountError } = await (supabase
       .from('instagram_accounts') as any)
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .eq('is_active', true)
       .single()
 
     if (accountError || !account) {
       return NextResponse.json(
-        { error: 'Instagram account not found' },
+        { error: 'Nenhuma conta Instagram conectada' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar se o token ainda é válido
+    if (account.token_expires_at) {
+      const expiresAt = new Date(account.token_expires_at)
+      if (expiresAt < new Date()) {
+        return NextResponse.json(
+          { error: 'Token expirado. Reconecte sua conta.' },
+          { status: 401 }
+        )
+      }
+    }
+
+    // Buscar posts do Instagram Graph API
+    const instagramResponse = await fetch(
+      `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&access_token=${account.access_token}&limit=50`
+    )
+
+    if (!instagramResponse.ok) {
+      const errorData = await instagramResponse.json()
+      console.error('Instagram API error:', errorData)
+
+      return NextResponse.json(
+        { error: 'Erro ao buscar posts do Instagram. Verifique a conexão.' },
+        { status: 500 }
+      )
+    }
+
+    const instagramData = await instagramResponse.json()
+
+    if (!instagramData.data || !Array.isArray(instagramData.data)) {
+      return NextResponse.json(
+        { error: 'Nenhum post encontrado' },
         { status: 404 }
       )
     }
 
-    // Buscar posts do Instagram
-    const mediaResponse = await fetch(
-      `https://graph.instagram.com/${account.instagram_user_id}/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count&access_token=${account.access_token}`
-    )
+    // Processar e salvar posts
+    let newPostsCount = 0
+    let updatedPostsCount = 0
 
-    if (!mediaResponse.ok) {
-      throw new Error('Failed to fetch Instagram media')
-    }
+    for (const post of instagramData.data) {
+      // Verificar se já existe
+      const { data: existingPost } = await (supabase
+        .from('instagram_posts') as any)
+        .select('id')
+        .eq('instagram_media_id', post.id)
+        .eq('instagram_account_id', account.id)
+        .single()
 
-    const mediaData = await mediaResponse.json()
+      if (existingPost) {
+        // Atualizar post existente
+        await (supabase
+          .from('instagram_posts') as any)
+          .update({
+            like_count: post.like_count || 0,
+            comments_count: post.comments_count || 0,
+            synced_at: new Date().toISOString(),
+          })
+          .eq('id', existingPost.id)
 
-    // Salvar posts no banco
-    if (mediaData.data && mediaData.data.length > 0) {
-      for (const post of mediaData.data) {
-        // Buscar insights (métricas detalhadas)
-        let insights = {
-          impressions: 0,
-          reach: 0,
-          saved: 0,
+        updatedPostsCount++
+      } else {
+        // Inserir novo post
+        const { error: insertError } = await (supabase
+          .from('instagram_posts') as any)
+          .insert({
+            instagram_account_id: account.id,
+            instagram_media_id: post.id,
+            caption: post.caption || '',
+            media_type: post.media_type || 'IMAGE',
+            media_url: post.media_url || post.thumbnail_url || '',
+            thumbnail_url: post.thumbnail_url || post.media_url || '',
+            permalink: post.permalink || '',
+            timestamp: post.timestamp || new Date().toISOString(),
+            like_count: post.like_count || 0,
+            comments_count: post.comments_count || 0,
+            synced_at: new Date().toISOString(),
+          })
+
+        if (!insertError) {
+          newPostsCount++
         }
-
-        try {
-          const insightsResponse = await fetch(
-            `https://graph.instagram.com/${post.id}/insights?metric=impressions,reach,saved&access_token=${account.access_token}`
-          )
-
-          if (insightsResponse.ok) {
-            const insightsData = await insightsResponse.json()
-            insightsData.data?.forEach((metric: any) => {
-              if (metric.name === 'impressions') insights.impressions = metric.values[0].value
-              if (metric.name === 'reach') insights.reach = metric.values[0].value
-              if (metric.name === 'saved') insights.saved = metric.values[0].value
-            })
-          }
-        } catch (e) {
-          console.warn('Failed to fetch insights for post', post.id)
-        }
-
-        // Calcular engagement rate
-        const totalEngagement = (post.like_count || 0) + (post.comments_count || 0) + insights.saved
-        const engagement_rate = insights.impressions > 0 ? (totalEngagement / insights.impressions) * 100 : 0
-
-        // Upsert post
-        await (supabase.from('instagram_posts') as any).upsert({
-          instagram_account_id: account.id,
-          instagram_media_id: post.id,
-          media_type: post.media_type,
-          caption: post.caption || null,
-          permalink: post.permalink,
-          thumbnail_url: post.thumbnail_url || post.media_url,
-          timestamp: post.timestamp,
-          like_count: post.like_count || 0,
-          comments_count: post.comments_count || 0,
-          impressions: insights.impressions,
-          reach: insights.reach,
-          saved: insights.saved,
-          video_views: 0,
-          engagement_rate,
-          synced_at: new Date().toISOString(),
-        })
       }
     }
 
-    // Atualizar last_sync_at
+    // Atualizar data da última sincronização e contadores
     await (supabase
       .from('instagram_accounts') as any)
-      .update({ last_sync_at: new Date().toISOString() })
+      .update({
+        last_sync_at: new Date().toISOString(),
+        media_count: instagramData.data.length,
+      })
       .eq('id', account.id)
 
     return NextResponse.json({
       success: true,
-      synced_posts: mediaData.data?.length || 0,
+      newPosts: newPostsCount,
+      updatedPosts: updatedPostsCount,
+      totalPosts: instagramData.data.length,
+      message: `${newPostsCount} novos posts importados, ${updatedPostsCount} posts atualizados`,
     })
-  } catch (error) {
-    console.error('Error syncing Instagram:', error)
+  } catch (error: any) {
+    console.error('Sync error:', error)
     return NextResponse.json(
-      { error: 'Failed to sync Instagram' },
+      { error: error.message || 'Erro ao sincronizar' },
       { status: 500 }
     )
   }

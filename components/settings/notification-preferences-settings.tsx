@@ -1,0 +1,370 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Bell, Mail, Smartphone, Target, TrendingUp, RefreshCw, AlertCircle, Check, X } from 'lucide-react'
+
+interface NotificationPreferences {
+  email_enabled: boolean
+  push_enabled: boolean
+  content_ideas: boolean
+  goal_achievements: boolean
+  instagram_sync: boolean
+  system_updates: boolean
+  frequency: 'instant' | 'daily' | 'weekly'
+  quiet_hours_enabled: boolean
+  quiet_hours_start: string
+  quiet_hours_end: string
+}
+
+const notificationTypes = [
+  {
+    id: 'content_ideas',
+    name: 'Novas Ideias de Conteúdo',
+    description: 'Receba notificações quando novas ideias forem geradas',
+    icon: Target
+  },
+  {
+    id: 'goal_achievements',
+    name: 'Metas Alcançadas',
+    description: 'Seja notificado quando atingir suas metas',
+    icon: TrendingUp
+  },
+  {
+    id: 'instagram_sync',
+    name: 'Sincronização Instagram',
+    description: 'Atualizações sobre sincronização de dados',
+    icon: RefreshCw
+  },
+  {
+    id: 'system_updates',
+    name: 'Atualizações do Sistema',
+    description: 'Novos recursos e melhorias da plataforma',
+    icon: AlertCircle
+  }
+]
+
+const frequencies = [
+  { id: 'instant', name: 'Instantâneas', description: 'Receba notificações imediatamente' },
+  { id: 'daily', name: 'Resumo Diário', description: 'Um resumo por dia às 9h' },
+  { id: 'weekly', name: 'Resumo Semanal', description: 'Um resumo por semana às segundas' }
+]
+
+export default function NotificationPreferencesSettings() {
+  const [preferences, setPreferences] = useState<NotificationPreferences>({
+    email_enabled: true,
+    push_enabled: false,
+    content_ideas: true,
+    goal_achievements: true,
+    instagram_sync: true,
+    system_updates: false,
+    frequency: 'instant',
+    quiet_hours_enabled: false,
+    quiet_hours_start: '22:00',
+    quiet_hours_end: '08:00'
+  })
+
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    // Load preferences from localStorage or API
+    const savedPrefs = localStorage.getItem('notificationPreferences')
+    if (savedPrefs) {
+      setPreferences(JSON.parse(savedPrefs))
+    }
+  }, [])
+
+  const handleToggle = (key: keyof NotificationPreferences) => {
+    setPreferences(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
+
+  const handleFrequencyChange = (frequency: 'instant' | 'daily' | 'weekly') => {
+    setPreferences(prev => ({
+      ...prev,
+      frequency
+    }))
+  }
+
+  const handleTimeChange = (type: 'start' | 'end', value: string) => {
+    setPreferences(prev => ({
+      ...prev,
+      [`quiet_hours_${type}`]: value
+    }))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      // Save to localStorage (in production, save to API)
+      localStorage.setItem('notificationPreferences', JSON.stringify(preferences))
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (error) {
+      console.error('Error saving preferences:', error)
+      alert('Erro ao salvar preferências')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Notification Channels */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
+            <Bell className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Canais de Notificação
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Escolha como deseja receber notificações
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Email Notifications */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <div>
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  Notificações por Email
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Receba atualizações no seu email
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggle('email_enabled')}
+              className={`
+                relative w-14 h-8 rounded-full transition-colors
+                ${preferences.email_enabled
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+                }
+              `}
+            >
+              <div className={`
+                absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform
+                ${preferences.email_enabled ? 'translate-x-6' : 'translate-x-0'}
+              `} />
+            </button>
+          </div>
+
+          {/* Push Notifications */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Smartphone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <div>
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  Notificações Push
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Notificações instantâneas no navegador
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggle('push_enabled')}
+              className={`
+                relative w-14 h-8 rounded-full transition-colors
+                ${preferences.push_enabled
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+                }
+              `}
+            >
+              <div className={`
+                absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform
+                ${preferences.push_enabled ? 'translate-x-6' : 'translate-x-0'}
+              `} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Notification Types */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            Tipos de Notificação
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Escolha quais notificações você deseja receber
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {notificationTypes.map((type) => {
+            const Icon = type.icon
+            const isEnabled = preferences[type.id as keyof NotificationPreferences]
+
+            return (
+              <div
+                key={type.id}
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      {type.name}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {type.description}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleToggle(type.id as keyof NotificationPreferences)}
+                  className={`
+                    relative w-14 h-8 rounded-full transition-colors
+                    ${isEnabled
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                      : 'bg-gray-300 dark:bg-gray-600'
+                    }
+                  `}
+                >
+                  <div className={`
+                    absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform
+                    ${isEnabled ? 'translate-x-6' : 'translate-x-0'}
+                  `} />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Frequency */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            Frequência
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Com que frequência deseja receber notificações
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {frequencies.map((freq) => {
+            const isSelected = preferences.frequency === freq.id
+
+            return (
+              <button
+                key={freq.id}
+                onClick={() => handleFrequencyChange(freq.id as 'instant' | 'daily' | 'weekly')}
+                className={`
+                  p-4 rounded-xl border-2 transition-all text-left
+                  ${isSelected
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-4 ring-purple-100 dark:ring-purple-900/50'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+                  }
+                `}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-semibold text-gray-900 dark:text-white">
+                    {freq.name}
+                  </div>
+                  {isSelected && (
+                    <Check className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  )}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {freq.description}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Quiet Hours */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+              Horário Silencioso
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Defina um período sem notificações
+            </p>
+          </div>
+          <button
+            onClick={() => handleToggle('quiet_hours_enabled')}
+            className={`
+              relative w-14 h-8 rounded-full transition-colors
+              ${preferences.quiet_hours_enabled
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                : 'bg-gray-300 dark:bg-gray-600'
+              }
+            `}
+          >
+            <div className={`
+              absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform
+              ${preferences.quiet_hours_enabled ? 'translate-x-6' : 'translate-x-0'}
+            `} />
+          </button>
+        </div>
+
+        {preferences.quiet_hours_enabled && (
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Início
+              </label>
+              <input
+                type="time"
+                value={preferences.quiet_hours_start}
+                onChange={(e) => handleTimeChange('start', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Fim
+              </label>
+              <input
+                type="time"
+                value={preferences.quiet_hours_end}
+                onChange={(e) => handleTimeChange('end', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Save Button */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? 'Salvando...' : 'Salvar Preferências'}
+        </button>
+
+        {saved && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-xl">
+            <Check className="w-5 h-5" />
+            <span className="font-semibold">Salvo!</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

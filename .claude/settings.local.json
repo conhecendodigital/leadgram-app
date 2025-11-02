@@ -8,7 +8,10 @@
       "Bash(npm run build:*)",
       "Bash(if exist .next rmdir /s /q .next)",
       "Bash(npm run dev:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(if not exist \"components\\dashboard\" mkdir componentsdashboard)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)"
     ],
     "deny": [],
     "ask": []
