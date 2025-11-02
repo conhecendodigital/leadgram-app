@@ -4,21 +4,40 @@ import ProfileHeader from '@/components/explore/profile-header'
 import ProfileStats from '@/components/explore/profile-stats'
 import TopPosts from '@/components/explore/top-posts'
 import EngagementChart from '@/components/explore/engagement-chart'
-import ContentFilters from '@/components/explore/content-filters'
-import CompareButton from '@/components/explore/compare-button'
-import { instagramAPI } from '@/lib/instagram-api'
+import { AlertCircle } from 'lucide-react'
 
 async function getProfileData(username: string) {
   try {
-    // Buscar perfil e posts em paralelo
-    const [profile, posts] = await Promise.all([
-      instagramAPI.getProfile(username),
-      instagramAPI.getUserPosts(username, 50),
+    // Chamar API interna que usa RapidAPI
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+    console.log('🔍 Fetching profile:', username)
+
+    const [profileRes, postsRes] = await Promise.all([
+      fetch(`${baseUrl}/api/instagram/profile?username=${username}`, {
+        cache: 'no-store',
+      }),
+      fetch(`${baseUrl}/api/instagram/posts?username=${username}&count=50`, {
+        cache: 'no-store',
+      }),
     ])
+
+    if (!profileRes.ok) {
+      console.error('Profile fetch failed:', await profileRes.text())
+      return null
+    }
+
+    if (!postsRes.ok) {
+      console.error('Posts fetch failed:', await postsRes.text())
+      return null
+    }
+
+    const profile = await profileRes.json()
+    const { posts } = await postsRes.json()
 
     return {
       ...profile,
-      posts,
+      posts: posts || [],
     }
   } catch (error) {
     console.error('Error fetching profile data:', error)
@@ -46,44 +65,49 @@ export default async function ProfileAnalysisPage({
 
   if (!profileData) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] p-4">
-        <div className="text-center">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Perfil não encontrado
-          </h2>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-            Não foi possível carregar o perfil @{username}
-          </p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 p-4">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl max-w-md">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h2 className="text-lg font-bold text-red-900 dark:text-red-100 mb-2">
+                Perfil não encontrado
+              </h2>
+              <p className="text-sm text-red-800 dark:text-red-200">
+                Não foi possível carregar o perfil <strong>@{username}</strong>
+              </p>
+              <p className="text-sm text-red-700 dark:text-red-300 mt-2">
+                Possíveis causas:
+              </p>
+              <ul className="text-sm text-red-700 dark:text-red-300 list-disc list-inside mt-1 space-y-1">
+                <li>Perfil privado ou inexistente</li>
+                <li>API RapidAPI não configurada</li>
+                <li>Limite de requisições atingido</li>
+              </ul>
+            </div>
+          </div>
         </div>
+
+        <a
+          href="/dashboard/explore"
+          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
+        >
+          ← Voltar
+        </a>
       </div>
     )
   }
 
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
-      {/* Profile Header */}
       <ProfileHeader profile={profileData} />
-
-      {/* Stats Overview */}
       <ProfileStats profile={profileData} />
-
-      {/* Engagement Chart */}
-      <EngagementChart posts={profileData.posts} />
-
-      {/* Content Section */}
-      <div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-            Publicações ({profileData.posts.length})
-          </h2>
-          <div className="flex gap-3">
-            <ContentFilters />
-            <CompareButton username={username} />
-          </div>
-        </div>
-
-        <TopPosts posts={profileData.posts} />
-      </div>
+      {profileData.posts && profileData.posts.length > 0 && (
+        <>
+          <EngagementChart posts={profileData.posts} />
+          <TopPosts posts={profileData.posts} />
+        </>
+      )}
     </div>
   )
 }

@@ -1,7 +1,11 @@
 // Service para integrar com RapidAPI Instagram Scraper
+// Com timeout, retry e error handling melhorado
 
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY
-const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'instagram-scraper-api2.p.rapidapi.com'
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY!
+const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST!
+
+// Timeout de 30 segundos (Vercel Hobby tem limite de 10s, mas Pro tem 60s)
+const FETCH_TIMEOUT = 25000
 
 interface InstagramProfile {
   username: string
@@ -28,10 +32,38 @@ interface InstagramPost {
   engagement_rate: number
 }
 
+// Helper para adicionar timeout em fetch
+async function fetchWithTimeout(url: string, options: RequestInit, timeout: number) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - API demorou muito para responder')
+    }
+    throw error
+  }
+}
+
 export class InstagramAPI {
   private async fetchFromRapidAPI(endpoint: string, params?: Record<string, string>) {
-    if (!RAPIDAPI_KEY) {
-      throw new Error('RAPIDAPI_KEY não configurada. Configure no arquivo .env.local')
+    // Validar credenciais
+    if (!RAPIDAPI_KEY || RAPIDAPI_KEY === 'undefined') {
+      console.error('❌ RAPIDAPI_KEY não configurada!')
+      throw new Error('RAPIDAPI_KEY não configurada. Configure nas variáveis de ambiente.')
+    }
+
+    if (!RAPIDAPI_HOST || RAPIDAPI_HOST === 'undefined') {
+      console.error('❌ RAPIDAPI_HOST não configurada!')
+      throw new Error('RAPIDAPI_HOST não configurada. Configure nas variáveis de ambiente.')
     }
 
     const url = new URL(`https://${RAPIDAPI_HOST}/${endpoint}`)
@@ -42,26 +74,55 @@ export class InstagramAPI {
       })
     }
 
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-host': RAPIDAPI_HOST,
-        'x-rapidapi-key': RAPIDAPI_KEY,
-      },
+    console.log('🔍 Chamando RapidAPI:', {
+      endpoint,
+      params,
+      url: url.toString().replace(RAPIDAPI_KEY, 'HIDDEN'),
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('RapidAPI Error:', response.status, errorText)
-      throw new Error(`Erro ao buscar dados do Instagram. Verifique suas credenciais RapidAPI.`)
-    }
+    try {
+      const response = await fetchWithTimeout(
+        url.toString(),
+        {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': RAPIDAPI_HOST,
+            'x-rapidapi-key': RAPIDAPI_KEY,
+          },
+        },
+        FETCH_TIMEOUT
+      )
 
-    return response.json()
+      console.log('✅ RapidAPI Response Status:', response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ RapidAPI Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        })
+
+        throw new Error(
+          `RapidAPI Error: ${response.status} ${response.statusText} - ${errorText}`
+        )
+      }
+
+      const data = await response.json()
+      console.log('✅ RapidAPI Data received:', Object.keys(data))
+
+      return data
+    } catch (error: any) {
+      console.error('❌ Erro na chamada RapidAPI:', error)
+      throw error
+    }
   }
 
   // Buscar informações do perfil
   async getProfile(username: string): Promise<InstagramProfile> {
     try {
+      console.log('📱 Buscando perfil:', username)
+
       const data = await this.fetchFromRapidAPI('user_info.php', { username })
 
       return {
@@ -77,7 +138,7 @@ export class InstagramAPI {
         category: data.category_name || undefined,
       }
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.error('❌ Error fetching profile:', error)
       throw error
     }
   }
@@ -85,21 +146,25 @@ export class InstagramAPI {
   // Buscar posts do usuário
   async getUserPosts(username: string, count: number = 50): Promise<InstagramPost[]> {
     try {
+      console.log('📸 Buscando posts:', { username, count })
+
       const data = await this.fetchFromRapidAPI('user_posts.php', {
         username,
         count: count.toString(),
       })
 
       if (!data.items || !Array.isArray(data.items)) {
+        console.warn('⚠️ Nenhum post encontrado')
         return []
       }
+
+      console.log(`✅ ${data.items.length} posts encontrados`)
 
       return data.items.map((item: any) => {
         const likeCount = item.like_count || 0
         const commentCount = item.comment_count || 0
-        const followers = data.follower_count || 1000 // Fallback
+        const followers = data.follower_count || 1000
 
-        // Calcular taxa de engajamento
         const engagementRate = followers > 0
           ? ((likeCount + commentCount) / followers) * 100
           : 0
@@ -117,7 +182,7 @@ export class InstagramAPI {
         }
       })
     } catch (error) {
-      console.error('Error fetching posts:', error)
+      console.error('❌ Error fetching posts:', error)
       throw error
     }
   }
@@ -125,6 +190,8 @@ export class InstagramAPI {
   // Buscar posts em alta (top posts por hashtag)
   async getTopPostsByHashtag(hashtag: string, count: number = 20): Promise<InstagramPost[]> {
     try {
+      console.log('🔥 Buscando top posts:', { hashtag, count })
+
       const data = await this.fetchFromRapidAPI('hashtag_posts.php', {
         hashtag,
         count: count.toString(),
@@ -143,47 +210,11 @@ export class InstagramAPI {
         like_count: item.like_count || 0,
         comment_count: item.comment_count || 0,
         timestamp: new Date(item.taken_at * 1000).toISOString(),
-        engagement_rate: 0, // Calcular depois se necessário
+        engagement_rate: 0,
       }))
     } catch (error) {
-      console.error('Error fetching hashtag posts:', error)
+      console.error('❌ Error fetching hashtag posts:', error)
       throw error
-    }
-  }
-
-  // Buscar stories do usuário (se disponível)
-  async getUserStories(username: string): Promise<any[]> {
-    try {
-      const data = await this.fetchFromRapidAPI('user_stories.php', { username })
-      return data.items || []
-    } catch (error) {
-      console.error('Error fetching stories:', error)
-      return []
-    }
-  }
-
-  // Buscar seguidores de um post específico
-  async getPostLikers(shortcode: string, count: number = 50): Promise<any[]> {
-    try {
-      const data = await this.fetchFromRapidAPI('get_post_likers.php', {
-        shortcode,
-        count: count.toString(),
-      })
-      return data.users || []
-    } catch (error) {
-      console.error('Error fetching post likers:', error)
-      return []
-    }
-  }
-
-  // Buscar perfis similares
-  async getSimilarProfiles(username: string): Promise<any[]> {
-    try {
-      const data = await this.fetchFromRapidAPI('similar_accounts.php', { username })
-      return data.users || []
-    } catch (error) {
-      console.error('Error fetching similar profiles:', error)
-      return []
     }
   }
 }
