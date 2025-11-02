@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import type { Database } from '@/types/database.types'
+import { ADMIN_EMAIL } from './lib/roles'
 
 export async function proxy(req: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -33,25 +34,43 @@ export async function proxy(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Proteger rotas do dashboard
-  if (req.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!session) {
-      const redirectUrl = new URL('/login', req.url)
-      return NextResponse.redirect(redirectUrl)
+  const isAuthPage = req.nextUrl.pathname.startsWith('/login') ||
+    req.nextUrl.pathname.startsWith('/register')
+  const isDashboardPage = req.nextUrl.pathname.startsWith('/dashboard')
+  const isAdminPage = req.nextUrl.pathname.startsWith('/admin')
+
+  // Se não tem sessão e tenta acessar área protegida
+  if (!session && (isDashboardPage || isAdminPage)) {
+    return NextResponse.redirect(new URL('/login', req.url))
+  }
+
+  // Se tem sessão e está em página de auth
+  if (session && isAuthPage) {
+    const isAdmin = session.user.email === ADMIN_EMAIL
+    const redirectTo = isAdmin ? '/admin/dashboard' : '/dashboard'
+    return NextResponse.redirect(new URL(redirectTo, req.url))
+  }
+
+  // Verificar se é admin tentando acessar área admin
+  if (isAdminPage && session) {
+    const isAdmin = session.user.email === ADMIN_EMAIL
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
   }
 
-  // Redirecionar usuários autenticados de login/register para dashboard
-  if (req.nextUrl.pathname.startsWith('/login') || req.nextUrl.pathname.startsWith('/register')) {
-    if (session) {
-      const redirectUrl = new URL('/dashboard', req.url)
-      return NextResponse.redirect(redirectUrl)
-    }
+  // Redirecionar root baseado em role
+  if (session && req.nextUrl.pathname === '/') {
+    const isAdmin = session.user.email === ADMIN_EMAIL
+    const redirectTo = isAdmin ? '/admin/dashboard' : '/dashboard'
+    return NextResponse.redirect(new URL(redirectTo, req.url))
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
