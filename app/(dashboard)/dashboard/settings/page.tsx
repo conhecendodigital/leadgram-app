@@ -14,19 +14,21 @@ export default async function SettingsPage() {
     redirect('/login')
   }
 
-  // Buscar profile
+  // Buscar profile com tratamento de erro
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single()
+    .catch(() => ({ data: null }))
 
-  // Buscar subscription
+  // Buscar subscription com tratamento de erro
   const { data: subscription } = await supabase
     .from('user_subscriptions')
     .select('*')
     .eq('user_id', session.user.id)
     .single()
+    .catch(() => ({ data: null }))
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">

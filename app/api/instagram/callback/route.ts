@@ -20,6 +20,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Verificar variáveis de ambiente
+    if (!process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET || !process.env.FACEBOOK_REDIRECT_URI) {
+      console.error('Missing Facebook OAuth environment variables')
+      return NextResponse.redirect(
+        new URL('/dashboard/instagram?error=config_missing', request.url)
+      )
+    }
+
     const supabase = await createServerClient()
 
     const {
@@ -32,9 +40,9 @@ export async function GET(request: NextRequest) {
 
     // 1. Trocar código por access token do Facebook
     const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
-    tokenUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!)
-    tokenUrl.searchParams.set('client_secret', process.env.FACEBOOK_APP_SECRET!)
-    tokenUrl.searchParams.set('redirect_uri', process.env.FACEBOOK_REDIRECT_URI!)
+    tokenUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID)
+    tokenUrl.searchParams.set('client_secret', process.env.FACEBOOK_APP_SECRET)
+    tokenUrl.searchParams.set('redirect_uri', process.env.FACEBOOK_REDIRECT_URI)
     tokenUrl.searchParams.set('code', code)
 
     const tokenResponse = await fetch(tokenUrl.toString())

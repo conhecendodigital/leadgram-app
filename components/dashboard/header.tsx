@@ -36,20 +36,20 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 px-6 py-4">
-      <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 px-3 sm:px-6 py-3 sm:py-4">
+      <div className="flex items-center justify-between gap-4">
         {/* Left - Greeting */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="min-w-0 flex-shrink">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">
             {getGreeting()}! 👋
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
             Veja como estão suas métricas hoje
           </p>
         </div>
 
         {/* Right - Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
           {/* Search */}
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -63,34 +63,40 @@ export default function Header() {
           {/* Quick Action - Nova Ideia */}
           <Link
             href="/dashboard/ideas/new"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-500/30 hover:shadow-xl hover:scale-105"
+            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg sm:rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-500/30 hover:shadow-xl hover:scale-105 text-sm"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Nova Ideia</span>
           </Link>
 
           {/* Theme Toggle */}
-          <ThemeToggle />
+          <div className="hidden sm:flex">
+            <ThemeToggle />
+          </div>
 
           {/* Notifications */}
-          {user && <NotificationCenter userId={user.id} />}
+          {user && (
+            <div className="hidden md:flex">
+              <NotificationCenter userId={user.id} />
+            </div>
+          )}
 
           {/* Settings */}
           <Link
             href="/dashboard/settings"
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg sm:rounded-xl transition-colors"
           >
-            <Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
           </Link>
 
           {/* User Dropdown */}
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+              className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg sm:rounded-xl transition-colors"
             >
-              <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </button>
 
@@ -100,9 +106,9 @@ export default function Header() {
                   className="fixed inset-0 z-10"
                   onClick={() => setDropdownOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 py-2 z-50">
-                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <div className="absolute right-0 mt-2 w-48 sm:w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 py-2 z-50">
+                  <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-gray-700">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
                       {user?.email}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -112,10 +118,10 @@ export default function Header() {
 
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
-                    Sair
+                    <span>Sair</span>
                   </button>
                 </div>
               </>

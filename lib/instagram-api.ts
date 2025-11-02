@@ -1,7 +1,7 @@
 // Service para integrar com RapidAPI Instagram Scraper
 
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY!
-const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST!
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY
+const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'instagram-scraper-api2.p.rapidapi.com'
 
 interface InstagramProfile {
   username: string
@@ -30,6 +30,10 @@ interface InstagramPost {
 
 export class InstagramAPI {
   private async fetchFromRapidAPI(endpoint: string, params?: Record<string, string>) {
+    if (!RAPIDAPI_KEY) {
+      throw new Error('RAPIDAPI_KEY não configurada. Configure no arquivo .env.local')
+    }
+
     const url = new URL(`https://${RAPIDAPI_HOST}/${endpoint}`)
 
     if (params) {
@@ -47,7 +51,9 @@ export class InstagramAPI {
     })
 
     if (!response.ok) {
-      throw new Error(`RapidAPI Error: ${response.status} ${response.statusText}`)
+      const errorText = await response.text()
+      console.error('RapidAPI Error:', response.status, errorText)
+      throw new Error(`Erro ao buscar dados do Instagram. Verifique suas credenciais RapidAPI.`)
     }
 
     return response.json()
