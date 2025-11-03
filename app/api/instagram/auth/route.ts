@@ -2,14 +2,26 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
-  const redirectUri = process.env.FACEBOOK_REDIRECT_URI
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
-  if (!appId || !redirectUri) {
+  if (!appId) {
     return NextResponse.json(
-      { error: 'Facebook credentials not configured' },
+      { error: 'NEXT_PUBLIC_FACEBOOK_APP_ID not configured' },
       { status: 500 }
     )
   }
+
+  if (!appUrl) {
+    return NextResponse.json(
+      { error: 'NEXT_PUBLIC_APP_URL not configured' },
+      { status: 500 }
+    )
+  }
+
+  // IMPORTANTE: Este redirect_uri DEVE ser IDÊNTICO ao usado em callback/route.ts
+  const redirectUri = `${appUrl}/api/instagram/callback`
+
+  console.log('🔐 Instagram Auth - Redirect URI:', redirectUri)
 
   // Facebook Login OAuth URL
   const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
