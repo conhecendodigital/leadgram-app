@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.formulareal.online"
+        }
+      ],
+      "destination": "https://formulareal.online/:path*",
+      "permanent": true
+    }
+  ]
+}
