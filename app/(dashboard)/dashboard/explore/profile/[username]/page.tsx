@@ -53,10 +53,11 @@ export default async function ProfileAnalysisPage({
   const supabase = await createServerClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/login')
   }
 

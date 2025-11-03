@@ -5,8 +5,8 @@ import { MercadoPagoConfig, Preference } from 'mercadopago'
 export async function POST(request: NextRequest) {
   const supabase = await createServerClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
           }
         ],
         payer: {
-          email: session.user.email!,
+          email: user.email!,
         },
-        external_reference: `${session.user.id}-${plan}`,
+        external_reference: `${user.id}-${plan}`,
         back_urls: {
           success: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?payment=success`,
           failure: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?payment=failure`,

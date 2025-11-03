@@ -21,10 +21,11 @@ export default async function DashboardPage() {
   const supabase = await createServerClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/login')
   }
 
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
   const { data: profileData } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   const profile = profileData as Database['public']['Tables']['profiles']['Row'] | null
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
   const { data } = await supabase
     .from('ideas')
     .select('*, idea_platforms(*, metrics(*))')
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
   const ideas = data as IdeaWithRelations[] | null

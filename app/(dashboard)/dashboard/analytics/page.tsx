@@ -28,10 +28,11 @@ export default async function AnalyticsPage() {
   const supabase = await createServerClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/login')
   }
 
@@ -42,7 +43,7 @@ export default async function AnalyticsPage() {
     const { data, error } = await (supabase
       .from('ideas') as any)
       .select('*, idea_platforms(*, metrics(*))')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
     if (!error && data) {

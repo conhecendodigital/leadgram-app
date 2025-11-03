@@ -8,10 +8,11 @@ export async function POST(request: NextRequest) {
 
     // Check authentication
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -26,13 +27,13 @@ export async function POST(request: NextRequest) {
     // Create payment preference
     const preferenceResponse = await createPaymentPreference(
       planId as PlanId,
-      session.user.id,
-      session.user.email || ''
+      user.id,
+      user.email || ''
     )
 
     // Store payment intent in database
     await (supabase.from('payments') as any).insert({
-      user_id: session.user.id,
+      user_id: user.id,
       plan_type: planId,
       amount: planId === 'PRO' ? 49.0 : 99.0,
       currency: 'BRL',

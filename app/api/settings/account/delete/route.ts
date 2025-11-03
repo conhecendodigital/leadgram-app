@@ -7,14 +7,15 @@ export async function DELETE(request: NextRequest) {
 
     // Check authentication
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = session.user.id
+    const userId = user.id
 
     // Delete related data (cascade delete based on database schema)
     // Note: Make sure your database has proper CASCADE DELETE set up

@@ -7,10 +7,11 @@ export async function POST(request: NextRequest) {
 
     // Verificar autenticação
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Não autenticado' },
         { status: 401 }
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { data: account, error: accountError } = await (supabase
       .from('instagram_accounts') as any)
       .select('*')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('is_active', true)
       .single()
 

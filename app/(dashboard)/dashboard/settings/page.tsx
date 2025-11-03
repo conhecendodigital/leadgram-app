@@ -7,10 +7,11 @@ export default async function SettingsPage() {
   const supabase = await createServerClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/login')
   }
 
@@ -18,7 +19,7 @@ export default async function SettingsPage() {
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   if (profileError) {
@@ -29,7 +30,7 @@ export default async function SettingsPage() {
   const { data: subscription, error: subscriptionError } = await supabase
     .from('user_subscriptions')
     .select('*')
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .single()
 
   if (subscriptionError) {
@@ -54,7 +55,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Settings Tabs */}
-      <SettingsTabs user={session.user} profile={profile} subscription={subscription} />
+      <SettingsTabs user={user} profile={profile} subscription={subscription} />
     </div>
   )
 }

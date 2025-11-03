@@ -7,10 +7,11 @@ export async function POST(request: NextRequest) {
 
     // Check authentication
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Verify current password by attempting to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: session.user.email!,
+      email: user.email!,
       password: currentPassword,
     })
 

@@ -5,13 +5,13 @@ import { getUserRole } from '@/lib/roles'
 export async function POST(request: NextRequest) {
   const supabase = await createServerClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // Verificar se é admin
-  const role = await getUserRole(session.user.id)
+  const role = await getUserRole(user.id)
   if (role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

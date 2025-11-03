@@ -31,37 +31,37 @@ export async function proxy(req: NextRequest) {
   )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const isAuthPage = req.nextUrl.pathname.startsWith('/login') ||
     req.nextUrl.pathname.startsWith('/register')
   const isDashboardPage = req.nextUrl.pathname.startsWith('/dashboard')
   const isAdminPage = req.nextUrl.pathname.startsWith('/admin')
 
-  // Se não tem sessão e tenta acessar área protegida
-  if (!session && (isDashboardPage || isAdminPage)) {
+  // Se não tem user e tenta acessar área protegida
+  if (!user && (isDashboardPage || isAdminPage)) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Se tem sessão e está em página de auth
-  if (session && isAuthPage) {
-    const isAdmin = session.user.email === ADMIN_EMAIL
+  // Se tem user e está em página de auth
+  if (user && isAuthPage) {
+    const isAdmin = user.email === ADMIN_EMAIL
     const redirectTo = isAdmin ? '/admin/dashboard' : '/dashboard'
     return NextResponse.redirect(new URL(redirectTo, req.url))
   }
 
   // Verificar se é admin tentando acessar área admin
-  if (isAdminPage && session) {
-    const isAdmin = session.user.email === ADMIN_EMAIL
+  if (isAdminPage && user) {
+    const isAdmin = user.email === ADMIN_EMAIL
     if (!isAdmin) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
   }
 
   // Redirecionar root baseado em role
-  if (session && req.nextUrl.pathname === '/') {
-    const isAdmin = session.user.email === ADMIN_EMAIL
+  if (user && req.nextUrl.pathname === '/') {
+    const isAdmin = user.email === ADMIN_EMAIL
     const redirectTo = isAdmin ? '/admin/dashboard' : '/dashboard'
     return NextResponse.redirect(new URL(redirectTo, req.url))
   }

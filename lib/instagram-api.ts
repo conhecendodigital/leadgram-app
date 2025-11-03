@@ -1,5 +1,12 @@
 // Service para integrar com RapidAPI Instagram Scraper
 // Com timeout, retry e error handling melhorado
+//
+// IMPORTANTE: Este código está configurado para usar a API "Instagram Scraper API2"
+// Host: instagram-scraper-api2.p.rapidapi.com
+// Endpoints: v1.2/user-info, v1.2/user-posts, v1.2/hashtag-posts
+//
+// Se você estiver usando uma API diferente do Instagram na RapidAPI,
+// você precisará ajustar os endpoints nos métodos getProfile(), getUserPosts() e getTopPostsByHashtag()
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY!
 const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST!
@@ -123,7 +130,7 @@ export class InstagramAPI {
     try {
       console.log('📱 Buscando perfil:', username)
 
-      const data = await this.fetchFromRapidAPI('user_info.php', { username })
+      const data = await this.fetchFromRapidAPI('v1.2/user-info', { username_or_id_or_url: username })
 
       return {
         username: data.username || username,
@@ -148,8 +155,8 @@ export class InstagramAPI {
     try {
       console.log('📸 Buscando posts:', { username, count })
 
-      const data = await this.fetchFromRapidAPI('user_posts.php', {
-        username,
+      const data = await this.fetchFromRapidAPI('v1.2/user-posts', {
+        username_or_id_or_url: username,
         count: count.toString(),
       })
 
@@ -192,8 +199,8 @@ export class InstagramAPI {
     try {
       console.log('🔥 Buscando top posts:', { hashtag, count })
 
-      const data = await this.fetchFromRapidAPI('hashtag_posts.php', {
-        hashtag,
+      const data = await this.fetchFromRapidAPI('v1.2/hashtag-posts', {
+        hashtag_name: hashtag,
         count: count.toString(),
       })
 

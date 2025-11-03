@@ -12,14 +12,15 @@ export default async function AdminLayout({
   const supabase = await createServerClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/login')
   }
 
-  const role = await getUserRole(session.user.id)
+  const role = await getUserRole(user.id)
 
   if (role !== 'admin') {
     redirect('/dashboard')
@@ -27,9 +28,9 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar user={session.user} />
+      <AdminSidebar user={user} />
       <div className="flex-1 lg:ml-64">
-        <AdminHeader user={session.user} />
+        <AdminHeader user={user} />
         <main className="p-6 lg:p-8">
           {children}
         </main>

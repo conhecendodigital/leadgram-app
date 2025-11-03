@@ -26,15 +26,30 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerClient()
 
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    if (!session) {
-      console.error('❌ No session')
+    if (authError || !user) {
+      console.error('❌ No user:', authError)
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
     console.log('🔑 Trocando code por access_token...')
+
+    // Verificar se as variáveis de ambiente estão configuradas
+    if (!process.env.NEXT_PUBLIC_FACEBOOK_APP_ID) {
+      throw new Error('NEXT_PUBLIC_FACEBOOK_APP_ID não configurado')
+    }
+    if (!process.env.FACEBOOK_APP_SECRET) {
+      throw new Error('FACEBOOK_APP_SECRET não configurado')
+    }
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      throw new Error('NEXT_PUBLIC_APP_URL não configurado')
+    }
+
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/instagram/callback`
+    console.log('📍 Redirect URI:', redirectUri)
 
     // Trocar code por access_token
     const tokenResponse = await fetch(
@@ -45,19 +60,26 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!,
-          client_secret: process.env.FACEBOOK_APP_SECRET!,
+          client_id: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
+          client_secret: process.env.FACEBOOK_APP_SECRET,
           grant_type: 'authorization_code',
-          redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/instagram/callback`,
+          redirect_uri: redirectUri,
           code,
         }),
       }
     )
 
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json()
-      console.error('❌ Token exchange failed:', errorData)
-      throw new Error('Failed to exchange code for token')
+      const errorData = await tokenResponse.json().catch(() => ({}))
+      console.error('❌ Token exchange failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: errorData,
+        redirectUri,
+      })
+      throw new Error(
+        `Failed to exchange code for token: ${errorData.error_message || errorData.error || 'Unknown error'}`
+      )
     }
 
     const tokenData = await tokenResponse.json()
@@ -86,13 +108,13 @@ export async function GET(request: NextRequest) {
     await (supabase
       .from('instagram_accounts') as any)
       .update({ is_active: false })
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
 
     // Inserir nova conexão
     const { data: account, error: insertError } = await (supabase
       .from('instagram_accounts') as any)
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         username: profileData.username,
         instagram_user_id: profileData.id,
         access_token: finalToken,
