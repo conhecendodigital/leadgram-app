@@ -47,17 +47,17 @@ export default function GrowthMetrics({ ideas = [] }: GrowthMetricsProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm"
+      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
           <TrendingUp className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             Métricas de Crescimento
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Evolução nos últimos 30 dias
           </p>
         </div>
@@ -71,20 +71,20 @@ export default function GrowthMetrics({ ideas = [] }: GrowthMetricsProps) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.1 }}
-            className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl"
+            className="p-4 bg-gray-50 rounded-xl"
           >
             <div className="flex items-center gap-3 mb-2">
               <div className={`p-2 bg-gradient-to-br ${metric.color} rounded-lg`}>
                 <metric.icon className="w-4 h-4 text-white" />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600">
                 {metric.label}
               </p>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-2xl font-bold text-gray-900 mb-1">
               {metric.value}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               {metric.description}
             </p>
           </motion.div>
@@ -93,7 +93,7 @@ export default function GrowthMetrics({ ideas = [] }: GrowthMetricsProps) {
 
       {/* Growth Chart */}
       <div>
-        <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+        <h4 className="font-semibold text-gray-900 mb-4">
           Evolução Geral
         </h4>
         <div className="h-80">
@@ -159,26 +159,26 @@ export default function GrowthMetrics({ ideas = [] }: GrowthMetricsProps) {
 
       {/* Growth Insights */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+        <div className="p-4 bg-green-50 rounded-xl border-2 border-green-200">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <h5 className="font-semibold text-green-900 dark:text-green-100">
+            <TrendingUp className="w-5 h-5 text-green-600" />
+            <h5 className="font-semibold text-green-900">
               Melhor Desempenho
             </h5>
           </div>
-          <p className="text-sm text-green-700 dark:text-green-300">
+          <p className="text-sm text-green-700">
             Crescimento de <strong>37.5%</strong> nos últimos 30 dias, ultrapassando a meta mensal em 12%.
           </p>
         </div>
 
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+        <div className="p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
           <div className="flex items-center gap-2 mb-2">
-            <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h5 className="font-semibold text-blue-900 dark:text-blue-100">
+            <Target className="w-5 h-5 text-primary" />
+            <h5 className="font-semibold text-blue-900">
               Projeção
             </h5>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
+          <p className="text-sm text-blue-700">
             Mantendo este ritmo, você alcançará <strong>150K seguidores</strong> até o final do mês.
           </p>
         </div>

@@ -77,7 +77,7 @@ export default function StatsOverview({
           className="group relative"
         >
           {/* Card */}
-          <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.bgGradient} dark:from-gray-800 dark:to-gray-900 border border-white/60 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300 p-6 cursor-pointer`}>
+          <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.bgGradient} border border-white/60 shadow-lg hover:shadow-2xl transition-all duration-300 p-6 cursor-pointer`}>
             {/* Background Glow */}
             <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br ${stat.gradient} opacity-20 blur-3xl group-hover:opacity-30 transition-opacity`} />
 

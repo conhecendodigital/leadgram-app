@@ -110,11 +110,11 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
       {/* Notification Bell */}
       <button
         onClick={handleToggle}
-        className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors"
       >
-        <Bell className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+        <Bell className="w-6 h-6 text-gray-700" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 w-5 h-5 gradient-primary text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -122,15 +122,15 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-bold text-gray-900">
                 Notificações
               </h3>
               {unreadCount > 0 && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600">
                   {unreadCount} não {unreadCount === 1 ? 'lida' : 'lidas'}
                 </p>
               )}
@@ -138,7 +138,7 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                className="text-sm text-primary hover:underline flex items-center gap-1"
               >
                 <CheckCheck className="w-4 h-4" />
                 Marcar todas
@@ -150,18 +150,18 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {loading ? (
               <div className="p-8 text-center">
-                <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                <p className="text-gray-600 dark:text-gray-400">Carregando...</p>
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-gray-600">Carregando...</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600">
                   Nenhuma notificação
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="divide-y divide-gray-200">
                 {notifications.map((notification) => {
                   const icon = getNotificationIcon(notification.type)
                   const colorClass = getNotificationColor(notification.type)
@@ -169,8 +169,8 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
                   return (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        !notification.read ? 'bg-purple-50 dark:bg-purple-900/10' : ''
+                      className={`p-4 hover:bg-gray-50 transition-colors ${
+                        !notification.read ? 'bg-purple-50' : ''
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -184,25 +184,25 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                            <h4 className="font-semibold text-gray-900 text-sm">
                               {notification.title}
                             </h4>
                             {!notification.read && (
-                              <div className="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0 mt-1" />
+                              <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1" />
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          <p className="text-sm text-gray-600 mb-2">
                             {notification.message}
                           </p>
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500 dark:text-gray-500">
+                            <span className="text-xs text-gray-500">
                               {formatTime(notification.created_at)}
                             </span>
                             <div className="flex items-center gap-2">
                               {!notification.read && (
                                 <button
                                   onClick={() => handleMarkAsRead(notification.id)}
-                                  className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                                  className="text-primary hover:opacity-90"
                                   title="Marcar como lida"
                                 >
                                   <Check className="w-4 h-4" />
@@ -210,7 +210,7 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
                               )}
                               <button
                                 onClick={() => handleDelete(notification.id)}
-                                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                                className="text-red-600 hover:text-red-700"
                                 title="Excluir"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -228,10 +228,10 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="p-3 border-t border-gray-200">
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-full py-2 text-center text-sm text-purple-600 dark:text-purple-400 hover:underline font-semibold"
+                className="w-full py-2 text-center text-sm text-primary hover:underline font-semibold"
               >
                 Fechar
               </button>

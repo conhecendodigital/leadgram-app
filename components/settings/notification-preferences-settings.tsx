@@ -117,16 +117,16 @@ export default function NotificationPreferencesSettings() {
   return (
     <div className="space-y-6">
       {/* Notification Channels */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
             <Bell className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-gray-900">
               Canais de Notificação
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Escolha como deseja receber notificações
             </p>
           </div>
@@ -134,14 +134,14 @@ export default function NotificationPreferencesSettings() {
 
         <div className="space-y-4">
           {/* Email Notifications */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <Mail className="w-5 h-5 text-gray-600" />
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white">
+                <div className="font-semibold text-gray-900">
                   Notificações por Email
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600">
                   Receba atualizações no seu email
                 </div>
               </div>
@@ -151,8 +151,8 @@ export default function NotificationPreferencesSettings() {
               className={`
                 relative w-14 h-8 rounded-full transition-colors
                 ${preferences.email_enabled
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                  ? 'gradient-primary'
+                  : 'bg-gray-300'
                 }
               `}
             >
@@ -164,14 +164,14 @@ export default function NotificationPreferencesSettings() {
           </div>
 
           {/* Push Notifications */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center gap-3">
-              <Smartphone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <Smartphone className="w-5 h-5 text-gray-600" />
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white">
+                <div className="font-semibold text-gray-900">
                   Notificações Push
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600">
                   Notificações instantâneas no navegador
                 </div>
               </div>
@@ -181,8 +181,8 @@ export default function NotificationPreferencesSettings() {
               className={`
                 relative w-14 h-8 rounded-full transition-colors
                 ${preferences.push_enabled
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                  ? 'gradient-primary'
+                  : 'bg-gray-300'
                 }
               `}
             >
@@ -196,12 +196,12 @@ export default function NotificationPreferencesSettings() {
       </div>
 
       {/* Notification Types */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="mb-4">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-lg font-bold text-gray-900 mb-1">
             Tipos de Notificação
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Escolha quais notificações você deseja receber
           </p>
         </div>
@@ -214,15 +214,15 @@ export default function NotificationPreferencesSettings() {
             return (
               <div
                 key={type.id}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
               >
                 <div className="flex items-center gap-3">
-                  <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <Icon className="w-5 h-5 text-gray-600" />
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">
+                    <div className="font-semibold text-gray-900">
                       {type.name}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-gray-600">
                       {type.description}
                     </div>
                   </div>
@@ -232,8 +232,8 @@ export default function NotificationPreferencesSettings() {
                   className={`
                     relative w-14 h-8 rounded-full transition-colors
                     ${isEnabled
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                      : 'bg-gray-300 dark:bg-gray-600'
+                      ? 'gradient-primary'
+                      : 'bg-gray-300'
                     }
                   `}
                 >
@@ -249,12 +249,12 @@ export default function NotificationPreferencesSettings() {
       </div>
 
       {/* Frequency */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="mb-4">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-lg font-bold text-gray-900 mb-1">
             Frequência
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Com que frequência deseja receber notificações
           </p>
         </div>
@@ -270,20 +270,20 @@ export default function NotificationPreferencesSettings() {
                 className={`
                   p-4 rounded-xl border-2 transition-all text-left
                   ${isSelected
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-4 ring-purple-100 dark:ring-purple-900/50'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+                    ? 'border-primary bg-purple-50 ring-4 ring-purple-100'
+                    : 'border-gray-200 hover:border-purple-300'
                   }
                 `}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="font-semibold text-gray-900 dark:text-white">
+                  <div className="font-semibold text-gray-900">
                     {freq.name}
                   </div>
                   {isSelected && (
-                    <Check className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <Check className="w-5 h-5 text-primary" />
                   )}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600">
                   {freq.description}
                 </div>
               </button>
@@ -293,13 +293,13 @@ export default function NotificationPreferencesSettings() {
       </div>
 
       {/* Quiet Hours */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
               Horário Silencioso
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Defina um período sem notificações
             </p>
           </div>
@@ -308,8 +308,8 @@ export default function NotificationPreferencesSettings() {
             className={`
               relative w-14 h-8 rounded-full transition-colors
               ${preferences.quiet_hours_enabled
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                : 'bg-gray-300 dark:bg-gray-600'
+                ? 'gradient-primary'
+                : 'bg-gray-300'
               }
             `}
           >
@@ -321,27 +321,27 @@ export default function NotificationPreferencesSettings() {
         </div>
 
         {preferences.quiet_hours_enabled && (
-          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Início
               </label>
               <input
                 type="time"
                 value={preferences.quiet_hours_start}
                 onChange={(e) => handleTimeChange('start', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fim
               </label>
               <input
                 type="time"
                 value={preferences.quiet_hours_end}
                 onChange={(e) => handleTimeChange('end', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
@@ -353,13 +353,13 @@ export default function NotificationPreferencesSettings() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3 px-6 gradient-primary text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? 'Salvando...' : 'Salvar Preferências'}
         </button>
 
         {saved && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-xl">
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-xl">
             <Check className="w-5 h-5" />
             <span className="font-semibold">Salvo!</span>
           </div>

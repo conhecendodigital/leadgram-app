@@ -19,10 +19,10 @@ export default function ExploreSearchForm() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-lg">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg">
         <div className="space-y-4">
           <label className="block">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+            <span className="text-sm font-medium text-gray-700 mb-2 block">
               Digite o @ do perfil que deseja analisar
             </span>
             <div className="relative">
@@ -34,7 +34,7 @@ export default function ExploreSearchForm() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="username"
-                className="w-full pl-10 pr-4 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900 dark:text-white text-lg"
+                className="w-full pl-10 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-gray-900 text-lg"
                 required
               />
             </div>
@@ -43,7 +43,7 @@ export default function ExploreSearchForm() {
           <button
             type="submit"
             disabled={!username.trim()}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 gradient-primary hover:opacity-90  disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:cursor-not-allowed"
           >
             <Search className="w-5 h-5" />
             Analisar Perfil
@@ -51,8 +51,8 @@ export default function ExploreSearchForm() {
         </div>
 
         {/* Exemplos */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <p className="text-sm text-gray-600 mb-3">
             Exemplos populares:
           </p>
           <div className="flex flex-wrap gap-2">
@@ -61,7 +61,7 @@ export default function ExploreSearchForm() {
                 key={example}
                 type="button"
                 onClick={() => setUsername(example)}
-                className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
               >
                 @{example}
               </button>

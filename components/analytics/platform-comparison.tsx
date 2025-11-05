@@ -58,14 +58,14 @@ export default function PlatformComparison({ ideas = [] }: PlatformComparisonPro
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm"
+      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             Comparação de Plataformas
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Engajamento por plataforma nos últimos 6 meses
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function PlatformComparison({ ideas = [] }: PlatformComparisonPro
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.1 }}
-            className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl"
+            className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl"
           >
             <div
               className="p-3 rounded-xl"
@@ -88,8 +88,8 @@ export default function PlatformComparison({ ideas = [] }: PlatformComparisonPro
               <platform.icon className="w-6 h-6" style={{ color: platform.color }} />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{platform.name}</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm text-gray-600">{platform.name}</p>
+              <p className="text-xl font-bold text-gray-900">
                 {platform.followers}
               </p>
             </div>

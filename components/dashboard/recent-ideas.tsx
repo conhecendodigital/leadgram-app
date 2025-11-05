@@ -66,7 +66,7 @@ export default function RecentIdeas() {
           <p className="text-gray-600 mb-4">Você ainda não tem ideias cadastradas</p>
           <Link
             href="/dashboard/ideas/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl hover:shadow-lg transition-all duration-200"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white font-medium rounded-xl hover:opacity-90 hover:shadow-lg transition-all duration-200"
           >
             Criar primeira ideia
             <ArrowRight className="w-4 h-4" />
@@ -82,7 +82,7 @@ export default function RecentIdeas() {
         <h3 className="text-lg font-semibold text-gray-900">Ideias Recentes</h3>
         <Link
           href="/dashboard/ideas"
-          className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+          className="text-sm font-medium text-primary hover:opacity-90 flex items-center gap-1"
         >
           Ver todas
           <ArrowRight className="w-4 h-4" />
@@ -98,7 +98,7 @@ export default function RecentIdeas() {
           >
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                <h4 className="font-medium text-gray-900 group-hover:text-primary transition-colors">
                   {idea.title}
                 </h4>
                 <StatusBadge status={idea.status} />
@@ -108,7 +108,7 @@ export default function RecentIdeas() {
                 {format(new Date(idea.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
             </div>
-            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
           </Link>
         ))}
       </div>

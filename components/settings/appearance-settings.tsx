@@ -7,7 +7,7 @@ const accentColors = [
   {
     name: 'Roxo',
     value: 'purple',
-    color: 'from-purple-600 to-pink-600',
+    color: 'gradient-primary',
     cssVars: {
       '--primary': '139 92 246',
       '--accent': '139 92 246',
@@ -17,7 +17,7 @@ const accentColors = [
   {
     name: 'Azul',
     value: 'blue',
-    color: 'from-blue-600 to-cyan-600',
+    color: 'from-blue-500 to-cyan-500',
     cssVars: {
       '--primary': '59 130 246',
       '--accent': '59 130 246',
@@ -27,7 +27,7 @@ const accentColors = [
   {
     name: 'Verde',
     value: 'green',
-    color: 'from-green-600 to-emerald-600',
+    color: 'from-green-500 to-emerald-500',
     cssVars: {
       '--primary': '34 197 94',
       '--accent': '34 197 94',
@@ -37,7 +37,7 @@ const accentColors = [
   {
     name: 'Laranja',
     value: 'orange',
-    color: 'from-orange-600 to-red-600',
+    color: 'from-orange-500 to-red-500',
     cssVars: {
       '--primary': '249 115 22',
       '--accent': '249 115 22',
@@ -47,7 +47,7 @@ const accentColors = [
   {
     name: 'Rosa',
     value: 'pink',
-    color: 'from-pink-600 to-rose-600',
+    color: 'from-pink-500 to-rose-500',
     cssVars: {
       '--primary': '236 72 153',
       '--accent': '236 72 153',
@@ -57,7 +57,7 @@ const accentColors = [
   {
     name: 'Índigo',
     value: 'indigo',
-    color: 'from-indigo-600 to-purple-600',
+    color: 'from-indigo-500 to-purple-500',
     cssVars: {
       '--primary': '99 102 241',
       '--accent': '99 102 241',

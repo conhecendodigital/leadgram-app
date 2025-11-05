@@ -88,7 +88,7 @@ export default function IdeasPage() {
           </div>
           <Link
             href="/dashboard/ideas/new"
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90 transition-all duration-200"
           >
             <Plus className="w-5 h-5" />
             Nova Ideia
@@ -107,7 +107,7 @@ export default function IdeasPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos os status</option>
               <option value="idea">Ideia</option>
@@ -119,7 +119,7 @@ export default function IdeasPage() {
             <select
               value={funnelFilter}
               onChange={(e) => setFunnelFilter(e.target.value as any)}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos os funis</option>
               <option value="top">Topo</option>
@@ -133,7 +133,7 @@ export default function IdeasPage() {
                   setStatusFilter('all')
                   setFunnelFilter('all')
                 }}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-primary hover:opacity-90 font-medium"
               >
                 Limpar filtros
               </button>
@@ -152,7 +152,7 @@ export default function IdeasPage() {
             {ideas.length === 0 && (
               <Link
                 href="/dashboard/ideas/new"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90 transition-all duration-200"
               >
                 <Plus className="w-5 h-5" />
                 Criar primeira ideia

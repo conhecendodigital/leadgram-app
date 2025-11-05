@@ -30,7 +30,7 @@ export default function InstagramConnect() {
         {/* Requirements Alert */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
               <p className="font-medium mb-2">Requisitos:</p>
               <ul className="space-y-1 text-blue-800">
@@ -68,7 +68,7 @@ export default function InstagramConnect() {
         <button
           onClick={handleConnect}
           disabled={loading}
-          className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white font-semibold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          className="w-full gradient-primary hover:opacity-90 text-white font-semibold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
         >
           {loading ? (
             <>

@@ -42,17 +42,17 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm"
+      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
           <Users className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             Insights da Audiência
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Conheça melhor seu público
           </p>
         </div>
@@ -61,7 +61,7 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Age Distribution */}
         <div>
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+          <h4 className="font-semibold text-gray-900 mb-4">
             Distribuição por Idade
           </h4>
           <div className="h-64">
@@ -89,7 +89,7 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
 
         {/* Gender Distribution */}
         <div>
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+          <h4 className="font-semibold text-gray-900 mb-4">
             Distribuição por Gênero
           </h4>
           <div className="h-64">
@@ -118,8 +118,8 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
         {/* Top Locations */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <MapPin className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <h4 className="font-semibold text-gray-900 dark:text-white">
+            <MapPin className="w-5 h-5 text-primary" />
+            <h4 className="font-semibold text-gray-900">
               Principais Localizações
             </h4>
           </div>
@@ -130,17 +130,17 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl"
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
               >
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                  <p className="font-medium text-gray-900">
                     {location.city}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600">
                     {location.country}
                   </p>
                 </div>
-                <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                <span className="text-lg font-bold text-primary">
                   {location.percentage}
                 </span>
               </motion.div>
@@ -151,8 +151,8 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
         {/* Peak Hours */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <h4 className="font-semibold text-gray-900 dark:text-white">
+            <Clock className="w-5 h-5 text-primary" />
+            <h4 className="font-semibold text-gray-900">
               Horários de Pico
             </h4>
           </div>
@@ -165,8 +165,8 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
                 transition={{ delay: index * 0.1 }}
                 className={`flex items-center justify-between p-3 rounded-xl transition-all ${
                   hour.active
-                    ? 'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-700'
-                    : 'bg-gray-50 dark:bg-gray-700/50'
+                    ? 'bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200'
+                    : 'bg-gray-50'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -178,8 +178,8 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
                   <p
                     className={`font-medium ${
                       hour.active
-                        ? 'text-purple-700 dark:text-purple-300'
-                        : 'text-gray-900 dark:text-white'
+                        ? 'text-purple-700'
+                        : 'text-gray-900'
                     }`}
                   >
                     {hour.time}
@@ -188,8 +188,8 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
                 <span
                   className={`text-lg font-bold ${
                     hour.active
-                      ? 'text-purple-600 dark:text-purple-400'
-                      : 'text-gray-600 dark:text-gray-400'
+                      ? 'text-primary'
+                      : 'text-gray-600'
                   }`}
                 >
                   {hour.percentage}

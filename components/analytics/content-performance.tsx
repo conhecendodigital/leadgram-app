@@ -50,14 +50,14 @@ export default function ContentPerformance({ ideas = [] }: ContentPerformancePro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm"
+      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             Conteúdo de Melhor Performance
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Top 3 posts dos últimos 30 dias
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function ContentPerformance({ ideas = [] }: ContentPerformancePro
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
           >
             {/* Thumbnail */}
             <div className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
@@ -88,10 +88,10 @@ export default function ContentPerformance({ ideas = [] }: ContentPerformancePro
             {/* Content Info */}
             <div className="flex-1">
               <div className="flex items-start justify-between mb-3">
-                <h4 className="font-semibold text-gray-900 dark:text-white">
+                <h4 className="font-semibold text-gray-900">
                   {content.title}
                 </h4>
-                <div className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg text-xs font-medium">
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-medium">
                   <TrendingUp className="w-3 h-3" />
                   {content.engagement}
                 </div>
@@ -100,26 +100,26 @@ export default function ContentPerformance({ ideas = [] }: ContentPerformancePro
               {/* Stats Grid */}
               <div className="grid grid-cols-4 gap-3">
                 <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <Eye className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-900">
                     {content.views}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-pink-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <Heart className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-900">
                     {content.likes}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <MessageCircle className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-900">
                     {content.comments}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <Share2 className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-900">
                     {content.shares}
                   </span>
                 </div>

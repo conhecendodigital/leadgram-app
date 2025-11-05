@@ -33,7 +33,7 @@ export default function StoriesCarousel({ ideas }: StoriesCarouselProps) {
 
   return (
     <div className="mt-6" data-tour="stories">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
         Suas Ideias 💡
       </h3>
 
@@ -45,11 +45,11 @@ export default function StoriesCarousel({ ideas }: StoriesCarouselProps) {
             whileTap={{ scale: 0.95 }}
             className="flex-shrink-0"
           >
-            <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center cursor-pointer group hover:shadow-xl transition-all">
-              <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500 transition-colors" />
-              <Plus className="w-8 h-8 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors" />
+            <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center cursor-pointer group hover:shadow-xl transition-all">
+              <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-gray-300 group-hover:border-gray-400 transition-colors" />
+              <Plus className="w-8 h-8 text-gray-400 group-hover:text-gray-600 transition-colors" />
             </div>
-            <p className="text-xs text-center mt-2 text-gray-600 dark:text-gray-400 font-medium">Nova</p>
+            <p className="text-xs text-center mt-2 text-gray-600 font-medium">Nova</p>
           </motion.div>
         </Link>
 
@@ -92,7 +92,7 @@ export default function StoriesCarousel({ ideas }: StoriesCarouselProps) {
                   </div>
                 </div>
 
-                <p className="text-xs text-center mt-2 text-gray-900 dark:text-white font-medium truncate w-24">
+                <p className="text-xs text-center mt-2 text-gray-900 font-medium truncate w-24">
                   {idea.title}
                 </p>
               </motion.div>

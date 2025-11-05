@@ -36,7 +36,7 @@ export default async function AdminPlansPage() {
       price: 'R$ 49',
       period: '/mês',
       users: planStats.pro,
-      color: 'from-blue-500 to-blue-600',
+      color: 'gradient-primary',
       features: [
         'Ideias ilimitadas',
         'Análise avançada de métricas',
@@ -51,7 +51,7 @@ export default async function AdminPlansPage() {
       price: 'R$ 99',
       period: '/mês',
       users: planStats.premium,
-      color: 'from-purple-500 to-purple-600',
+      color: 'gradient-primary',
       features: [
         'Tudo do Pro +',
         'Multi-plataformas',
@@ -66,65 +66,65 @@ export default async function AdminPlansPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Planos
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Gerencie os planos de assinatura disponíveis
         </p>
       </div>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span className="text-sm font-medium text-gray-500">
               Total de Planos
             </span>
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-3xl font-bold text-gray-900 mb-1">
             {plans.length}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500">
             Planos ativos
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
               <Users className="w-6 h-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span className="text-sm font-medium text-gray-500">
               Assinaturas
             </span>
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-3xl font-bold text-gray-900 mb-1">
             {subscriptions?.length || 0}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500">
             Total de assinantes
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span className="text-sm font-medium text-gray-500">
               Taxa de Conversão
             </span>
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-3xl font-bold text-gray-900 mb-1">
             {subscriptions?.length
               ? (((planStats.pro + planStats.premium) / subscriptions.length) * 100).toFixed(1)
               : 0}%
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500">
             Free para pago
           </p>
         </div>
@@ -135,7 +135,7 @@ export default async function AdminPlansPage() {
         {plans.map((plan) => (
           <div
             key={plan.type}
-            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+            className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
           >
             {/* Header */}
             <div className={`bg-gradient-to-r ${plan.color} p-6 text-white`}>
@@ -147,16 +147,16 @@ export default async function AdminPlansPage() {
             </div>
 
             {/* Stats */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-sm font-medium text-gray-500">
                   Usuários Ativos
                 </span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                <span className="text-2xl font-bold text-gray-900">
                   {plan.users}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className={`bg-gradient-to-r ${plan.color} h-2 rounded-full transition-all`}
                   style={{
@@ -164,7 +164,7 @@ export default async function AdminPlansPage() {
                   }}
                 />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 {subscriptions?.length
                   ? ((plan.users / subscriptions.length) * 100).toFixed(1)
                   : 0}% do total
@@ -173,14 +173,14 @@ export default async function AdminPlansPage() {
 
             {/* Features */}
             <div className="p-6">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">
                 Recursos Inclusos:
               </h4>
               <ul className="space-y-2">
                 {plan.features.map((feature, index) => (
                   <li
                     key={index}
-                    className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
+                    className="flex items-start gap-2 text-sm text-gray-600"
                   >
                     <span className="text-green-500 mt-0.5">✓</span>
                     {feature}

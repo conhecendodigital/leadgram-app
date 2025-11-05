@@ -30,8 +30,8 @@ export default function EngagementChart({ posts }: EngagementChartProps) {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-2xl">
-          <p className="font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="bg-white/95 backdrop-blur-xl border border-gray-200 rounded-xl p-4 shadow-2xl">
+          <p className="font-semibold text-gray-900 mb-2">
             Post #{payload[0].payload.index}
           </p>
           {payload.map((entry: any, index: number) => (
@@ -46,15 +46,15 @@ export default function EngagementChart({ posts }: EngagementChartProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-6 shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+          <h3 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             Evolução do Engajamento
           </h3>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-xs md:text-sm text-gray-600 mt-1">
             Últimos 15 posts • Média: {avgEngagement}%
           </p>
         </div>

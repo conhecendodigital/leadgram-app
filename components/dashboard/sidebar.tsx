@@ -41,14 +41,14 @@ export default function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 bg-[#1C1E21] text-white flex flex-col">
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Logo */}
       <div className="p-6">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold">Leadgram</span>
+          <span className="text-xl font-bold text-gray-900">Leadgram</span>
         </Link>
       </div>
 
@@ -67,8 +67,8 @@ export default function Sidebar() {
                     flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
                     ${
                       isActive
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/50'
-                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/50'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
                 >
@@ -82,8 +82,8 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-white/10">
-        <p className="text-xs text-gray-400 text-center">
+      <div className="p-4 border-t border-gray-200">
+        <p className="text-xs text-gray-500 text-center">
           © 2025 Leadgram
         </p>
       </div>

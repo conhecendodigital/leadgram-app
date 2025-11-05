@@ -20,12 +20,12 @@ export default function TopContent({ ideas }: TopContentProps) {
 
   if (!topIdeas || topIdeas.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Trophy className="w-5 h-5 text-yellow-500" />
-          <h3 className="font-semibold text-gray-900 dark:text-white">Top Conteúdos</h3>
+          <h3 className="font-semibold text-gray-900">Top Conteúdos</h3>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+        <p className="text-sm text-gray-500 text-center py-8">
           Nenhum conteúdo disponível ainda
         </p>
       </div>
@@ -49,7 +49,7 @@ export default function TopContent({ ideas }: TopContentProps) {
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm hover:shadow-lg transition-shadow"
+      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-lg transition-shadow"
       data-tour="top-content"
     >
       <div className="flex items-center gap-2 mb-6">
@@ -57,8 +57,8 @@ export default function TopContent({ ideas }: TopContentProps) {
           <Trophy className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="font-bold text-gray-900 dark:text-white">Top Conteúdos</h3>
-          <p className="text-xs text-gray-600 dark:text-gray-400">Seus melhores posts</p>
+          <h3 className="font-bold text-gray-900">Top Conteúdos</h3>
+          <p className="text-xs text-gray-600">Seus melhores posts</p>
         </div>
       </div>
 
@@ -74,7 +74,7 @@ export default function TopContent({ ideas }: TopContentProps) {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="group relative flex items-center gap-3 p-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all cursor-pointer"
+                className="group relative flex items-center gap-3 p-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all cursor-pointer"
               >
                   {/* Medal/Position */}
                   <div
@@ -102,15 +102,15 @@ export default function TopContent({ ideas }: TopContentProps) {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white text-sm truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    <p className="font-medium text-gray-900 text-sm truncate group-hover:text-primary transition-colors">
                       {idea.title}
                     </p>
                     <div className="flex items-center gap-3 mt-1">
-                      <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1 text-xs text-gray-600">
                         <Eye className="w-3 h-3" />
                         <span>{views.toLocaleString('pt-BR')}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1 text-xs text-gray-600">
                         <Heart className="w-3 h-3" />
                         <span>{likes.toLocaleString('pt-BR')}</span>
                       </div>
@@ -126,7 +126,7 @@ export default function TopContent({ ideas }: TopContentProps) {
       </div>
 
       <Link href="/dashboard/ideas">
-        <button className="w-full mt-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors font-medium">
+        <button className="w-full mt-4 py-2 text-sm text-primary hover:bg-purple-50 rounded-lg transition-colors font-medium">
           Ver todos os conteúdos →
         </button>
       </Link>

@@ -27,7 +27,7 @@ const plans = [
     name: 'Pro',
     price: 49,
     icon: Zap,
-    color: 'from-purple-600 to-pink-600',
+    color: 'gradient-primary',
     popular: true,
     features: [
       '100 ideias por mês',
@@ -93,7 +93,7 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
   return (
     <div className="space-y-6">
       {/* Current Plan Card */}
-      <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-xl">
+      <div className="gradient-primary rounded-2xl p-6 text-white shadow-xl">
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -143,17 +143,17 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
             <div
               key={plan.id}
               className={`
-                relative bg-white dark:bg-gray-800 rounded-2xl border-2 p-6 shadow-lg transition-all hover:shadow-xl
+                relative bg-white rounded-2xl border-2 p-6 shadow-lg transition-all hover:shadow-xl
                 ${isCurrent
-                  ? 'border-purple-500 dark:border-purple-400 ring-4 ring-purple-100 dark:ring-purple-900'
-                  : 'border-gray-200 dark:border-gray-700'
+                  ? 'border-primary ring-4 ring-purple-100'
+                  : 'border-gray-200'
                 }
               `}
             >
               {/* Popular Badge */}
               {plan.popular && !isCurrent && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                  <div className="gradient-primary text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
                     Mais Popular
                   </div>
@@ -176,17 +176,17 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
               </div>
 
               {/* Plan Name */}
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 {plan.name}
               </h3>
 
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-4xl font-bold text-gray-900">
                     R$ {plan.price}
                   </span>
-                  <span className="text-gray-600 dark:text-gray-400">/mês</span>
+                  <span className="text-gray-600">/mês</span>
                 </div>
               </div>
 
@@ -195,7 +195,7 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700 dark:text-gray-300 text-sm">
+                    <span className="text-gray-700 text-sm">
                       {feature}
                     </span>
                   </li>
@@ -209,12 +209,12 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
                 className={`
                   w-full py-3 px-4 rounded-xl font-semibold transition-all
                   ${isCurrent
-                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                     : canUpgrade
                     ? `bg-gradient-to-r ${plan.color} text-white hover:shadow-lg hover:scale-105`
                     : canDowngrade
-                    ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }
                   ${loading === plan.id ? 'opacity-50 cursor-wait' : ''}
                 `}
@@ -232,29 +232,29 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
 
       {/* Payment History */}
       {subscription && subscription.payment_history && subscription.payment_history.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
             Histórico de Pagamentos
           </h3>
           <div className="space-y-3">
             {subscription.payment_history.map((payment: any, index: number) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
               >
                 <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">
+                  <div className="font-semibold text-gray-900">
                     {payment.plan_type} - R$ {payment.amount}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-gray-600">
                     {new Date(payment.created_at).toLocaleDateString('pt-BR')}
                   </div>
                 </div>
                 <div className={`
                   px-3 py-1 rounded-full text-sm font-semibold
                   ${payment.status === 'approved'
-                    ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                    : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-yellow-100 text-yellow-700'
                   }
                 `}>
                   {payment.status === 'approved' ? 'Aprovado' : 'Pendente'}
@@ -266,8 +266,8 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
       )}
 
       {/* Help Text */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-300">
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <p className="text-sm text-blue-800">
           <strong>💡 Dica:</strong> Você pode fazer upgrade ou downgrade do seu plano a qualquer momento.
           As mudanças entram em vigor imediatamente e você será cobrado proporcionalmente.
         </p>

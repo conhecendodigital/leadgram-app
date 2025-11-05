@@ -19,10 +19,10 @@ export default function AdminSettingsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Configurações
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Gerencie as configurações do sistema
         </p>
       </div>
@@ -30,7 +30,7 @@ export default function AdminSettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-2">
+          <div className="bg-white rounded-2xl border border-gray-200 p-2">
             <nav className="space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon
@@ -45,7 +45,7 @@ export default function AdminSettingsPage() {
                       ${
                         isActive
                           ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg'
-                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          : 'text-gray-600 hover:bg-gray-100'
                       }
                     `}
                   >
@@ -60,7 +60,7 @@ export default function AdminSettingsPage() {
 
         {/* Content */}
         <div className="lg:col-span-3">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
             {activeTab === 'general' && <GeneralSettings />}
             {activeTab === 'notifications' && <NotificationSettings />}
             {activeTab === 'database' && <DatabaseSettings />}
@@ -78,39 +78,39 @@ function GeneralSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Configurações Gerais
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Configure as opções gerais da aplicação
         </p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Nome da Aplicação
           </label>
           <input
             type="text"
             defaultValue="Leadgram"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             URL da Aplicação
           </label>
           <input
             type="url"
             defaultValue="https://leadgram.app"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Modo de Manutenção
           </label>
           <div className="flex items-center gap-3">
@@ -119,7 +119,7 @@ function GeneralSettings() {
               id="maintenance"
               className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
             />
-            <label htmlFor="maintenance" className="text-sm text-gray-600 dark:text-gray-400">
+            <label htmlFor="maintenance" className="text-sm text-gray-600">
               Ativar modo de manutenção
             </label>
           </div>
@@ -139,19 +139,19 @@ function NotificationSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Notificações
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Configure quando e como receber notificações
         </p>
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Novos Usuários</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900">Novos Usuários</p>
+            <p className="text-sm text-gray-500">
               Notificar quando um novo usuário se registrar
             </p>
           </div>
@@ -162,10 +162,10 @@ function NotificationSettings() {
           />
         </div>
 
-        <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Novos Pagamentos</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900">Novos Pagamentos</p>
+            <p className="text-sm text-gray-500">
               Notificar sobre novos pagamentos recebidos
             </p>
           </div>
@@ -176,10 +176,10 @@ function NotificationSettings() {
           />
         </div>
 
-        <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Cancelamentos</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900">Cancelamentos</p>
+            <p className="text-sm text-gray-500">
               Notificar quando um usuário cancelar assinatura
             </p>
           </div>
@@ -192,8 +192,8 @@ function NotificationSettings() {
 
         <div className="flex items-center justify-between py-3">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Erros do Sistema</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900">Erros do Sistema</p>
+            <p className="text-sm text-gray-500">
               Notificar sobre erros críticos do sistema
             </p>
           </div>
@@ -218,39 +218,39 @@ function DatabaseSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Banco de Dados
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Informações e manutenção do banco de dados
         </p>
       </div>
 
       <div className="space-y-4">
-        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">
             Status da Conexão
           </p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Conectado</span>
+            <span className="text-sm text-gray-600">Conectado</span>
           </div>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">
             Último Backup
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             {new Date().toLocaleString('pt-BR')}
           </p>
         </div>
 
         <div className="pt-4 space-y-3">
-          <button className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+          <button className="w-full px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary transition-colors">
             Criar Backup
           </button>
-          <button className="w-full px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <button className="w-full px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
             Otimizar Banco
           </button>
         </div>
@@ -263,19 +263,19 @@ function SecuritySettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Segurança
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Configure as opções de segurança da aplicação
         </p>
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Autenticação de Dois Fatores</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900">Autenticação de Dois Fatores</p>
+            <p className="text-sm text-gray-500">
               Exigir 2FA para todos os admins
             </p>
           </div>
@@ -285,10 +285,10 @@ function SecuritySettings() {
           />
         </div>
 
-        <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Limite de Tentativas de Login</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900">Limite de Tentativas de Login</p>
+            <p className="text-sm text-gray-500">
               Bloquear após 5 tentativas falhas
             </p>
           </div>
@@ -301,8 +301,8 @@ function SecuritySettings() {
 
         <div className="flex items-center justify-between py-3">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Log de Auditoria</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900">Log de Auditoria</p>
+            <p className="text-sm text-gray-500">
               Registrar todas as ações administrativas
             </p>
           </div>
@@ -327,20 +327,20 @@ function EmailSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Configurações de Email
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Configure o serviço de envio de emails
         </p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Provedor de Email
           </label>
-          <select className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent">
+          <select className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent">
             <option>SMTP</option>
             <option>SendGrid</option>
             <option>Mailgun</option>
@@ -349,24 +349,24 @@ function EmailSettings() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Email de Remetente
           </label>
           <input
             type="email"
             defaultValue="noreply@leadgram.app"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Nome de Exibição
           </label>
           <input
             type="text"
             defaultValue="Leadgram"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
         </div>
 
@@ -374,7 +374,7 @@ function EmailSettings() {
           <button className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
             Salvar Configurações
           </button>
-          <button className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
             Enviar Email de Teste
           </button>
         </div>
@@ -387,28 +387,28 @@ function WebhookSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Webhooks
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Configure webhooks para integração com outros sistemas
         </p>
       </div>
 
       <div className="space-y-4">
-        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+        <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">Mercado Pago Webhook</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="font-medium text-gray-900">Mercado Pago Webhook</p>
+              <p className="text-sm text-gray-500">
                 /api/mercadopago/webhook
               </p>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
               Ativo
             </span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500">
             Recebe notificações de pagamentos do Mercado Pago
           </p>
         </div>

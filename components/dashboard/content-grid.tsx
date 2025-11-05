@@ -11,11 +11,11 @@ interface ContentGridProps {
 export default function ContentGrid({ ideas }: ContentGridProps) {
   if (!ideas || ideas.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-12 text-center" data-tour="content-grid">
-        <p className="text-gray-500 dark:text-gray-400">Nenhum conteúdo postado ainda</p>
+      <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center" data-tour="content-grid">
+        <p className="text-gray-500">Nenhum conteúdo postado ainda</p>
         <Link
           href="/dashboard/ideas/new"
-          className="inline-block mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
+          className="inline-block mt-4 px-6 py-3 gradient-primary text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
         >
           Criar Primeira Ideia
         </Link>
@@ -24,12 +24,12 @@ export default function ContentGrid({ ideas }: ContentGridProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm" data-tour="content-grid">
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm" data-tour="content-grid">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Seus Posts</h3>
+        <h3 className="text-xl font-bold text-gray-900">Seus Posts</h3>
         <Link
           href="/dashboard/ideas"
-          className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+          className="text-sm font-medium text-primary hover:opacity-90"
         >
           Ver todos
         </Link>
