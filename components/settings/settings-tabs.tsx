@@ -30,7 +30,7 @@ export default function SettingsTabs({ user, profile, subscription }: SettingsTa
   return (
     <div className="space-y-6">
       {/* Tabs Navigation */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-2 shadow-sm overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-gray-100 p-2 shadow-sm overflow-x-auto">
         <div className="flex gap-2 min-w-max">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -39,10 +39,10 @@ export default function SettingsTabs({ user, profile, subscription }: SettingsTa
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap
+                  flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap cursor-pointer
                   ${activeTab === tab.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'text-gray-700 hover:bg-gray-100'
                   }
                 `}
               >

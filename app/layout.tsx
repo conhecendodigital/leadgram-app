@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { Toaster } from "react-hot-toast";
+import ThemeInitializer from "@/components/theme-initializer";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -24,9 +25,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${montserrat.variable} font-sans antialiased`}
+        className={`${montserrat.variable} font-sans antialiased bg-white`}
       >
         <ThemeProvider>
+          <ThemeInitializer />
           {children}
           <Toaster
             position="top-right"

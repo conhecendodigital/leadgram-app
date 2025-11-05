@@ -1,40 +1,42 @@
 @import "tailwindcss";
 
 @layer base {
+  /* TEMA CLARO - Totalmente branco e limpo */
   :root {
-    --background: 255 255 255;
-    --foreground: 15 23 42;
-    --primary: 139 92 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 241 245 249;
-    --secondary-foreground: 15 23 42;
-    --muted: 241 245 249;
-    --muted-foreground: 100 116 139;
-    --accent: 139 92 246;
-    --accent-foreground: 255 255 255;
-    --card: 255 255 255;
-    --card-foreground: 15 23 42;
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 139 92 246;
+    --background: 255 255 255;           /* Branco puro */
+    --foreground: 17 24 39;              /* Cinza muito escuro (gray-900) */
+    --primary: 139 92 246;               /* Roxo (será alterado dinamicamente) */
+    --primary-foreground: 255 255 255;   /* Branco */
+    --secondary: 243 244 246;            /* Cinza claro (gray-100) */
+    --secondary-foreground: 17 24 39;    /* Cinza escuro */
+    --muted: 249 250 251;                /* Cinza muito claro (gray-50) */
+    --muted-foreground: 107 114 128;     /* Cinza médio (gray-500) */
+    --accent: 139 92 246;                /* Roxo (será alterado dinamicamente) */
+    --accent-foreground: 255 255 255;    /* Branco */
+    --card: 255 255 255;                 /* Branco puro */
+    --card-foreground: 17 24 39;         /* Cinza escuro */
+    --border: 229 231 235;               /* Cinza claro (gray-200) */
+    --input: 243 244 246;                /* Cinza claro (gray-100) */
+    --ring: 139 92 246;                  /* Roxo (será alterado dinamicamente) */
   }
 
+  /* TEMA ESCURO - Totalmente escuro e contrastado */
   .dark {
-    --background: 15 23 42;
-    --foreground: 241 245 249;
-    --primary: 139 92 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 30 41 59;
-    --secondary-foreground: 241 245 249;
-    --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
-    --accent: 139 92 246;
-    --accent-foreground: 255 255 255;
-    --card: 30 41 59;
-    --card-foreground: 241 245 249;
-    --border: 51 65 85;
-    --input: 51 65 85;
-    --ring: 139 92 246;
+    --background: 17 24 39;              /* Cinza muito escuro (gray-900) */
+    --foreground: 249 250 251;           /* Branco suave (gray-50) */
+    --primary: 139 92 246;               /* Roxo (será alterado dinamicamente) */
+    --primary-foreground: 255 255 255;   /* Branco puro */
+    --secondary: 31 41 55;               /* Cinza escuro (gray-800) */
+    --secondary-foreground: 249 250 251; /* Branco suave */
+    --muted: 31 41 55;                   /* Cinza escuro (gray-800) */
+    --muted-foreground: 156 163 175;     /* Cinza médio (gray-400) */
+    --accent: 139 92 246;                /* Roxo (será alterado dinamicamente) */
+    --accent-foreground: 255 255 255;    /* Branco puro */
+    --card: 31 41 55;                    /* Cinza escuro (gray-800) */
+    --card-foreground: 249 250 251;      /* Branco suave */
+    --border: 55 65 81;                  /* Cinza médio-escuro (gray-700) */
+    --input: 31 41 55;                   /* Cinza escuro (gray-800) */
+    --ring: 139 92 246;                  /* Roxo (será alterado dinamicamente) */
   }
 }
 
@@ -43,9 +45,14 @@
 }
 
 body {
-  background-color: rgb(var(--background));
-  color: rgb(var(--foreground));
+  background-color: rgb(var(--background)) !important;
+  color: rgb(var(--foreground)) !important;
   font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Força background e foreground em elementos principais */
+div, section, main, article, aside, nav, header, footer {
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 /* Smooth transitions for theme changes */
@@ -97,48 +104,13 @@ body {
   color-scheme: dark;
 }
 
-.dark body {
-  @apply bg-gray-900 text-white;
-}
-
-.dark .bg-white {
-  @apply bg-gray-800;
-}
-
-.dark .bg-gray-50 {
-  @apply bg-gray-900;
-}
-
-.dark .bg-gray-100 {
-  @apply bg-gray-800;
-}
-
-.dark .text-gray-900 {
-  @apply text-white;
-}
-
-.dark .text-gray-600 {
-  @apply text-gray-400;
-}
-
-.dark .text-gray-500 {
-  @apply text-gray-500;
-}
-
-.dark .border-gray-100 {
-  @apply border-gray-700;
-}
-
-.dark .border-gray-200 {
-  @apply border-gray-600;
-}
-
-.dark .hover\:bg-gray-50:hover {
-  @apply bg-gray-700;
-}
-
-.dark .hover\:bg-gray-100:hover {
-  @apply bg-gray-800;
+/* Cursor pointer for interactive elements */
+button,
+a,
+[role="button"],
+[onClick],
+.cursor-pointer {
+  cursor: pointer;
 }
 
 /* Glassmorphism effect */
@@ -159,4 +131,61 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Dynamic accent color classes - use these for themeable components */
+.bg-accent {
+  background-color: rgb(var(--accent));
+}
+
+.text-accent {
+  color: rgb(var(--accent));
+}
+
+.border-accent {
+  border-color: rgb(var(--accent));
+}
+
+.ring-accent {
+  ring-color: rgb(var(--accent));
+}
+
+/* Primary color classes */
+.bg-primary {
+  background-color: rgb(var(--primary));
+}
+
+.text-primary {
+  color: rgb(var(--primary));
+}
+
+.border-primary {
+  border-color: rgb(var(--primary));
+}
+
+/* Gradient classes using accent colors */
+.gradient-primary {
+  background: linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(var(--accent)) 100%);
+}
+
+.gradient-primary-text {
+  background: linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(var(--accent)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button with accent color */
+.btn-primary {
+  background-color: rgb(var(--primary));
+  color: rgb(var(--primary-foreground));
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
 }
