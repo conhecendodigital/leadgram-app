@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ThemeToggle from '@/components/ui/theme-toggle'
 import NotificationCenter from '@/components/notifications/notification-center'
 
 export default function Header() {
@@ -63,16 +62,11 @@ export default function Header() {
           {/* Quick Action - Nova Ideia */}
           <Link
             href="/dashboard/ideas/new"
-            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg sm:rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-500/30 hover:shadow-xl hover:scale-105 text-sm"
+            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 bg-primary text-white rounded-lg sm:rounded-xl font-medium hover:opacity-90 transition-all shadow-lg hover:shadow-xl hover:scale-105 text-sm"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Nova Ideia</span>
           </Link>
-
-          {/* Theme Toggle */}
-          <div className="hidden sm:flex">
-            <ThemeToggle />
-          </div>
 
           {/* Notifications */}
           {user && (

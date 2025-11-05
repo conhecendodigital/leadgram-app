@@ -1,36 +1,69 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sun, Moon, Monitor, Palette, Type, Check } from 'lucide-react'
-
-const themes = [
-  {
-    id: 'light',
-    name: 'Claro',
-    icon: Sun,
-    description: 'Tema claro para uso diurno'
-  },
-  {
-    id: 'dark',
-    name: 'Escuro',
-    icon: Moon,
-    description: 'Tema escuro para reduzir cansaço visual'
-  },
-  {
-    id: 'auto',
-    name: 'Automático',
-    icon: Monitor,
-    description: 'Seguir preferência do sistema'
-  }
-]
+import { Palette, Type, Check } from 'lucide-react'
 
 const accentColors = [
-  { name: 'Roxo', value: 'purple', color: 'from-purple-600 to-pink-600' },
-  { name: 'Azul', value: 'blue', color: 'from-blue-600 to-cyan-600' },
-  { name: 'Verde', value: 'green', color: 'from-green-600 to-emerald-600' },
-  { name: 'Laranja', value: 'orange', color: 'from-orange-600 to-red-600' },
-  { name: 'Rosa', value: 'pink', color: 'from-pink-600 to-rose-600' },
-  { name: 'Índigo', value: 'indigo', color: 'from-indigo-600 to-purple-600' }
+  {
+    name: 'Roxo',
+    value: 'purple',
+    color: 'from-purple-600 to-pink-600',
+    cssVars: {
+      '--primary': '139 92 246',
+      '--accent': '139 92 246',
+      '--ring': '139 92 246'
+    }
+  },
+  {
+    name: 'Azul',
+    value: 'blue',
+    color: 'from-blue-600 to-cyan-600',
+    cssVars: {
+      '--primary': '59 130 246',
+      '--accent': '59 130 246',
+      '--ring': '59 130 246'
+    }
+  },
+  {
+    name: 'Verde',
+    value: 'green',
+    color: 'from-green-600 to-emerald-600',
+    cssVars: {
+      '--primary': '34 197 94',
+      '--accent': '34 197 94',
+      '--ring': '34 197 94'
+    }
+  },
+  {
+    name: 'Laranja',
+    value: 'orange',
+    color: 'from-orange-600 to-red-600',
+    cssVars: {
+      '--primary': '249 115 22',
+      '--accent': '249 115 22',
+      '--ring': '249 115 22'
+    }
+  },
+  {
+    name: 'Rosa',
+    value: 'pink',
+    color: 'from-pink-600 to-rose-600',
+    cssVars: {
+      '--primary': '236 72 153',
+      '--accent': '236 72 153',
+      '--ring': '236 72 153'
+    }
+  },
+  {
+    name: 'Índigo',
+    value: 'indigo',
+    color: 'from-indigo-600 to-purple-600',
+    cssVars: {
+      '--primary': '99 102 241',
+      '--accent': '99 102 241',
+      '--ring': '99 102 241'
+    }
+  }
 ]
 
 const fontSizes = [
@@ -40,7 +73,6 @@ const fontSizes = [
 ]
 
 export default function AppearanceSettings() {
-  const [theme, setTheme] = useState('auto')
   const [accentColor, setAccentColor] = useState('purple')
   const [fontSize, setFontSize] = useState('medium')
   const [mounted, setMounted] = useState(false)
@@ -49,132 +81,68 @@ export default function AppearanceSettings() {
     setMounted(true)
 
     // Load saved preferences from localStorage
-    const savedTheme = localStorage.getItem('theme') || 'auto'
     const savedAccent = localStorage.getItem('accentColor') || 'purple'
     const savedFontSize = localStorage.getItem('fontSize') || 'medium'
 
-    setTheme(savedTheme)
     setAccentColor(savedAccent)
     setFontSize(savedFontSize)
 
-    // Apply theme
-    applyTheme(savedTheme)
-    applyFontSize(savedFontSize)
+    // Aplicar cores imediatamente
+    applyAccentColor(savedAccent)
   }, [])
 
-  const applyTheme = (selectedTheme: string) => {
+  const applyAccentColor = (accent: string) => {
     const root = document.documentElement
+    const colorConfig = accentColors.find(c => c.value === accent)
 
-    if (selectedTheme === 'auto') {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      root.classList.toggle('dark', systemDark)
-    } else {
-      root.classList.toggle('dark', selectedTheme === 'dark')
+    if (colorConfig && colorConfig.cssVars) {
+      Object.entries(colorConfig.cssVars).forEach(([key, value]) => {
+        root.style.setProperty(key, value)
+      })
+      console.log('🎨 Cor de destaque aplicada:', accent)
+
+      // Dispara evento para notificar outros componentes
+      window.dispatchEvent(new CustomEvent('accentchange', { detail: { accent } }))
     }
-  }
-
-  const applyFontSize = (size: string) => {
-    const root = document.documentElement
-    const sizeMap = {
-      small: '14px',
-      medium: '16px',
-      large: '18px'
-    }
-    root.style.fontSize = sizeMap[size as keyof typeof sizeMap]
-  }
-
-  const handleThemeChange = (newTheme: string) => {
-    setTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
-    applyTheme(newTheme)
   }
 
   const handleAccentChange = (newAccent: string) => {
+    console.log('🎨 Mudando cor de destaque para:', newAccent)
     setAccentColor(newAccent)
     localStorage.setItem('accentColor', newAccent)
-    // You can implement dynamic accent color changes here
+    applyAccentColor(newAccent)
   }
 
   const handleFontSizeChange = (newSize: string) => {
     setFontSize(newSize)
     localStorage.setItem('fontSize', newSize)
-    applyFontSize(newSize)
+
+    // Dispatch custom event to notify ThemeInitializer
+    window.dispatchEvent(new CustomEvent('fontsizechange', { detail: { fontSize: newSize } }))
   }
 
   if (!mounted) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
-        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+        <div className="h-48 bg-gray-200 rounded-2xl"></div>
+        <div className="h-48 bg-gray-200 rounded-2xl"></div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Theme Selection */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-            <Palette className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              Tema
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha o tema do aplicativo
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {themes.map((themeOption) => {
-            const Icon = themeOption.icon
-            const isSelected = theme === themeOption.id
-
-            return (
-              <button
-                key={themeOption.id}
-                onClick={() => handleThemeChange(themeOption.id)}
-                className={`
-                  relative p-4 rounded-xl border-2 transition-all text-left
-                  ${isSelected
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-4 ring-purple-100 dark:ring-purple-900/50'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
-                  }
-                `}
-              >
-                {isSelected && (
-                  <div className="absolute top-2 right-2">
-                    <Check className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                )}
-
-                <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}`} />
-                <div className="font-semibold text-gray-900 dark:text-white mb-1">
-                  {themeOption.name}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {themeOption.description}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
       {/* Accent Color */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl">
             <Palette className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-gray-900">
               Cor de Destaque
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Personalize a cor principal da interface
             </p>
           </div>
@@ -188,13 +156,13 @@ export default function AppearanceSettings() {
               <button
                 key={color.value}
                 onClick={() => handleAccentChange(color.value)}
-                className="group relative"
+                className="group relative cursor-pointer"
                 title={color.name}
               >
                 <div className={`
                   w-full aspect-square rounded-xl bg-gradient-to-br ${color.color}
                   transition-all group-hover:scale-110 group-hover:shadow-lg
-                  ${isSelected ? 'ring-4 ring-gray-400 dark:ring-gray-600 scale-110' : ''}
+                  ${isSelected ? 'ring-4 ring-gray-400 scale-110' : ''}
                 `}>
                   {isSelected && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -202,7 +170,7 @@ export default function AppearanceSettings() {
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-center mt-1 text-gray-600 dark:text-gray-400">
+                <div className="text-xs text-center mt-1 text-gray-600">
                   {color.name}
                 </div>
               </button>
@@ -212,16 +180,16 @@ export default function AppearanceSettings() {
       </div>
 
       {/* Font Size */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
             <Type className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-gray-900">
               Tamanho da Fonte
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Ajuste o tamanho do texto
             </p>
           </div>
@@ -236,23 +204,23 @@ export default function AppearanceSettings() {
                 key={size.value}
                 onClick={() => handleFontSizeChange(size.value)}
                 className={`
-                  relative p-4 rounded-xl border-2 transition-all
+                  relative p-4 rounded-xl border-2 transition-all cursor-pointer
                   ${isSelected
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20 ring-4 ring-green-100 dark:ring-green-900/50'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700'
+                    ? 'border-green-500 bg-green-50 ring-4 ring-green-100'
+                    : 'border-gray-200 hover:border-green-300'
                   }
                 `}
               >
                 {isSelected && (
                   <div className="absolute top-2 right-2">
-                    <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <Check className="w-5 h-5 text-green-600" />
                   </div>
                 )}
 
-                <div className={`font-semibold text-gray-900 dark:text-white mb-1`} style={{ fontSize: size.scale }}>
+                <div className={`font-semibold text-gray-900 mb-1`} style={{ fontSize: size.scale }}>
                   Aa
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600">
                   {size.name} ({size.scale})
                 </div>
               </button>
@@ -262,28 +230,33 @@ export default function AppearanceSettings() {
       </div>
 
       {/* Preview */}
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl border border-purple-200 dark:border-gray-600 p-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+      <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl border-primary/30 p-6 border">
+        <h3 className="text-lg font-bold text-gray-900 mb-3">
           Prévia
         </h3>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 space-y-3">
+        <div className="bg-white rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${accentColors.find(c => c.value === accentColor)?.color || 'from-purple-600 to-pink-600'}`}></div>
+            <div className="w-12 h-12 rounded-xl gradient-primary"></div>
             <div>
-              <div className="font-semibold text-gray-900 dark:text-white">
+              <div className="font-semibold text-gray-900">
                 Leadgram
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Tema {themes.find(t => t.id === theme)?.name} • Fonte {fontSizes.find(f => f.value === fontSize)?.name}
+              <div className="text-sm text-gray-600">
+                Fonte {fontSizes.find(f => f.value === fontSize)?.name} • Cor {accentColors.find(c => c.value === accentColor)?.name}
               </div>
             </div>
           </div>
-          <p className="text-gray-700 dark:text-gray-300">
+          <p className="text-gray-700">
             Este é um exemplo de como o texto aparecerá com as suas configurações de aparência.
           </p>
-          <button className={`w-full py-2 rounded-lg bg-gradient-to-r ${accentColors.find(c => c.value === accentColor)?.color || 'from-purple-600 to-pink-600'} text-white font-semibold`}>
+          <button className="btn-primary w-full shadow-lg hover:shadow-xl transition-all">
             Botão de Exemplo
           </button>
+          <div className="flex gap-2 items-center">
+            <div className="w-8 h-8 rounded-lg bg-primary"></div>
+            <div className="w-8 h-8 rounded-lg bg-accent"></div>
+            <span className="text-sm text-gray-600">← Suas cores de destaque</span>
+          </div>
         </div>
       </div>
     </div>

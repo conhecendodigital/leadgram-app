@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { Shield, Bell, Lock, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { showToast } from '@/lib/toast'
-import ThemeToggle from '@/components/ui/theme-toggle'
 
 interface AccountSettingsProps {
   user: any
@@ -49,20 +48,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
       </div>
 
       <div className="space-y-6">
-        {/* Theme Toggle */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">Tema</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Alternar entre modo claro e escuro
-              </p>
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           {/* Notifications */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
