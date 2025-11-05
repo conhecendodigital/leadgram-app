@@ -29,8 +29,8 @@ export default function LoginPage() {
 
       // Verificar se o usuário é admin
       if (data.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
+        const { data: profile } = await (supabase
+          .from('profiles') as any)
           .select('role')
           .eq('id', data.user.id)
           .single()
