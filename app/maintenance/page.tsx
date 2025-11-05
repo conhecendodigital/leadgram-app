@@ -12,8 +12,8 @@ export default function MaintenancePage() {
     const fetchMaintenanceMessage = async () => {
       try {
         const supabase = createClient()
-        const { data } = await supabase
-          .from('app_settings')
+        const { data } = await (supabase
+          .from('app_settings') as any)
           .select('value')
           .eq('key', 'maintenance_message')
           .single()
