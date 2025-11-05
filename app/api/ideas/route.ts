@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getIdeaLimit } from '@/lib/settings'
 
 export async function GET() {
   try {
@@ -58,6 +59,37 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Title and funnel_stage are required' },
         { status: 400 }
+      )
+    }
+
+    // Verificar plano do usuário
+    const { data: subscription } = await (supabase
+      .from('user_subscriptions') as any)
+      .select('plan_type')
+      .eq('user_id', user.id)
+      .single()
+
+    const planType = subscription?.plan_type || 'free'
+
+    // Contar ideias do usuário
+    const { count: currentIdeasCount } = await (supabase
+      .from('ideas') as any)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    // Verificar limite de ideias
+    const ideaLimit = await getIdeaLimit(planType)
+
+    if (ideaLimit !== -1 && currentIdeasCount !== null && currentIdeasCount >= ideaLimit) {
+      return NextResponse.json(
+        {
+          error: 'Limite de ideias atingido',
+          message: `Seu plano ${planType} permite apenas ${ideaLimit} ideias. Faça upgrade para criar mais ideias.`,
+          limit: ideaLimit,
+          current: currentIdeasCount,
+          planType,
+        },
+        { status: 403 }
       )
     }
 
