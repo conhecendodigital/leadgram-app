@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, Bell, Database, Shield, Mail, Webhook } from 'lucide-react'
+import { Bell, Database, Shield, Mail, Webhook } from 'lucide-react'
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState('general')
+  const [activeTab, setActiveTab] = useState('notifications')
 
   const tabs = [
-    { id: 'general', label: 'Geral', icon: Settings },
     { id: 'notifications', label: 'Notificações', icon: Bell },
     { id: 'database', label: 'Banco de Dados', icon: Database },
     { id: 'security', label: 'Segurança', icon: Shield },
@@ -61,74 +60,12 @@ export default function AdminSettingsPage() {
         {/* Content */}
         <div className="lg:col-span-3">
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            {activeTab === 'general' && <GeneralSettings />}
             {activeTab === 'notifications' && <NotificationSettings />}
             {activeTab === 'database' && <DatabaseSettings />}
             {activeTab === 'security' && <SecuritySettings />}
             {activeTab === 'email' && <EmailSettings />}
             {activeTab === 'webhooks' && <WebhookSettings />}
           </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function GeneralSettings() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Configurações Gerais
-        </h2>
-        <p className="text-gray-600">
-          Configure as opções gerais da aplicação
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nome da Aplicação
-          </label>
-          <input
-            type="text"
-            defaultValue="Leadgram"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            URL da Aplicação
-          </label>
-          <input
-            type="url"
-            defaultValue="https://leadgram.app"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Modo de Manutenção
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="maintenance"
-              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-            />
-            <label htmlFor="maintenance" className="text-sm text-gray-600">
-              Ativar modo de manutenção
-            </label>
-          </div>
-        </div>
-
-        <div className="pt-4">
-          <button className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
-            Salvar Alterações
-          </button>
         </div>
       </div>
     </div>
