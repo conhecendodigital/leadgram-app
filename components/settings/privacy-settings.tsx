@@ -65,16 +65,16 @@ export default function PrivacySettings() {
   return (
     <div className="space-y-6">
       {/* Profile Visibility */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
             <Eye className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-gray-900">
               Visibilidade do Perfil
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Controle quem pode ver seu perfil
             </p>
           </div>
@@ -86,18 +86,18 @@ export default function PrivacySettings() {
             className={`
               p-4 rounded-xl border-2 transition-all text-left
               ${profileVisibility === 'public'
-                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-4 ring-purple-100 dark:ring-purple-900/50'
-                : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+                ? 'border-primary bg-purple-50 ring-4 ring-purple-100'
+                : 'border-gray-200 hover:border-purple-300'
               }
             `}
           >
             <div className="flex items-center gap-3 mb-2">
-              <Eye className={`w-5 h-5 ${profileVisibility === 'public' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}`} />
-              <div className="font-semibold text-gray-900 dark:text-white">
+              <Eye className={`w-5 h-5 ${profileVisibility === 'public' ? 'text-primary' : 'text-gray-600'}`} />
+              <div className="font-semibold text-gray-900">
                 Público
               </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-gray-600">
               Qualquer pessoa pode ver seu perfil
             </div>
           </button>
@@ -107,18 +107,18 @@ export default function PrivacySettings() {
             className={`
               p-4 rounded-xl border-2 transition-all text-left
               ${profileVisibility === 'private'
-                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-4 ring-purple-100 dark:ring-purple-900/50'
-                : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+                ? 'border-primary bg-purple-50 ring-4 ring-purple-100'
+                : 'border-gray-200 hover:border-purple-300'
               }
             `}
           >
             <div className="flex items-center gap-3 mb-2">
-              <EyeOff className={`w-5 h-5 ${profileVisibility === 'private' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}`} />
-              <div className="font-semibold text-gray-900 dark:text-white">
+              <EyeOff className={`w-5 h-5 ${profileVisibility === 'private' ? 'text-primary' : 'text-gray-600'}`} />
+              <div className="font-semibold text-gray-900">
                 Privado
               </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-gray-600">
               Apenas você pode ver seu perfil
             </div>
           </button>
@@ -126,30 +126,30 @@ export default function PrivacySettings() {
       </div>
 
       {/* Data Privacy */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl">
             <Database className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-gray-900">
               Privacidade de Dados
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Gerencie como seus dados são usados
             </p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <Users className="w-5 h-5 text-gray-600" />
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white">
+                <div className="font-semibold text-gray-900">
                   Compartilhar Análises Anônimas
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600">
                   Ajude a melhorar o produto compartilhando dados anônimos
                 </div>
               </div>
@@ -159,8 +159,8 @@ export default function PrivacySettings() {
               className={`
                 relative w-14 h-8 rounded-full transition-colors
                 ${shareAnalytics
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                  ? 'gradient-primary'
+                  : 'bg-gray-300'
                 }
               `}
             >
@@ -171,14 +171,14 @@ export default function PrivacySettings() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center gap-3">
-              <Eye className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <Eye className="w-5 h-5 text-gray-600" />
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white">
+                <div className="font-semibold text-gray-900">
                   Aparecer em Buscas
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600">
                   Permitir que seu perfil apareça em resultados de busca
                 </div>
               </div>
@@ -188,8 +188,8 @@ export default function PrivacySettings() {
               className={`
                 relative w-14 h-8 rounded-full transition-colors
                 ${showInSearch
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                  ? 'gradient-primary'
+                  : 'bg-gray-300'
                 }
               `}
             >
@@ -203,25 +203,25 @@ export default function PrivacySettings() {
       </div>
 
       {/* Data Export */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
             <Download className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-gray-900">
               Exportar Dados
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Baixe uma cópia de todos os seus dados
             </p>
           </div>
         </div>
 
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-            <div className="text-sm text-blue-800 dark:text-blue-300">
+            <Shield className="w-5 h-5 text-primary mt-0.5" />
+            <div className="text-sm text-blue-800">
               <strong>Seus dados incluem:</strong> perfil, ideias salvas, análises do Instagram,
               configurações e histórico de uso. O arquivo será enviado em formato JSON.
             </div>
@@ -248,16 +248,16 @@ export default function PrivacySettings() {
       </div>
 
       {/* Delete Account */}
-      <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-2xl p-6">
+      <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-red-500 rounded-xl">
             <AlertTriangle className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-red-900 dark:text-red-300">
+            <h3 className="text-lg font-bold text-red-900">
               Zona de Perigo
             </h3>
-            <p className="text-sm text-red-700 dark:text-red-400">
+            <p className="text-sm text-red-700">
               Ações irreversíveis
             </p>
           </div>
@@ -273,11 +273,11 @@ export default function PrivacySettings() {
           </button>
         ) : (
           <div className="space-y-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
+            <div className="bg-white rounded-xl p-4">
               <div className="flex items-start gap-3 mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5" />
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong className="text-red-600 dark:text-red-400">Atenção!</strong> Esta ação é permanente e não pode ser desfeita.
+                <div className="text-sm text-gray-700">
+                  <strong className="text-red-600">Atenção!</strong> Esta ação é permanente e não pode ser desfeita.
                   Todos os seus dados serão deletados:
                   <ul className="list-disc list-inside mt-2 space-y-1">
                     <li>Perfil e configurações</li>
@@ -291,7 +291,7 @@ export default function PrivacySettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
                 Digite "DELETAR MINHA CONTA" para confirmar:
               </label>
               <input
@@ -299,7 +299,7 @@ export default function PrivacySettings() {
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
                 placeholder="DELETAR MINHA CONTA"
-                className="w-full px-4 py-3 border-2 border-red-300 dark:border-red-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-3 border-2 border-red-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -309,7 +309,7 @@ export default function PrivacySettings() {
                   setShowDeleteConfirm(false)
                   setDeleteConfirmText('')
                 }}
-                className="flex-1 py-3 px-6 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                className="flex-1 py-3 px-6 bg-gray-200 text-gray-900 font-semibold rounded-xl hover:bg-gray-300 transition-all"
               >
                 Cancelar
               </button>
@@ -327,11 +327,11 @@ export default function PrivacySettings() {
       </div>
 
       {/* Privacy Info */}
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl border border-purple-200 dark:border-gray-600 p-6">
+      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 p-6">
         <div className="flex items-start gap-3">
-          <CheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400 mt-0.5" />
-          <div className="text-sm text-gray-700 dark:text-gray-300">
-            <strong className="text-purple-600 dark:text-purple-400">Sua privacidade é importante!</strong>
+          <CheckCircle className="w-6 h-6 text-primary mt-0.5" />
+          <div className="text-sm text-gray-700">
+            <strong className="text-primary">Sua privacidade é importante!</strong>
             <p className="mt-2">
               Nós levamos a segurança dos seus dados a sério. Todos os dados são criptografados
               e armazenados com segurança. Nunca compartilhamos suas informações pessoais sem
@@ -339,7 +339,7 @@ export default function PrivacySettings() {
             </p>
             <a
               href="/privacy-policy"
-              className="inline-block mt-3 text-purple-600 dark:text-purple-400 font-semibold hover:underline"
+              className="inline-block mt-3 text-primary font-semibold hover:underline"
             >
               Leia nossa Política de Privacidade →
             </a>

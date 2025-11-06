@@ -44,7 +44,7 @@ export default function ProfileStats({ profile }: ProfileStatsProps) {
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-6 shadow-sm"
+          className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm"
         >
           <div className="flex items-start justify-between mb-3">
             <div className={`p-2 md:p-3 bg-gradient-to-br ${stat.color} rounded-xl`}>
@@ -53,10 +53,10 @@ export default function ProfileStats({ profile }: ProfileStatsProps) {
           </div>
 
           <div>
-            <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
               {stat.value}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-xs md:text-sm text-gray-600">
               {stat.label}
             </p>
           </div>

@@ -11,14 +11,14 @@ export function Skeleton({ className }: { className?: string }) {
         repeat: Infinity,
         ease: 'easeInOut',
       }}
-      className={`bg-gray-200 dark:bg-gray-700 rounded-xl ${className}`}
+      className={`bg-gray-200 rounded-xl ${className}`}
     />
   )
 }
 
 export function StatsCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
+    <div className="bg-white rounded-2xl border border-gray-100 p-6">
       <Skeleton className="w-12 h-12 mb-4" />
       <Skeleton className="w-24 h-8 mb-2" />
       <Skeleton className="w-32 h-4" />
@@ -38,7 +38,7 @@ export function ContentGridSkeleton() {
 
 export function ChartSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
+    <div className="bg-white rounded-2xl border border-gray-100 p-6">
       <Skeleton className="w-48 h-6 mb-4" />
       <Skeleton className="w-full h-64" />
     </div>
@@ -47,7 +47,7 @@ export function ChartSkeleton() {
 
 export function ActivityFeedSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
+    <div className="bg-white rounded-2xl border border-gray-100 p-6">
       <div className="flex items-center gap-2 mb-6">
         <Skeleton className="w-10 h-10 rounded-xl" />
         <div className="flex-1">
@@ -72,7 +72,7 @@ export function ActivityFeedSkeleton() {
 
 export function TopContentSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
+    <div className="bg-white rounded-2xl border border-gray-100 p-6">
       <div className="flex items-center gap-2 mb-6">
         <Skeleton className="w-10 h-10 rounded-xl" />
         <div className="flex-1">

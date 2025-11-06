@@ -19,17 +19,17 @@ export default function RevenueChart() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm"
+      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
           <DollarSign className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             Receita Mensal
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Últimos 6 meses
           </p>
         </div>

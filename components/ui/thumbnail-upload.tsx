@@ -71,7 +71,7 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label className="block text-sm font-medium text-gray-700">
         Thumbnail
       </label>
 
@@ -86,7 +86,7 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
             <img
               src={preview}
               alt="Thumbnail preview"
-              className="w-full h-48 object-cover rounded-xl border-2 border-gray-200 dark:border-gray-700"
+              className="w-full h-48 object-cover rounded-xl border-2 border-gray-200"
             />
 
             {/* Overlay on hover */}
@@ -105,8 +105,8 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
             className={`
               border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
               ${isDragActive
-                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                : 'border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500'
+                ? 'border-primary bg-purple-50'
+                : 'border-gray-300 hover:border-purple-400'
               }
               ${uploading ? 'pointer-events-none opacity-50' : ''}
             `}
@@ -118,26 +118,26 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
               className="flex flex-col items-center gap-4"
             >
               {uploading ? (
-                <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
               ) : (
-                <div className="p-4 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                <div className="p-4 bg-purple-100 rounded-full">
                   {isDragActive ? (
-                    <Upload className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                    <Upload className="w-8 h-8 text-primary" />
                   ) : (
-                    <ImageIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                    <ImageIcon className="w-8 h-8 text-primary" />
                   )}
                 </div>
               )}
 
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-gray-900">
                   {uploading
                     ? 'Enviando...'
                     : isDragActive
                     ? 'Solte a imagem aqui'
                     : 'Arraste uma imagem ou clique para selecionar'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   PNG, JPG, WEBP até 5MB
                 </p>
               </div>

@@ -95,7 +95,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4">
           {/* Profile Picture */}
@@ -103,7 +103,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
             <img
               src={account.profile_picture_url}
               alt={account.username}
-              className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-700"
+              className="w-16 h-16 rounded-full border-2 border-gray-200"
             />
           ) : (
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
@@ -113,13 +113,13 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
 
           {/* Account Info */}
           <div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               @{account.username}
-              <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
+              <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
                 Conectado
               </span>
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-600 mt-1">
               Conectado em {formatDate(account.connected_at)}
             </p>
           </div>
@@ -130,7 +130,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {syncing ? (
               <>
@@ -167,32 +167,32 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-600 mb-2">
             <Users className="w-4 h-4" />
             <span className="text-sm font-medium">Seguidores</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-gray-900">
             {account.followers_count?.toLocaleString('pt-BR') || '0'}
           </p>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-600 mb-2">
             <Users className="w-4 h-4" />
             <span className="text-sm font-medium">Seguindo</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-gray-900">
             {account.follows_count?.toLocaleString('pt-BR') || '0'}
           </p>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-600 mb-2">
             <Image className="w-4 h-4" />
             <span className="text-sm font-medium">Posts</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-gray-900">
             {account.media_count?.toLocaleString('pt-BR') || '0'}
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
 
       {/* Last Sync */}
       {account.last_sync_at && (
-        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
           <Calendar className="w-4 h-4" />
           Última sincronização: {formatDate(account.last_sync_at)}
         </div>

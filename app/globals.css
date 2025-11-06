@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Força tema claro mesmo quando o sistema está em dark mode */
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: light;
+  }
+}
+
 @layer base {
   /* TEMA CLARO - Totalmente branco e limpo */
   :root {
@@ -20,24 +27,6 @@
     --ring: 139 92 246;                  /* Roxo (será alterado dinamicamente) */
   }
 
-  /* TEMA ESCURO - Totalmente escuro e contrastado */
-  .dark {
-    --background: 17 24 39;              /* Cinza muito escuro (gray-900) */
-    --foreground: 249 250 251;           /* Branco suave (gray-50) */
-    --primary: 139 92 246;               /* Roxo (será alterado dinamicamente) */
-    --primary-foreground: 255 255 255;   /* Branco puro */
-    --secondary: 31 41 55;               /* Cinza escuro (gray-800) */
-    --secondary-foreground: 249 250 251; /* Branco suave */
-    --muted: 31 41 55;                   /* Cinza escuro (gray-800) */
-    --muted-foreground: 156 163 175;     /* Cinza médio (gray-400) */
-    --accent: 139 92 246;                /* Roxo (será alterado dinamicamente) */
-    --accent-foreground: 255 255 255;    /* Branco puro */
-    --card: 31 41 55;                    /* Cinza escuro (gray-800) */
-    --card-foreground: 249 250 251;      /* Branco suave */
-    --border: 55 65 81;                  /* Cinza médio-escuro (gray-700) */
-    --input: 31 41 55;                   /* Cinza escuro (gray-800) */
-    --ring: 139 92 246;                  /* Roxo (será alterado dinamicamente) */
-  }
 }
 
 @theme inline {
@@ -99,10 +88,6 @@ div, section, main, article, aside, nav, header, footer {
   background: linear-gradient(180deg, #9333ea 0%, #db2777 100%);
 }
 
-/* Dark Mode Styles */
-.dark {
-  color-scheme: dark;
-}
 
 /* Cursor pointer for interactive elements */
 button,
@@ -120,10 +105,6 @@ a,
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.dark .glass {
-  background: rgba(17, 24, 39, 0.7);
-  border: 1px solid rgba(75, 85, 99, 0.3);
-}
 
 /* Custom gradient text */
 .gradient-text {

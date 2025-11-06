@@ -67,20 +67,20 @@ export default async function ProfileAnalysisPage({
   if (!profileData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 p-4">
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl max-w-md">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl max-w-md">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h2 className="text-lg font-bold text-red-900 dark:text-red-100 mb-2">
+              <h2 className="text-lg font-bold text-red-900 mb-2">
                 Perfil não encontrado
               </h2>
-              <p className="text-sm text-red-800 dark:text-red-200">
+              <p className="text-sm text-red-800">
                 Não foi possível carregar o perfil <strong>@{username}</strong>
               </p>
-              <p className="text-sm text-red-700 dark:text-red-300 mt-2">
+              <p className="text-sm text-red-700 mt-2">
                 Possíveis causas:
               </p>
-              <ul className="text-sm text-red-700 dark:text-red-300 list-disc list-inside mt-1 space-y-1">
+              <ul className="text-sm text-red-700 list-disc list-inside mt-1 space-y-1">
                 <li>Perfil privado ou inexistente</li>
                 <li>API RapidAPI não configurada</li>
                 <li>Limite de requisições atingido</li>
@@ -91,7 +91,7 @@ export default async function ProfileAnalysisPage({
 
         <a
           href="/dashboard/explore"
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
+          className="px-6 py-3 bg-primary hover:bg-primary text-white rounded-xl font-semibold transition-colors"
         >
           ← Voltar
         </a>

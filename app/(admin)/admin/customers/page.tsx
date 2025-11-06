@@ -20,11 +20,11 @@ export default async function AdminCustomersPage() {
           <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl">
             <Users className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-4xl font-bold text-gray-900">
             Clientes
           </h1>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Gerencie todos os clientes da plataforma
         </p>
       </div>

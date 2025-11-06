@@ -47,7 +47,7 @@ export default function AnalyticsOverview({ ideas = [] }: AnalyticsOverviewProps
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow"
+          className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow"
         >
           <div className="flex items-start justify-between mb-4">
             <div className={`p-3 bg-gradient-to-br ${stat.color} rounded-xl`}>
@@ -56,8 +56,8 @@ export default function AnalyticsOverview({ ideas = [] }: AnalyticsOverviewProps
             <div
               className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
                 stat.trend === 'up'
-                  ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                  : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                  ? 'bg-green-50 text-green-600'
+                  : 'bg-red-50 text-red-600'
               }`}
             >
               {stat.trend === 'up' ? (
@@ -70,10 +70,10 @@ export default function AnalyticsOverview({ ideas = [] }: AnalyticsOverviewProps
           </div>
 
           <div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-3xl font-bold text-gray-900 mb-1">
               {stat.value}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
+            <p className="text-sm text-gray-600">{stat.label}</p>
           </div>
         </div>
       ))}

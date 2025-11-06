@@ -26,7 +26,7 @@ export default function AdminSidebar({ user }: { user: any }) {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-gray-900 dark:bg-black border-r border-gray-800 fixed inset-y-0 z-50">
+    <aside className="hidden lg:flex flex-col w-64 bg-gray-900 border-r border-gray-800 fixed inset-y-0 z-50">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-800">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">

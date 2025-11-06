@@ -55,7 +55,7 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
         </div>
 
         {/* Título */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-primary transition-colors line-clamp-2">
           {idea.title}
         </h3>
 

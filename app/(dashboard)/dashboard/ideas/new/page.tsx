@@ -8,7 +8,7 @@ export default function NewIdeaPage() {
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-          <Link href="/dashboard/ideas" className="hover:text-blue-600 transition-colors">
+          <Link href="/dashboard/ideas" className="hover:text-primary transition-colors">
             Ideias
           </Link>
           <ChevronRight className="w-4 h-4" />

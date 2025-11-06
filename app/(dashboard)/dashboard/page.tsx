@@ -80,15 +80,15 @@ export default async function DashboardPage() {
     : '0.00'
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       {/* Header Premium */}
       <div className="mb-6 md:mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
               Olá, {profile?.full_name || 'Criador'}! 👋
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
+            <p className="text-gray-600 mt-2 text-sm md:text-base">
               Acompanhe seu desempenho e gerencie seu conteúdo
             </p>
           </div>

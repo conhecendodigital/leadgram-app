@@ -99,12 +99,12 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
         <p className="text-lg text-gray-600 mb-6 max-w-md mx-auto">
           {randomMessage}
         </p>
-        <div className="flex items-center justify-center gap-2 text-blue-600 mb-4">
+        <div className="flex items-center justify-center gap-2 text-primary mb-4">
           <Video className="w-5 h-5 animate-pulse" />
           <span className="font-medium">Redirecionando para suas ideias...</span>
         </div>
         <div className="w-48 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-[loading_3s_ease-in-out]" />
+          <div className="h-full gradient-primary rounded-full animate-[loading_3s_ease-in-out]" />
         </div>
       </div>
     )
@@ -129,7 +129,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
           required
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
           placeholder="Ex: 5 dicas para aumentar o engajamento"
         />
       </div>
@@ -144,7 +144,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
           type="text"
           value={formData.theme}
           onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
           placeholder="Ex: Marketing Digital, Produtividade, etc."
         />
       </div>
@@ -159,7 +159,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
           rows={6}
           value={formData.script}
           onChange={(e) => setFormData({ ...formData, script: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
           placeholder="Descreva o roteiro do seu conteúdo..."
         />
       </div>
@@ -174,7 +174,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
           rows={4}
           value={formData.editor_instructions}
           onChange={(e) => setFormData({ ...formData, editor_instructions: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
           placeholder="Orientações especiais para edição..."
         />
       </div>
@@ -189,7 +189,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
             id="status"
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-            className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
           >
             <option value="idea">Ideia</option>
             <option value="recorded">Gravado</option>
@@ -210,7 +210,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
             ].map((option) => (
               <label
                 key={option.value}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all hover:border-blue-300"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all hover:border-primary/30"
                 style={{
                   borderColor: formData.funnel_stage === option.value ? '#0866FF' : '#e5e7eb',
                   backgroundColor: formData.funnel_stage === option.value ? '#eff6ff' : 'white',
@@ -245,7 +245,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
           ].map((platform) => (
             <label
               key={platform.value}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all hover:border-blue-300"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all hover:border-primary/30"
               style={{
                 borderColor: formData.platforms.includes(platform.value as Platform) ? '#0866FF' : '#e5e7eb',
                 backgroundColor: formData.platforms.includes(platform.value as Platform) ? '#eff6ff' : 'white',
@@ -275,7 +275,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+          className="flex-1 px-6 py-3 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           {loading ? (
             <>

@@ -51,8 +51,8 @@ export default function TopPosts({ posts }: TopPostsProps) {
             className={`
               flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all text-sm md:text-base
               ${filter === f.value
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                ? 'gradient-primary text-white shadow-lg'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }
             `}
           >
@@ -70,7 +70,7 @@ export default function TopPosts({ posts }: TopPostsProps) {
             className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer"
           >
             {/* Post Image/Video */}
-            <div className="w-full h-full bg-gray-200 dark:bg-gray-700">
+            <div className="w-full h-full bg-gray-200">
               {post.media_url ? (
                 <img
                   src={post.media_url}
@@ -134,7 +134,7 @@ export default function TopPosts({ posts }: TopPostsProps) {
       {/* No posts */}
       {filteredPosts.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500">
             Nenhum post encontrado
           </p>
         </div>

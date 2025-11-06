@@ -42,7 +42,7 @@ export default function QuickActions() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all"
+        className="flex items-center gap-2 px-6 py-3 gradient-primary text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all"
       >
         <Sparkles className="w-5 h-5" />
         <span>Ações Rápidas</span>
@@ -65,7 +65,7 @@ export default function QuickActions() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 z-50"
+              className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50"
             >
               {actions.map((action, index) => (
                 <Link key={action.label} href={action.href}>
@@ -74,12 +74,12 @@ export default function QuickActions() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
                   >
                     <div className={`p-2 rounded-lg bg-gradient-to-br ${action.gradient} group-hover:scale-110 transition-transform shadow-md`}>
                       <action.icon className="w-5 h-5 text-white" />
                     </div>
-                    <span className="font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    <span className="font-medium text-gray-900 group-hover:text-primary transition-colors">
                       {action.label}
                     </span>
                   </motion.div>

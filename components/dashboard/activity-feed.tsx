@@ -46,19 +46,19 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
 
   if (!ideas || ideas.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-white">Atividades Recentes</h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Suas últimas ações</p>
+            <h3 className="font-bold text-gray-900">Atividades Recentes</h3>
+            <p className="text-xs text-gray-600">Suas últimas ações</p>
           </div>
         </div>
         <div className="text-center py-8">
-          <Sparkles className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma atividade ainda</p>
+          <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Nenhuma atividade ainda</p>
         </div>
       </div>
     )
@@ -69,15 +69,15 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm hover:shadow-lg transition-shadow"
+      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-lg transition-shadow"
     >
       <div className="flex items-center gap-2 mb-6">
         <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="font-bold text-gray-900 dark:text-white">Atividades Recentes</h3>
-          <p className="text-xs text-gray-600 dark:text-gray-400">Suas últimas ações</p>
+          <h3 className="font-bold text-gray-900">Atividades Recentes</h3>
+          <p className="text-xs text-gray-600">Suas últimas ações</p>
         </div>
       </div>
 
@@ -100,12 +100,12 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-gray-900">
                   {activityText}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <Clock className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <Clock className="w-3 h-3 text-gray-400" />
+                  <span className="text-xs text-gray-500">
                     {formatDistanceToNow(new Date(idea.created_at), {
                       addSuffix: true,
                       locale: ptBR,
@@ -119,7 +119,7 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
       </div>
 
       <Link href="/dashboard/ideas">
-        <button className="w-full mt-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors font-medium">
+        <button className="w-full mt-4 py-2 text-sm text-primary hover:bg-purple-50 rounded-lg transition-colors font-medium">
           Ver tudo
         </button>
       </Link>

@@ -19,11 +19,11 @@ export default async function AdminMercadoPagoPage() {
           <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl">
             <CreditCard className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-4xl font-bold text-gray-900">
             Mercado Pago
           </h1>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Conecte sua conta para receber pagamentos dos clientes
         </p>
       </div>
