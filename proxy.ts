@@ -38,6 +38,61 @@ export async function proxy(req: NextRequest) {
     req.nextUrl.pathname.startsWith('/register')
   const isDashboardPage = req.nextUrl.pathname.startsWith('/dashboard')
   const isAdminPage = req.nextUrl.pathname.startsWith('/admin')
+  const isMaintenancePage = req.nextUrl.pathname.startsWith('/maintenance')
+  const isApiPath = req.nextUrl.pathname.startsWith('/api')
+
+  // Verificar modo de manutenção (exceto para API e página de manutenção)
+  if (!isApiPath && !isMaintenancePage) {
+    try {
+      const { data: maintenanceSetting } = await (supabase
+        .from('app_settings') as any)
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .single()
+
+      const isMaintenanceMode = maintenanceSetting?.value === true
+
+      if (isMaintenanceMode) {
+        // Verificar se o usuário é admin
+        let isAdmin = false
+        if (user) {
+          const { data: profile } = await (supabase
+            .from('profiles') as any)
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+          isAdmin = profile?.role === 'admin' || user.email === ADMIN_EMAIL
+        }
+
+        // Se não for admin, redirecionar para página de manutenção
+        if (!isAdmin) {
+          return NextResponse.redirect(new URL('/maintenance', req.url))
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar modo de manutenção:', error)
+    }
+  }
+
+  // Se não está em manutenção e tentando acessar /maintenance, redirecionar
+  if (isMaintenancePage && !isAuthPage) {
+    try {
+      const { data: maintenanceSetting } = await (supabase
+        .from('app_settings') as any)
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .single()
+
+      const isMaintenanceMode = maintenanceSetting?.value === true
+
+      if (!isMaintenanceMode) {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+      }
+    } catch (error) {
+      console.error('Erro ao verificar modo de manutenção:', error)
+    }
+  }
 
   // Se não tem user e tenta acessar área protegida
   if (!user && (isDashboardPage || isAdminPage)) {
