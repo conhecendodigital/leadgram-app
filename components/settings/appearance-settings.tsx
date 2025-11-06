@@ -7,7 +7,7 @@ const accentColors = [
   {
     name: 'Roxo',
     value: 'purple',
-    color: 'gradient-primary',
+    color: 'from-purple-600 to-pink-600',
     cssVars: {
       '--primary': '139 92 246',
       '--accent': '139 92 246',
@@ -182,7 +182,7 @@ export default function AppearanceSettings() {
       {/* Font Size */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+          <div className="p-2 gradient-primary rounded-xl">
             <Type className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -204,16 +204,16 @@ export default function AppearanceSettings() {
                 key={size.value}
                 onClick={() => handleFontSizeChange(size.value)}
                 className={`
-                  relative p-4 rounded-xl border-2 transition-all cursor-pointer
+                  relative p-4 rounded-xl transition-all cursor-pointer
                   ${isSelected
-                    ? 'border-green-500 bg-green-50 ring-4 ring-green-100'
-                    : 'border-gray-200 hover:border-green-300'
+                    ? 'border-2 border-primary bg-primary/5'
+                    : 'border border-gray-200'
                   }
                 `}
               >
                 {isSelected && (
                   <div className="absolute top-2 right-2">
-                    <Check className="w-5 h-5 text-green-600" />
+                    <Check className="w-5 h-5 text-primary" />
                   </div>
                 )}
 
@@ -252,11 +252,6 @@ export default function AppearanceSettings() {
           <button className="btn-primary w-full shadow-lg hover:shadow-xl transition-all">
             Botão de Exemplo
           </button>
-          <div className="flex gap-2 items-center">
-            <div className="w-8 h-8 rounded-lg bg-primary"></div>
-            <div className="w-8 h-8 rounded-lg bg-accent"></div>
-            <span className="text-sm text-gray-600">← Suas cores de destaque</span>
-          </div>
         </div>
       </div>
     </div>
