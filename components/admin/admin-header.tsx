@@ -1,9 +1,10 @@
 'use client'
 
-import { Bell, LogOut, Menu } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import NotificationBell from './notification-bell'
 
 export default function AdminHeader({ user }: { user: any }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -36,10 +37,7 @@ export default function AdminHeader({ user }: { user: any }) {
         {/* Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* Notifications */}
-          <button className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg sm:rounded-xl relative">
-            <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-            <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <NotificationBell />
 
           {/* Logout */}
           <button
