@@ -3,6 +3,7 @@ import AdminStatsCards from '@/components/admin/admin-stats-cards'
 import RevenueChart from '@/components/admin/revenue-chart'
 import RecentCustomers from '@/components/admin/recent-customers'
 import PlanDistribution from '@/components/admin/plan-distribution'
+import RecentActivity from '@/components/admin/recent-activity'
 
 export default async function AdminDashboardPage() {
   const supabase = await createServerClient()
@@ -52,8 +53,11 @@ export default async function AdminDashboardPage() {
         <PlanDistribution subscriptions={subscriptions || []} />
       </div>
 
-      {/* Recent Customers */}
-      <RecentCustomers />
+      {/* Activity and Customers Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RecentActivity />
+        <RecentCustomers />
+      </div>
     </div>
   )
 }
