@@ -119,6 +119,70 @@ export class NotificationService {
 
     if (error) throw error;
   }
+
+  // ============= MÉTODOS CONVENIENTES =============
+  // Estes métodos facilitam a criação de notificações programaticamente
+  // Nota: Os triggers do banco também criam notificações automaticamente
+
+  /**
+   * Criar notificação de novo usuário
+   * Nota: Normalmente isso é feito via trigger no banco
+   */
+  async notifyNewUser(userId: string, userEmail: string) {
+    return this.createNotification(
+      'new_user',
+      'Novo Usuário Registrado',
+      `${userEmail} acabou de se registrar`,
+      { email: userEmail },
+      userId,
+      '/admin/clientes'
+    );
+  }
+
+  /**
+   * Criar notificação de pagamento
+   * Nota: Normalmente isso é feito via trigger no banco
+   */
+  async notifyPayment(userId: string, amount: number, planName?: string) {
+    return this.createNotification(
+      'payment',
+      'Novo Pagamento',
+      `Recebido R$ ${amount.toFixed(2)}${planName ? ` do plano ${planName}` : ''}`,
+      { amount, plan: planName },
+      userId,
+      '/admin/pagamentos'
+    );
+  }
+
+  /**
+   * Criar notificação de cancelamento
+   * Nota: Normalmente isso é feito via trigger no banco
+   */
+  async notifyCancellation(userId: string, planName: string) {
+    return this.createNotification(
+      'cancellation',
+      'Assinatura Cancelada',
+      `Usuário cancelou assinatura do plano ${planName}`,
+      { plan: planName },
+      userId,
+      '/admin/clientes'
+    );
+  }
+
+  /**
+   * Criar notificação de erro do sistema
+   * Nota: Normalmente isso é feito via trigger no banco
+   */
+  async notifyError(errorMessage: string, errorType: string, metadata?: Record<string, any>) {
+    return this.createNotification(
+      'system_error',
+      'Erro Crítico do Sistema',
+      errorMessage.substring(0, 200),
+      { error_type: errorType, ...metadata },
+      undefined,
+      '/admin/logs'
+    );
+  }
 }
 
 export const notificationService = new NotificationService();
