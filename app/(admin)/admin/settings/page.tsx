@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Database, Shield, Mail, Webhook, HardDrive, Users, Lightbulb, Download, Trash2, RefreshCw, Clock } from 'lucide-react'
+import { Bell, Database, Shield, Mail, Webhook, HardDrive, Users, Lightbulb } from 'lucide-react'
 import { notificationService } from '@/lib/services/notification-service'
 import { databaseService } from '@/lib/services/database-service'
 import type { NotificationSettings as NotificationSettingsType } from '@/lib/types/notifications'
-import type { DatabaseStats, DatabaseBackup, BackupConfig, CleanupStats } from '@/lib/types/database'
+import type { DatabaseStats, CleanupStats } from '@/lib/types/database'
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('notifications')
@@ -271,12 +271,8 @@ function NotificationSettings() {
 
 function DatabaseSettings() {
   const [stats, setStats] = useState<DatabaseStats | null>(null);
-  const [backups, setBackups] = useState<DatabaseBackup[]>([]);
-  const [backupConfig, setBackupConfig] = useState<BackupConfig | null>(null);
   const [cleanupStats, setCleanupStats] = useState<CleanupStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [optimizing, setOptimizing] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -286,15 +282,11 @@ function DatabaseSettings() {
 
   const loadData = async () => {
     try {
-      const [statsData, backupsData, configData, cleanupData] = await Promise.all([
+      const [statsData, cleanupData] = await Promise.all([
         databaseService.getStats(),
-        databaseService.getBackups(5),
-        databaseService.getBackupConfig(),
         databaseService.getCleanupStats()
       ]);
       setStats(statsData);
-      setBackups(backupsData);
-      setBackupConfig(configData);
       setCleanupStats(cleanupData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -309,45 +301,7 @@ function DatabaseSettings() {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const handleCreateBackup = async () => {
-    setCreating(true);
-    try {
-      await databaseService.createBackup();
-      await loadData();
-      showMessage('success', 'Backup criado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao criar backup:', error);
-      showMessage('error', 'Erro ao criar backup');
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleDeleteBackup = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este backup?')) return;
-    try {
-      await databaseService.deleteBackup(id);
-      await loadData();
-      showMessage('success', 'Backup excluído com sucesso!');
-    } catch (error) {
-      console.error('Erro ao excluir backup:', error);
-      showMessage('error', 'Erro ao excluir backup');
-    }
-  };
-
-  const handleSaveBackupConfig = async () => {
-    if (!backupConfig) return;
-    try {
-      await databaseService.updateBackupConfig(backupConfig);
-      await loadData();
-      showMessage('success', 'Configuração salva com sucesso!');
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-      showMessage('error', 'Erro ao salvar configuração');
-    }
-  };
-
-  const handleCleanup = async () => {
+  const handleCleanupNotifications = async () => {
     if (!confirm('Tem certeza que deseja limpar notificações antigas (90+ dias)?')) return;
     setCleaning(true);
     try {
@@ -360,34 +314,6 @@ function DatabaseSettings() {
     } finally {
       setCleaning(false);
     }
-  };
-
-  const handleOptimize = async () => {
-    setOptimizing(true);
-    try {
-      await databaseService.optimizeDatabase();
-      showMessage('success', 'Otimização solicitada com sucesso!');
-    } catch (error) {
-      console.error('Erro ao otimizar:', error);
-      showMessage('error', 'Erro ao otimizar banco');
-    } finally {
-      setOptimizing(false);
-    }
-  };
-
-  const formatBytes = (bytes: number) => {
-    const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(1)} MB`;
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   if (loading) {
@@ -413,10 +339,10 @@ function DatabaseSettings() {
         </p>
       </div>
 
-      {/* Estatísticas */}
+      {/* ========== ESTATÍSTICAS DO BANCO (MANTER) ========== */}
       {stats && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Estatísticas</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Estatísticas do Banco</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
               <div className="flex items-center gap-3">
@@ -461,136 +387,27 @@ function DatabaseSettings() {
         </div>
       )}
 
-      {/* Backup Automático */}
-      {backupConfig && (
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Backup Automático</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Ativar Backup Automático</p>
-                <p className="text-sm text-gray-500">Criar backups automaticamente</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={backupConfig.enabled}
-                onChange={(e) => setBackupConfig({ ...backupConfig, enabled: e.target.checked })}
-                className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500"
-              />
-            </div>
-
-            {backupConfig.enabled && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Frequência
-                  </label>
-                  <select
-                    value={backupConfig.frequency}
-                    onChange={(e) => setBackupConfig({ ...backupConfig, frequency: e.target.value as any })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  >
-                    <option value="daily">Diário</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="monthly">Mensal</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Horário
-                  </label>
-                  <input
-                    type="time"
-                    value={backupConfig.time}
-                    onChange={(e) => setBackupConfig({ ...backupConfig, time: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
-
-                {backupConfig.next_run && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    <span>Próximo backup: {formatDate(backupConfig.next_run)}</span>
-                  </div>
-                )}
-              </>
-            )}
-
-            <button
-              onClick={handleSaveBackupConfig}
-              className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
-            >
-              Salvar Configuração
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Criar Backup Manual */}
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Backup Manual</h3>
-        <button
-          onClick={handleCreateBackup}
-          disabled={creating}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          <Download className="w-4 h-4" />
-          {creating ? 'Criando...' : 'Criar Backup Agora'}
-        </button>
-      </div>
-
-      {/* Histórico de Backups */}
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Histórico de Backups</h3>
-        {backups.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">Nenhum backup encontrado</p>
-        ) : (
-          <div className="space-y-2">
-            {backups.map((backup) => (
-              <div
-                key={backup.id}
-                className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
-              >
-                <div className="flex items-center gap-3">
-                  <Database className="w-5 h-5 text-gray-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{backup.filename}</p>
-                    <p className="text-xs text-gray-500">
-                      {formatDate(backup.created_at)} • {formatBytes(backup.size_bytes)}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeleteBackup(backup.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Excluir backup"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Limpeza de Dados */}
+      {/* ========== LIMPEZA DE DADOS (MANTER) ========== */}
       {cleanupStats && (
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Limpeza de Dados</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Limpeza de Dados</h3>
+          <p className="text-sm text-gray-600 mb-4">Remove dados antigos para liberar espaço</p>
+
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
               <div className="flex items-center gap-3">
-                <Trash2 className="w-5 h-5 text-orange-600" />
+                <span className="text-2xl">🗑️</span>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Notificações antigas (90+ dias)</p>
-                  <p className="text-xs text-gray-500">{cleanupStats.oldNotifications} itens encontrados</p>
+                  <p className="font-medium text-gray-900">Notificações Antigas</p>
+                  <p className="text-sm text-gray-600">
+                    {cleanupStats.oldNotifications || 0} notificações com mais de 90 dias
+                  </p>
                 </div>
               </div>
               <button
-                onClick={handleCleanup}
-                disabled={cleaning || cleanupStats.oldNotifications === 0}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleCleanupNotifications}
+                disabled={!cleanupStats.oldNotifications || cleaning}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cleaning ? 'Limpando...' : 'Limpar'}
               </button>
@@ -599,20 +416,124 @@ function DatabaseSettings() {
         </div>
       )}
 
-      {/* Otimização */}
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Otimização</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Otimizar o banco de dados pode melhorar a performance das queries
-        </p>
-        <button
-          onClick={handleOptimize}
-          disabled={optimizing}
-          className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          {optimizing ? 'Otimizando...' : 'Otimizar Banco'}
-        </button>
+      {/* ========== GERENCIAMENTO AVANÇADO (NOVO) ========== */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">
+              Gerenciamento Avançado
+            </h3>
+            <p className="text-sm text-gray-600">
+              Acesse o Supabase Dashboard para funcionalidades avançadas
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Card: Backups */}
+          <a
+            href={`https://supabase.com/dashboard/project/${process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID}/settings/database`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">💾</span>
+                  <h4 className="font-semibold text-gray-900">Backups</h4>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Criar, restaurar e gerenciar backups automáticos
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+
+          {/* Card: Otimização */}
+          <a
+            href={`https://supabase.com/dashboard/project/${process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID}/database/query-performance`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">⚡</span>
+                  <h4 className="font-semibold text-gray-900">Performance</h4>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Monitorar queries e otimizar performance
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+
+          {/* Card: Tabelas */}
+          <a
+            href={`https://supabase.com/dashboard/project/${process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID}/editor`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">📊</span>
+                  <h4 className="font-semibold text-gray-900">Editor de Tabelas</h4>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Visualizar e editar dados diretamente
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+
+          {/* Card: SQL Editor */}
+          <a
+            href={`https://supabase.com/dashboard/project/${process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID}/sql`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">💻</span>
+                  <h4 className="font-semibold text-gray-900">SQL Editor</h4>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Executar queries SQL customizadas
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+        </div>
+
+        <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>💡 Dica:</strong> O Supabase já gerencia backups automáticos diários.
+            Acesse a seção de Backups para configurar retenção e restauração.
+          </p>
+        </div>
       </div>
 
       {/* Messages */}
