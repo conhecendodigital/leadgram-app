@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { Toaster } from "react-hot-toast";
 import ThemeInitializer from "@/components/theme-initializer";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -29,7 +30,9 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <ThemeInitializer />
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
           <Toaster
             position="top-right"
             toastOptions={{
