@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import type { DatabaseStats, DatabaseBackup, BackupConfig, CleanupStats } from '@/lib/types/database';
+import type { DatabaseStats, CleanupStats } from '@/lib/types/database';
 
 export class DatabaseService {
   private supabase = createClient();
@@ -33,131 +33,8 @@ export class DatabaseService {
     }
   }
 
-  // ============= BACKUPS =============
-  async getBackups(limit = 10): Promise<DatabaseBackup[]> {
-    const { data, error } = await (this.supabase
-      .from('database_backups') as any)
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-    return data as DatabaseBackup[];
-  }
-
-  async createBackup(): Promise<DatabaseBackup> {
-    const user = (await this.supabase.auth.getUser()).data.user;
-
-    // Simular criação de backup
-    const filename = `backup_${new Date().toISOString().replace(/[:.]/g, '-')}.sql`;
-    const estimatedSize = Math.floor(Math.random() * 10000000) + 40000000; // 40-50 MB
-
-    const { data, error } = await (this.supabase
-      .from('database_backups') as any)
-      .insert({
-        filename,
-        size_bytes: estimatedSize,
-        backup_type: 'manual',
-        created_by: user?.id
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Criar notificação de backup criado
-    await (this.supabase.from('admin_notifications') as any).insert({
-      type: 'system_error', // Usar como evento do sistema
-      title: 'Backup Criado',
-      message: `Backup manual criado com sucesso: ${filename}`,
-      metadata: { backup_id: data.id }
-    });
-
-    return data as DatabaseBackup;
-  }
-
-  async deleteBackup(id: string): Promise<void> {
-    const { error } = await (this.supabase
-      .from('database_backups') as any)
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-  }
-
-  // ============= BACKUP AUTOMÁTICO =============
-  async getBackupConfig(): Promise<BackupConfig> {
-    const { data, error } = await (this.supabase
-      .from('database_backup_config') as any)
-      .select('*')
-      .single();
-
-    if (error) throw error;
-    return data as BackupConfig;
-  }
-
-  async updateBackupConfig(config: Partial<BackupConfig>): Promise<void> {
-    const current = await this.getBackupConfig();
-
-    // Calcular próximo backup
-    let nextRun: Date | null = null;
-    if (config.enabled !== false) {
-      nextRun = this.calculateNextRun(
-        config.frequency || current.frequency,
-        config.time || current.time,
-        config.day_of_week,
-        config.day_of_month
-      );
-    }
-
-    const { error } = await (this.supabase
-      .from('database_backup_config') as any)
-      .update({
-        ...config,
-        next_run: nextRun?.toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', current.id);
-
-    if (error) throw error;
-  }
-
-  private calculateNextRun(
-    frequency: string,
-    time: string,
-    dayOfWeek?: number,
-    dayOfMonth?: number
-  ): Date {
-    const [hours, minutes] = time.split(':').map(Number);
-    const now = new Date();
-    let next = new Date();
-
-    next.setHours(hours, minutes, 0, 0);
-
-    if (frequency === 'daily') {
-      if (next <= now) {
-        next.setDate(next.getDate() + 1);
-      }
-    } else if (frequency === 'weekly' && dayOfWeek !== undefined) {
-      next.setDate(next.getDate() + ((7 + dayOfWeek - next.getDay()) % 7));
-      if (next <= now) {
-        next.setDate(next.getDate() + 7);
-      }
-    } else if (frequency === 'monthly' && dayOfMonth !== undefined) {
-      next.setDate(dayOfMonth);
-      if (next <= now) {
-        next.setMonth(next.getMonth() + 1);
-      }
-    }
-
-    return next;
-  }
-
   // ============= LIMPEZA =============
   async getCleanupStats(): Promise<CleanupStats> {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -200,17 +77,6 @@ export class DatabaseService {
     }
 
     return 0;
-  }
-
-  // ============= OTIMIZAÇÃO =============
-  async optimizeDatabase(): Promise<void> {
-    // Supabase gerencia otimização automaticamente
-    // Criar notificação indicando que foi solicitado
-    await (this.supabase.from('admin_notifications') as any).insert({
-      type: 'system_error',
-      title: 'Otimização Solicitada',
-      message: 'A otimização do banco de dados foi iniciada'
-    });
   }
 }
 
