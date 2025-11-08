@@ -6,6 +6,9 @@ import { notificationService } from '@/lib/services/notification-service'
 import { databaseService } from '@/lib/services/database-service'
 import type { NotificationSettings as NotificationSettingsType } from '@/lib/types/notifications'
 import type { DatabaseStats, CleanupStats } from '@/lib/types/database'
+import { securityService } from '@/lib/services/security-service'
+import { TwoFASetup } from '@/components/admin/2fa-setup'
+import type { SecuritySettings as SecuritySettingsType } from '@/lib/types/security'
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('notifications')
@@ -95,7 +98,7 @@ function NotificationSettings() {
 
   const loadSettings = async () => {
     try {
-      const data = await notificationService.getSettings();
+      const data = await notificationService.instance.getSettings();
       if (data) {
         setSettings({
           notify_new_users: data.notify_new_users,
@@ -118,7 +121,7 @@ function NotificationSettings() {
     setSaving(true);
     setMessage(null);
     try {
-      await notificationService.updateSettings(settings);
+      await notificationService.instance.updateSettings(settings);
       setMessage({ type: 'success', text: 'Preferências salvas com sucesso!' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
@@ -283,8 +286,8 @@ function DatabaseSettings() {
   const loadData = async () => {
     try {
       const [statsData, cleanupData] = await Promise.all([
-        databaseService.getStats(),
-        databaseService.getCleanupStats()
+        databaseService.instance.getStats(),
+        databaseService.instance.getCleanupStats()
       ]);
       setStats(statsData);
       setCleanupStats(cleanupData);
@@ -305,7 +308,7 @@ function DatabaseSettings() {
     if (!confirm('Tem certeza que deseja limpar notificações antigas (90+ dias)?')) return;
     setCleaning(true);
     try {
-      const count = await databaseService.cleanupOldData('notifications');
+      const count = await databaseService.instance.cleanupOldData('notifications');
       await loadData();
       showMessage('success', `${count} notificações antigas removidas!`);
     } catch (error) {
@@ -553,65 +556,382 @@ function DatabaseSettings() {
 }
 
 function SecuritySettings() {
+  const [activeSubTab, setActiveSubTab] = useState('general');
+  const [settings, setSettings] = useState<any>(null);
+  const [twoFAStatus, setTwoFAStatus] = useState<any>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loginAttempts, setLoginAttempts] = useState<any[]>([]);
+  const [blockedIPs, setBlockedIPs] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    loadSecurityData();
+  }, []);
+
+  const loadSecurityData = async () => {
+    setLoading(true);
+    try {
+      // Importar dinamicamente o securityService
+      const { securityService } = await import('@/lib/services/security-service');
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const [settingsData, twoFAData, sessionsData, attemptsData, ipsData, logsData] = await Promise.all([
+        securityService.instance.getSettings(),
+        user ? securityService.instance.get2FAStatus(user.id) : null,
+        securityService.instance.getActiveSessions(),
+        securityService.instance.getLoginAttempts(20),
+        securityService.instance.getBlockedIPs(),
+        securityService.instance.getAuditLogs(30)
+      ]);
+
+      setSettings(settingsData);
+      setTwoFAStatus(twoFAData);
+      setSessions(sessionsData);
+      setLoginAttempts(attemptsData);
+      setBlockedIPs(ipsData);
+      setAuditLogs(logsData);
+    } catch (error) {
+      console.error('Erro ao carregar dados de segurança:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      const { securityService } = await import('@/lib/services/security-service');
+      await securityService.instance.updateSettings(settings);
+      setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao salvar configurações' });
+    }
+  };
+
+  const handleTerminateSession = async (sessionId: string) => {
+    if (!confirm('Tem certeza que deseja encerrar esta sessão?')) return;
+    try {
+      const { securityService } = await import('@/lib/services/security-service');
+      await securityService.instance.terminateSession(sessionId);
+      await loadSecurityData();
+      setMessage({ type: 'success', text: 'Sessão encerrada com sucesso!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao encerrar sessão' });
+    }
+  };
+
+  const handleUnblockIP = async (id: string) => {
+    if (!confirm('Tem certeza que deseja desbloquear este IP?')) return;
+    try {
+      const { securityService } = await import('@/lib/services/security-service');
+      await securityService.instance.unblockIP(id);
+      await loadSecurityData();
+      setMessage({ type: 'success', text: 'IP desbloqueado com sucesso!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao desbloquear IP' });
+    }
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading || !settings) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">Segurança</h2>
+        <p className="text-gray-600">Carregando...</p>
+      </div>
+    );
+  }
+
+  const subTabs = [
+    { id: 'general', label: 'Geral' },
+    { id: 'sessions', label: 'Sessões' },
+    { id: 'access', label: 'Acessos' },
+    { id: 'ips', label: 'IPs Bloqueados' },
+    { id: 'audit', label: 'Auditoria' }
+  ];
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Segurança
-        </h2>
-        <p className="text-gray-600">
-          Configure as opções de segurança da aplicação
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Segurança</h2>
+        <p className="text-gray-600">Configure as opções de segurança da aplicação</p>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <p className="font-medium text-gray-900">Autenticação de Dois Fatores</p>
-            <p className="text-sm text-gray-500">
-              Exigir 2FA para todos os admins
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <p className="font-medium text-gray-900">Limite de Tentativas de Login</p>
-            <p className="text-sm text-gray-500">
-              Bloquear após 5 tentativas falhas
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            defaultChecked
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-3">
-          <div>
-            <p className="font-medium text-gray-900">Log de Auditoria</p>
-            <p className="text-sm text-gray-500">
-              Registrar todas as ações administrativas
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            defaultChecked
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
-
-        <div className="pt-4">
-          <button className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
-            Salvar Configurações
+      {/* Sub Tabs */}
+      <div className="flex gap-2 border-b border-gray-200">
+        {subTabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveSubTab(tab.id)}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeSubTab === tab.id
+                ? 'border-b-2 border-red-600 text-red-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab.label}
           </button>
-        </div>
+        ))}
       </div>
+
+      {/* General Settings */}
+      {activeSubTab === 'general' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between py-3 border-b border-gray-200">
+            <div>
+              <p className="font-medium text-gray-900">Autenticação de Dois Fatores</p>
+              <p className="text-sm text-gray-500">
+                {twoFAStatus?.enabled ? '2FA está ativo' : 'Adicione uma camada extra de segurança'}
+              </p>
+            </div>
+            {twoFAStatus?.enabled ? (
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                Ativo
+              </span>
+            ) : (
+              <button
+                onClick={() => setShow2FASetup(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+              >
+                Ativar 2FA
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between py-3 border-b border-gray-200">
+            <div>
+              <p className="font-medium text-gray-900">Limite de Tentativas de Login</p>
+              <p className="text-sm text-gray-500">
+                Bloquear após {settings.max_login_attempts} tentativas falhas
+              </p>
+            </div>
+            <input
+              type="number"
+              value={settings.max_login_attempts}
+              onChange={(e) => setSettings({ ...settings, max_login_attempts: parseInt(e.target.value) })}
+              className="w-20 px-3 py-1 border border-gray-300 rounded text-center"
+              min="3"
+              max="10"
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-3 border-b border-gray-200">
+            <div>
+              <p className="font-medium text-gray-900">Duração do Bloqueio</p>
+              <p className="text-sm text-gray-500">
+                Tempo em minutos que o IP fica bloqueado
+              </p>
+            </div>
+            <input
+              type="number"
+              value={settings.lockout_duration}
+              onChange={(e) => setSettings({ ...settings, lockout_duration: parseInt(e.target.value) })}
+              className="w-20 px-3 py-1 border border-gray-300 rounded text-center"
+              min="5"
+              max="60"
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <p className="font-medium text-gray-900">Log de Auditoria</p>
+              <p className="text-sm text-gray-500">
+                Registrar todas as ações administrativas
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.enable_audit_log}
+              onChange={(e) => setSettings({ ...settings, enable_audit_log: e.target.checked })}
+              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+            />
+          </div>
+
+          <div className="pt-4">
+            <button
+              onClick={handleSaveSettings}
+              className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+            >
+              Salvar Configurações
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Active Sessions */}
+      {activeSubTab === 'sessions' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">{sessions.length} sessões ativas</p>
+          {sessions.length === 0 ? (
+            <p className="text-center py-8 text-gray-500">Nenhuma sessão ativa</p>
+          ) : (
+            <div className="space-y-2">
+              {sessions.map((session) => (
+                <div key={session.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{session.device_type || 'Desktop'} - {session.browser || 'Navegador'}</p>
+                      <p className="text-sm text-gray-600 mt-1">{session.ip_address}</p>
+                      <p className="text-xs text-gray-500 mt-1">Última atividade: {formatDate(session.last_activity)}</p>
+                    </div>
+                    <button
+                      onClick={() => handleTerminateSession(session.id)}
+                      className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+                    >
+                      Encerrar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Login Attempts */}
+      {activeSubTab === 'access' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">Últimas {loginAttempts.length} tentativas de login</p>
+          {loginAttempts.length === 0 ? (
+            <p className="text-center py-8 text-gray-500">Nenhuma tentativa registrada</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Email</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">IP</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {loginAttempts.map((attempt) => (
+                    <tr key={attempt.id}>
+                      <td className="px-4 py-3 text-sm">{attempt.email || '-'}</td>
+                      <td className="px-4 py-3 text-sm font-mono">{attempt.ip_address}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          attempt.success
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {attempt.success ? 'Sucesso' : 'Falha'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{formatDate(attempt.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Blocked IPs */}
+      {activeSubTab === 'ips' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">{blockedIPs.length} IPs bloqueados</p>
+          {blockedIPs.length === 0 ? (
+            <p className="text-center py-8 text-gray-500">Nenhum IP bloqueado</p>
+          ) : (
+            <div className="space-y-2">
+              {blockedIPs.map((ip) => (
+                <div key={ip.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-medium font-mono text-gray-900">{ip.ip_address}</p>
+                      <p className="text-sm text-gray-600 mt-1">{ip.reason || 'Sem motivo'}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Bloqueado em: {formatDate(ip.blocked_at)}
+                        {ip.is_permanent ? ' (Permanente)' : ip.blocked_until ? ` até ${formatDate(ip.blocked_until)}` : ''}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleUnblockIP(ip.id)}
+                      className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    >
+                      Desbloquear
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Audit Logs */}
+      {activeSubTab === 'audit' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">Últimas {auditLogs.length} ações registradas</p>
+          {auditLogs.length === 0 ? (
+            <p className="text-center py-8 text-gray-500">Nenhuma ação registrada</p>
+          ) : (
+            <div className="space-y-2">
+              {auditLogs.map((log) => (
+                <div key={log.id} className="bg-white border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{log.action}</p>
+                      <p className="text-sm text-gray-600 mt-1">{log.description || '-'}</p>
+                      {log.resource_type && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Recurso: {log.resource_type}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">{formatDate(log.created_at)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Messages */}
+      {message && (
+        <div
+          className={`p-3 rounded-lg text-sm ${
+            message.type === 'success'
+              ? 'bg-green-50 text-green-700 border border-green-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
+      {/* 2FA Setup Modal */}
+      {show2FASetup && (
+        <TwoFASetup
+          isOpen={show2FASetup}
+          onClose={() => setShow2FASetup(false)}
+          onSuccess={() => {
+            loadSecurityData();
+            setMessage({ type: 'success', text: '2FA ativado com sucesso!' });
+            setTimeout(() => setMessage(null), 3000);
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -16,7 +16,7 @@ export default function RecentActivity() {
 
   const loadNotifications = async () => {
     try {
-      const data = await notificationService.getNotifications(5);
+      const data = await notificationService.instance.getNotifications(5);
       setNotifications(data);
     } catch (error) {
       console.error('Erro ao carregar atividades:', error);

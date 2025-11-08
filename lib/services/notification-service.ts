@@ -1,8 +1,13 @@
 import { createClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AdminNotification, NotificationType, NotificationSettings } from '@/lib/types/notifications';
 
 export class NotificationService {
-  private supabase = createClient();
+  private supabase: SupabaseClient;
+
+  constructor(supabaseClient?: SupabaseClient) {
+    this.supabase = supabaseClient || createClient();
+  }
 
   async createNotification(
     type: NotificationType,
@@ -185,4 +190,13 @@ export class NotificationService {
   }
 }
 
-export const notificationService = new NotificationService();
+// Lazy-loaded singleton for client-side usage
+let _notificationServiceInstance: NotificationService | null = null;
+export const notificationService = {
+  get instance() {
+    if (!_notificationServiceInstance) {
+      _notificationServiceInstance = new NotificationService();
+    }
+    return _notificationServiceInstance;
+  }
+};

@@ -1,0 +1,46 @@
+-- ═══════════════════════════════════════════════════════════
+-- DIAGNÓSTICO: Desabilitar Trigger Temporariamente
+-- ═══════════════════════════════════════════════════════════
+--
+-- Para descobrir se o problema está no trigger ou em outro lugar,
+-- vamos desabilitá-lo temporariamente e tentar signup.
+--
+-- Se signup funcionar sem trigger → problema está NO TRIGGER
+-- Se signup falhar sem trigger → problema está EM OUTRO LUGAR
+-- ═══════════════════════════════════════════════════════════
+
+BEGIN;
+
+-- Desabilitar trigger de INSERT
+ALTER TABLE auth.users DISABLE TRIGGER on_auth_user_created;
+
+-- Desabilitar trigger de DELETE também
+ALTER TABLE auth.users DISABLE TRIGGER on_auth_user_deleted;
+
+-- Verificação
+DO $$
+BEGIN
+  RAISE NOTICE '═══════════════════════════════════════════════';
+  RAISE NOTICE 'TRIGGERS DESABILITADOS';
+  RAISE NOTICE '═══════════════════════════════════════════════';
+  RAISE NOTICE '';
+  RAISE NOTICE '⚠️  Triggers em auth.users foram DESABILITADOS';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Agora teste o signup em:';
+  RAISE NOTICE '  http://localhost:3000/register';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Se signup FUNCIONAR:';
+  RAISE NOTICE '  → Problema está na função handle_new_user()';
+  RAISE NOTICE '  → Precisamos corrigir a função';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Se signup FALHAR:';
+  RAISE NOTICE '  → Problema está em outro lugar (não no trigger)';
+  RAISE NOTICE '  → Pode ser configuração do Supabase Auth';
+  RAISE NOTICE '';
+  RAISE NOTICE '⚠️  IMPORTANTE: Perfis NÃO serão criados automaticamente';
+  RAISE NOTICE '   enquanto o trigger estiver desabilitado!';
+  RAISE NOTICE '';
+  RAISE NOTICE '═══════════════════════════════════════════════';
+END $$;
+
+COMMIT;

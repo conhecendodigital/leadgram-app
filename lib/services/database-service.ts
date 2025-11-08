@@ -1,8 +1,13 @@
 import { createClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DatabaseStats, CleanupStats } from '@/lib/types/database';
 
 export class DatabaseService {
-  private supabase = createClient();
+  private supabase: SupabaseClient;
+
+  constructor(supabaseClient?: SupabaseClient) {
+    this.supabase = supabaseClient || createClient();
+  }
 
   // ============= ESTATÍSTICAS =============
   async getStats(): Promise<DatabaseStats> {
@@ -80,4 +85,13 @@ export class DatabaseService {
   }
 }
 
-export const databaseService = new DatabaseService();
+// Lazy-loaded singleton for client-side usage
+let _databaseServiceInstance: DatabaseService | null = null;
+export const databaseService = {
+  get instance() {
+    if (!_databaseServiceInstance) {
+      _databaseServiceInstance = new DatabaseService();
+    }
+    return _databaseServiceInstance;
+  }
+};

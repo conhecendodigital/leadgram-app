@@ -18,7 +18,7 @@ export default function NotificationsPage() {
   const loadNotifications = async () => {
     setLoading(true);
     try {
-      const data = await notificationService.getNotifications(50, filter === 'unread');
+      const data = await notificationService.instance.getNotifications(50, filter === 'unread');
 
       // Aplicar filtro de tipo se necessário
       let filtered = data;
@@ -36,7 +36,7 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await notificationService.markAsRead(id);
+      await notificationService.instance.markAsRead(id);
       await loadNotifications();
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
@@ -45,7 +45,7 @@ export default function NotificationsPage() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationService.markAllAsRead();
+      await notificationService.instance.markAllAsRead();
       await loadNotifications();
     } catch (error) {
       console.error('Erro ao marcar todas como lidas:', error);
