@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/supabase/server';
 
 /**
  * Handler centralizado de erros para API routes
@@ -13,7 +13,7 @@ export async function handleApiError(error: unknown, context?: string) {
   const err = error instanceof Error ? error : new Error(String(error));
 
   try {
-    const supabase = createClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     // Registrar erro crítico no banco (trigger vai criar notificação)

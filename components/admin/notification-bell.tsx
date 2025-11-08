@@ -21,8 +21,8 @@ export default function NotificationBell() {
   const loadNotifications = async () => {
     try {
       const [notifs, count] = await Promise.all([
-        notificationService.getNotifications(5),
-        notificationService.getUnreadCount()
+        notificationService.instance.getNotifications(5),
+        notificationService.instance.getUnreadCount()
       ]);
       setNotifications(notifs);
       setUnreadCount(count);
@@ -35,7 +35,7 @@ export default function NotificationBell() {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await notificationService.markAsRead(id);
+      await notificationService.instance.markAsRead(id);
       await loadNotifications();
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
@@ -91,7 +91,7 @@ export default function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={async () => {
-                    await notificationService.markAllAsRead();
+                    await notificationService.instance.markAllAsRead();
                     await loadNotifications();
                   }}
                   className="text-xs text-blue-600 hover:text-blue-700 font-medium"

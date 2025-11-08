@@ -1,7 +1,12 @@
 import { createClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export class ErrorTrackingService {
-  private supabase = createClient();
+  private supabase: SupabaseClient;
+
+  constructor(supabaseClient?: SupabaseClient) {
+    this.supabase = supabaseClient || createClient();
+  }
 
   /**
    * Registra um erro no banco de dados
@@ -127,4 +132,13 @@ export class ErrorTrackingService {
   }
 }
 
-export const errorTracking = new ErrorTrackingService();
+// Lazy-loaded singleton for client-side usage
+let _errorTrackingInstance: ErrorTrackingService | null = null;
+export const errorTracking = {
+  get instance() {
+    if (!_errorTrackingInstance) {
+      _errorTrackingInstance = new ErrorTrackingService();
+    }
+    return _errorTrackingInstance;
+  }
+};

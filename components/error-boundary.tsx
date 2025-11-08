@@ -24,7 +24,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log erro crítico (isso vai criar uma notificação automática via trigger)
-    errorTracking.logCriticalError(error, `Component Stack: ${errorInfo.componentStack}`);
+    errorTracking.instance.logCriticalError(error, `Component Stack: ${errorInfo.componentStack}`);
   }
 
   render() {

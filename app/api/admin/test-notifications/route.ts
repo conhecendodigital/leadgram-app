@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { notificationService } from '@/lib/services/notification-service';
-import { errorTracking } from '@/lib/services/error-tracking-service';
-import { createClient } from '@/lib/supabase/server';
+import { NotificationService } from '@/lib/services/notification-service';
+import { ErrorTrackingService } from '@/lib/services/error-tracking-service';
+import { createServerClient } from '@/lib/supabase/server';
 
 /**
  * API para testar notificações automáticas
@@ -9,7 +9,9 @@ import { createClient } from '@/lib/supabase/server';
  */
 export async function POST(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createServerClient();
+    const notificationService = new NotificationService(supabase);
+    const errorTracking = new ErrorTrackingService(supabase);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {

@@ -19,24 +19,35 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // ===== NOVA API COM SISTEMA DE SEGURANÇA INTEGRADO =====
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       })
 
-      if (error) throw error
+      const result = await response.json()
 
-      // Verificar se o usuário é admin
-      if (data.user) {
-        const { data: profile } = await (supabase
-          .from('profiles') as any)
-          .select('role')
-          .eq('id', data.user.id)
-          .single()
+      // Tratar erros com informações de segurança
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Rate limit ou IP bloqueado
+          throw new Error(result.message || 'Muitas tentativas. Aguarde um momento.')
+        }
 
-        // Redirecionar para admin se for admin, caso contrário para dashboard
-        if (profile?.role === 'admin' || email === 'matheussss.afiliado@gmail.com') {
+        // Mostrar tentativas restantes
+        if (result.remainingAttempts !== undefined) {
+          throw new Error(`${result.error}. Tentativas restantes: ${result.remainingAttempts}`)
+        }
+
+        throw new Error(result.error || 'Erro ao fazer login')
+      }
+
+      // Login bem-sucedido
+      if (result.success && result.user) {
+        // Redirecionar direto para dashboard
+        // O middleware vai verificar o role e redirecionar se necessário
+        if (email === 'matheussss.afiliado@gmail.com') {
           router.push('/admin/dashboard')
         } else {
           router.push('/dashboard')

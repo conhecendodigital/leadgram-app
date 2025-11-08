@@ -23,7 +23,7 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
 
-      // Criar usuário (o trigger handle_new_user() criará o perfil automaticamente)
+      // Criar usuário
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -35,12 +35,19 @@ export default function RegisterPage() {
         },
       })
 
-      if (signUpError) throw signUpError
+      if (signUpError) {
+        console.error('Erro no signUp:', signUpError)
+        throw signUpError
+      }
 
       // Verificar se o usuário foi criado
       if (!data.user) {
         throw new Error('Erro ao criar usuário')
       }
+
+      // ✅ Perfil criado AUTOMATICAMENTE pelo trigger handle_new_user()
+      // O trigger executa após INSERT em auth.users e cria o perfil em profiles
+      // Não é necessário INSERT manual aqui!
 
       // Verificar se há sessão (auto-login)
       if (data.session) {

@@ -1,0 +1,108 @@
+-- ═══════════════════════════════════════════════════════════
+-- CORREÇÃO ABRANGENTE: Remover TODAS FK para auth.users
+-- ═══════════════════════════════════════════════════════════
+--
+-- PROBLEMA: FK constraints em MÚLTIPLAS tabelas bloqueando signup
+--
+-- TABELAS AFETADAS:
+-- - profiles.id → auth.users.id
+-- - user_subscriptions.user_id → auth.users.id
+-- - payments.user_id → auth.users.id
+--
+-- SOLUÇÃO: Remover todas as FK e usar triggers para integridade
+-- ═══════════════════════════════════════════════════════════
+
+BEGIN;
+
+-- ═══════════════════════════════════════════════════════════
+-- 1. REMOVER FK DE PROFILES
+-- ═══════════════════════════════════════════════════════════
+
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_user_id_fkey;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS fk_profiles_user;
+
+-- ═══════════════════════════════════════════════════════════
+-- 2. REMOVER FK DE USER_SUBSCRIPTIONS
+-- ═══════════════════════════════════════════════════════════
+
+ALTER TABLE public.user_subscriptions DROP CONSTRAINT IF EXISTS user_subscriptions_user_id_fkey;
+ALTER TABLE public.user_subscriptions DROP CONSTRAINT IF EXISTS fk_user_subscriptions_user;
+
+-- ═══════════════════════════════════════════════════════════
+-- 3. REMOVER FK DE PAYMENTS
+-- ═══════════════════════════════════════════════════════════
+
+ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS payments_user_id_fkey;
+ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS fk_payments_user;
+
+-- ═══════════════════════════════════════════════════════════
+-- 4. ATUALIZAR TRIGGER DE DELETE PARA LIMPAR TUDO
+-- ═══════════════════════════════════════════════════════════
+
+CREATE OR REPLACE FUNCTION public.handle_user_delete()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Deletar perfil
+  DELETE FROM public.profiles WHERE id = OLD.id;
+
+  -- Deletar pagamentos
+  DELETE FROM public.payments WHERE user_id = OLD.id;
+
+  -- Deletar assinaturas
+  DELETE FROM public.user_subscriptions WHERE user_id = OLD.id;
+
+  RAISE NOTICE 'Dados do usuário % deletados (profiles, payments, subscriptions)', OLD.id;
+
+  RETURN OLD;
+END;
+$$;
+
+-- Garantir que trigger existe
+DROP TRIGGER IF EXISTS on_auth_user_deleted ON auth.users;
+CREATE TRIGGER on_auth_user_deleted
+  BEFORE DELETE ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_user_delete();
+
+-- ═══════════════════════════════════════════════════════════
+-- 5. VALIDAÇÃO
+-- ═══════════════════════════════════════════════════════════
+
+DO $$
+DECLARE
+  fk_count INTEGER;
+BEGIN
+  -- Contar TODAS as FK constraints para auth.users
+  SELECT COUNT(*) INTO fk_count
+  FROM information_schema.table_constraints tc
+  JOIN information_schema.constraint_column_usage ccu
+    ON tc.constraint_name = ccu.constraint_name
+  WHERE tc.constraint_type = 'FOREIGN KEY'
+    AND ccu.table_schema = 'auth'
+    AND ccu.table_name = 'users';
+
+  RAISE NOTICE '═══════════════════════════════════════════════';
+  RAISE NOTICE 'REMOÇÃO DE FK CONSTRAINTS';
+  RAISE NOTICE '═══════════════════════════════════════════════';
+  RAISE NOTICE '';
+  RAISE NOTICE 'FK constraints para auth.users: %', fk_count;
+
+  IF fk_count = 0 THEN
+    RAISE NOTICE '✓ Todas as FK constraints removidas!';
+  ELSE
+    RAISE WARNING '⚠ Ainda existem % FK constraints', fk_count;
+  END IF;
+
+  RAISE NOTICE '';
+  RAISE NOTICE '✓ Trigger de cascade delete atualizado';
+  RAISE NOTICE '✓ Signup deve funcionar agora!';
+  RAISE NOTICE '';
+  RAISE NOTICE '═══════════════════════════════════════════════';
+END $$;
+
+COMMIT;
