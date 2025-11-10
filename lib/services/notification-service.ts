@@ -90,7 +90,7 @@ export class NotificationService {
     const { data: settings } = await (this.supabase
       .from('admin_notification_settings') as any)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (!settings?.email_on_errors || type !== 'system_error') return;
     if (!settings.admin_email) return;
@@ -103,9 +103,29 @@ export class NotificationService {
     const { data, error } = await (this.supabase
       .from('admin_notification_settings') as any)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+
+    // Se não existe, criar configuração padrão
+    if (!data) {
+      const { data: newSettings, error: insertError } = await (this.supabase
+        .from('admin_notification_settings') as any)
+        .insert({
+          notify_new_users: true,
+          notify_payments: true,
+          notify_cancellations: true,
+          notify_system_errors: true,
+          email_on_errors: true,
+          admin_email: ''
+        })
+        .select()
+        .maybeSingle();
+
+      if (insertError) throw insertError;
+      return newSettings as NotificationSettings | null;
+    }
+
     return data as NotificationSettings | null;
   }
 
@@ -113,9 +133,27 @@ export class NotificationService {
     const { data: currentSettings } = await (this.supabase
       .from('admin_notification_settings') as any)
       .select('id')
-      .single();
+      .maybeSingle();
 
-    if (!currentSettings) throw new Error('Settings not found');
+    if (!currentSettings) {
+      // Se não existe, criar primeiro
+      await this.getSettings();
+      // Tentar novamente
+      const { data: retrySettings } = await (this.supabase
+        .from('admin_notification_settings') as any)
+        .select('id')
+        .maybeSingle();
+
+      if (!retrySettings) throw new Error('Failed to create settings');
+
+      const { error } = await (this.supabase
+        .from('admin_notification_settings') as any)
+        .update({ ...settings, updated_at: new Date().toISOString() })
+        .eq('id', retrySettings.id);
+
+      if (error) throw error;
+      return;
+    }
 
     const { error } = await (this.supabase
       .from('admin_notification_settings') as any)

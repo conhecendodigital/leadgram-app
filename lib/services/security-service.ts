@@ -22,9 +22,27 @@ export class SecurityService {
     const { data, error } = await (this.supabase
       .from('security_settings') as any)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+
+    // Se não existe, criar configuração padrão
+    if (!data) {
+      const { data: newSettings, error: insertError } = await (this.supabase
+        .from('security_settings') as any)
+        .insert({
+          require_2fa_admin: false,
+          max_login_attempts: 5,
+          lockout_duration: 15,
+          enable_audit_log: true
+        })
+        .select()
+        .maybeSingle();
+
+      if (insertError) throw insertError;
+      return newSettings as SecuritySettings;
+    }
+
     return data as SecuritySettings;
   }
 
@@ -185,7 +203,7 @@ export class SecurityService {
       .from('blocked_ips') as any)
       .select('ip_address')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     const { error } = await (this.supabase
       .from('blocked_ips') as any)
@@ -375,7 +393,7 @@ export class SecurityService {
       .from('user_2fa') as any)
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data as User2FA | null;

@@ -937,6 +937,110 @@ function SecuritySettings() {
 }
 
 function EmailSettings() {
+  const [settings, setSettings] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    loadSettings();
+    loadStats();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const { emailService } = await import('@/lib/services/email-service');
+      const data = await emailService.instance.getSettings();
+      setSettings(data);
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+      showMessage('error', 'Erro ao carregar configurações de email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const { emailService } = await import('@/lib/services/email-service');
+      const data = await emailService.instance.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const { emailService } = await import('@/lib/services/email-service');
+      await emailService.instance.updateSettings(settings);
+      showMessage('success', 'Configurações salvas com sucesso!');
+      await loadStats();
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      showMessage('error', 'Erro ao salvar configurações');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    if (!settings.enabled || !settings.api_key) {
+      showMessage('error', 'Configure a API Key e habilite o envio de emails primeiro');
+      return;
+    }
+
+    const testEmail = prompt('Digite o email para teste:');
+    if (!testEmail) return;
+
+    setTesting(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: testEmail })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('success', `Email de teste enviado para ${testEmail}!`);
+        await loadStats();
+      } else {
+        showMessage('error', data.error || 'Erro ao enviar email de teste');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      showMessage('error', 'Erro ao enviar email de teste');
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 5000);
+  };
+
+  if (loading || !settings) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Configurações de Email</h2>
+          <p className="text-gray-600">Configure o serviço de envio de emails</p>
+        </div>
+        <div className="p-8 text-center text-gray-500">Carregando...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -944,51 +1048,285 @@ function EmailSettings() {
           Configurações de Email
         </h2>
         <p className="text-gray-600">
-          Configure o serviço de envio de emails
+          Configure o serviço de envio de emails para seus usuários
         </p>
       </div>
 
-      <div className="space-y-4">
+      {/* Estatísticas */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <p className="text-sm text-blue-700 mb-1">Total Enviados</p>
+            <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+          </div>
+          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <p className="text-sm text-green-700 mb-1">Sucessos</p>
+            <p className="text-2xl font-bold text-green-900">{stats.sent}</p>
+          </div>
+          <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+            <p className="text-sm text-red-700 mb-1">Falhas</p>
+            <p className="text-2xl font-bold text-red-900">{stats.failed}</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <p className="text-sm text-purple-700 mb-1">Hoje</p>
+            <p className="text-2xl font-bold text-purple-900">{stats.today}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {/* Status */}
+        <div className="flex items-center justify-between py-3 border-b border-gray-200">
+          <div>
+            <p className="font-medium text-gray-900">Sistema de Email</p>
+            <p className="text-sm text-gray-500">
+              {settings.enabled ? 'Emails sendo enviados normalmente' : 'Sistema desabilitado'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              settings.enabled
+                ? 'bg-green-100 text-green-700'
+                : 'bg-gray-100 text-gray-700'
+            }`}>
+              {settings.enabled ? 'Ativo' : 'Inativo'}
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.enabled}
+              onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
+              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+            />
+          </div>
+        </div>
+
+        {/* Provedor */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Provedor de Email
           </label>
-          <select className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent">
-            <option>SMTP</option>
-            <option>SendGrid</option>
-            <option>Mailgun</option>
-            <option>Amazon SES</option>
+          <select
+            value={settings.provider}
+            onChange={(e) => setSettings({ ...settings, provider: e.target.value })}
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          >
+            <option value="resend">Resend (Recomendado)</option>
+            <option value="smtp">SMTP</option>
+            <option value="sendgrid">SendGrid</option>
+            <option value="mailgun">Mailgun</option>
+            <option value="ses">Amazon SES</option>
           </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Resend oferece 3.000 emails/mês gratuitos e é muito fácil de configurar
+          </p>
+        </div>
+
+        {/* API Key */}
+        {settings.provider === 'resend' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              API Key do Resend
+              <a
+                href="https://resend.com/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 text-xs text-blue-600 hover:underline"
+              >
+                (Obter API Key →)
+              </a>
+            </label>
+            <div className="relative">
+              <input
+                type={showApiKey ? "text" : "password"}
+                value={settings.api_key || ''}
+                onChange={(e) => setSettings({ ...settings, api_key: e.target.value })}
+                placeholder="re_..."
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showApiKey ? '🙈' : '👁️'}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              A API Key é armazenada de forma segura. Nunca a compartilhe!
+            </p>
+          </div>
+        )}
+
+        {/* Configurações de Remetente */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email de Remetente
+            </label>
+            <input
+              type="email"
+              value={settings.from_email}
+              onChange={(e) => setSettings({ ...settings, from_email: e.target.value })}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nome de Exibição
+            </label>
+            <input
+              type="text"
+              value={settings.from_name}
+              onChange={(e) => setSettings({ ...settings, from_name: e.target.value })}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email de Remetente
+            Email para Resposta (opcional)
           </label>
           <input
             type="email"
-            defaultValue="noreply@leadgram.app"
+            value={settings.reply_to || ''}
+            onChange={(e) => setSettings({ ...settings, reply_to: e.target.value })}
+            placeholder="suporte@leadgram.app"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
         </div>
 
+        {/* Limites */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nome de Exibição
+            Limite Diário de Emails
           </label>
           <input
-            type="text"
-            defaultValue="Leadgram"
+            type="number"
+            value={settings.daily_limit}
+            onChange={(e) => setSettings({ ...settings, daily_limit: parseInt(e.target.value) })}
+            min="100"
+            max="10000"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Enviados hoje: {settings.emails_sent_today} / {settings.daily_limit}
+          </p>
         </div>
 
+        {/* Templates Habilitados */}
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Templates de Email</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="font-medium text-gray-900">Email de Boas-vindas</p>
+                <p className="text-sm text-gray-500">Enviado quando um novo usuário se cadastra</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.send_welcome_email}
+                onChange={(e) => setSettings({ ...settings, send_welcome_email: e.target.checked })}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="font-medium text-gray-900">Confirmação de Pagamento</p>
+                <p className="text-sm text-gray-500">Enviado quando um pagamento é aprovado</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.send_payment_confirmation}
+                onChange={(e) => setSettings({ ...settings, send_payment_confirmation: e.target.checked })}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="font-medium text-gray-900">Pagamento Falhou</p>
+                <p className="text-sm text-gray-500">Enviado quando há erro no pagamento</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.send_payment_failed}
+                onChange={(e) => setSettings({ ...settings, send_payment_failed: e.target.checked })}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="font-medium text-gray-900">Assinatura Cancelada</p>
+                <p className="text-sm text-gray-500">Enviado quando usuário cancela assinatura</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.send_subscription_cancelled}
+                onChange={(e) => setSettings({ ...settings, send_subscription_cancelled: e.target.checked })}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="font-medium text-gray-900">Redefinição de Senha</p>
+                <p className="text-sm text-gray-500">Enviado para recuperação de senha</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.send_password_reset}
+                onChange={(e) => setSettings({ ...settings, send_password_reset: e.target.checked })}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="font-medium text-gray-900">Notificações do Admin</p>
+                <p className="text-sm text-gray-500">Enviado para avisar admin sobre eventos</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.send_admin_notifications}
+                onChange={(e) => setSettings({ ...settings, send_admin_notifications: e.target.checked })}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        {message && (
+          <div
+            className={`p-3 rounded-lg text-sm ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        {/* Actions */}
         <div className="pt-4 flex gap-3">
-          <button className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
-            Salvar Configurações
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Salvando...' : 'Salvar Configurações'}
           </button>
-          <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-            Enviar Email de Teste
+          <button
+            onClick={handleTestEmail}
+            disabled={testing || !settings.enabled}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {testing ? 'Enviando...' : 'Enviar Email de Teste'}
           </button>
         </div>
       </div>
@@ -997,6 +1335,97 @@ function EmailSettings() {
 }
 
 function WebhookSettings() {
+  const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<any>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const { webhookService } = await import('@/lib/services/webhook-service');
+      const [webhooksData, statsData] = await Promise.all([
+        webhookService.instance.getWebhooks(),
+        webhookService.instance.getStats()
+      ]);
+      setWebhooks(webhooksData);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      showMessage('error', 'Erro ao carregar webhooks');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTest = async (id: string) => {
+    setTesting(id);
+    try {
+      const { webhookService } = await import('@/lib/services/webhook-service');
+      const result = await webhookService.instance.testWebhook(id);
+
+      if (result.success) {
+        showMessage('success', `Webhook testado com sucesso! (${result.response_time_ms}ms)`);
+      } else {
+        showMessage('error', `Erro no teste: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Erro ao testar:', error);
+      showMessage('error', 'Erro ao testar webhook');
+    } finally {
+      setTesting(null);
+    }
+  };
+
+  const handleToggle = async (id: string, enabled: boolean) => {
+    try {
+      const { webhookService } = await import('@/lib/services/webhook-service');
+      await webhookService.instance.toggleWebhook(id, enabled);
+      await loadData();
+      showMessage('success', `Webhook ${enabled ? 'ativado' : 'desativado'} com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao alternar:', error);
+      showMessage('error', 'Erro ao alternar webhook');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar este webhook?')) return;
+
+    try {
+      const { webhookService } = await import('@/lib/services/webhook-service');
+      await webhookService.instance.deleteWebhook(id);
+      await loadData();
+      showMessage('success', 'Webhook deletado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar:', error);
+      showMessage('error', 'Erro ao deletar webhook');
+    }
+  };
+
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 5000);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Webhooks</h2>
+          <p className="text-gray-600">Configure webhooks para integração com outros sistemas</p>
+        </div>
+        <div className="p-8 text-center text-gray-500">Carregando...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -1004,34 +1433,400 @@ function WebhookSettings() {
           Webhooks
         </h2>
         <p className="text-gray-600">
-          Configure webhooks para integração com outros sistemas
+          Configure webhooks para integração com outros sistemas externos
         </p>
       </div>
 
-      <div className="space-y-4">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="font-medium text-gray-900">Mercado Pago Webhook</p>
-              <p className="text-sm text-gray-500">
-                /api/mercadopago/webhook
-              </p>
-            </div>
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-              Ativo
-            </span>
+      {/* Estatísticas */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <p className="text-sm text-blue-700 mb-1">Total Webhooks</p>
+            <p className="text-2xl font-bold text-blue-900">{stats.total_webhooks}</p>
           </div>
-          <p className="text-xs text-gray-500">
-            Recebe notificações de pagamentos do Mercado Pago
-          </p>
+          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <p className="text-sm text-green-700 mb-1">Ativos</p>
+            <p className="text-2xl font-bold text-green-900">{stats.active_webhooks}</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <p className="text-sm text-purple-700 mb-1">Chamadas Hoje</p>
+            <p className="text-2xl font-bold text-purple-900">{stats.total_calls_today}</p>
+          </div>
+          <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+            <p className="text-sm text-orange-700 mb-1">Taxa de Sucesso</p>
+            <p className="text-2xl font-bold text-orange-900">{stats.success_rate}%</p>
+          </div>
+        </div>
+      )}
+
+      {/* Lista de Webhooks */}
+      <div className="space-y-3">
+        {webhooks.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <Webhook className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+            <p className="text-gray-600 mb-4">Nenhum webhook configurado</p>
+            <button
+              onClick={() => { setEditingWebhook(null); setShowModal(true); }}
+              className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+            >
+              Adicionar Primeiro Webhook
+            </button>
+          </div>
+        ) : (
+          webhooks.map((webhook) => (
+            <div
+              key={webhook.id}
+              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-gray-900">{webhook.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      webhook.enabled && webhook.status === 'active'
+                        ? 'bg-green-100 text-green-700'
+                        : webhook.status === 'error'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {webhook.enabled ? (webhook.status === 'active' ? 'Ativo' : 'Erro') : 'Inativo'}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-1 font-mono break-all">{webhook.url}</p>
+
+                  {webhook.description && (
+                    <p className="text-sm text-gray-500 mb-2">{webhook.description}</p>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {webhook.events?.map((event: string) => (
+                      <span key={event} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                        {event}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                    <span>Total: {webhook.total_calls}</span>
+                    <span className="text-green-600">✓ {webhook.success_calls}</span>
+                    <span className="text-red-600">✗ {webhook.failed_calls}</span>
+                    {webhook.last_called_at && (
+                      <span>Último: {new Date(webhook.last_called_at).toLocaleString('pt-BR')}</span>
+                    )}
+                  </div>
+
+                  {webhook.last_error && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                      Último erro: {webhook.last_error}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2 ml-4">
+                  <button
+                    onClick={() => handleTest(webhook.id)}
+                    disabled={testing === webhook.id || !webhook.enabled}
+                    className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {testing === webhook.id ? '⏳' : '🧪'} Testar
+                  </button>
+
+                  <button
+                    onClick={() => handleToggle(webhook.id, !webhook.enabled)}
+                    className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                  >
+                    {webhook.enabled ? '⏸️ Pausar' : '▶️ Ativar'}
+                  </button>
+
+                  <button
+                    onClick={() => { setEditingWebhook(webhook); setShowModal(true); }}
+                    className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                  >
+                    ✏️ Editar
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(webhook.id)}
+                    className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+                  >
+                    🗑️ Deletar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Botão Adicionar */}
+      {webhooks.length > 0 && (
+        <div className="pt-4">
+          <button
+            onClick={() => { setEditingWebhook(null); setShowModal(true); }}
+            className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+          >
+            Adicionar Webhook
+          </button>
+        </div>
+      )}
+
+      {/* Messages */}
+      {message && (
+        <div
+          className={`p-3 rounded-lg text-sm ${
+            message.type === 'success'
+              ? 'bg-green-50 text-green-700 border border-green-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
+      {/* Modal de Criação/Edição */}
+      {showModal && (
+        <WebhookModal
+          webhook={editingWebhook}
+          onClose={() => setShowModal(false)}
+          onSave={() => {
+            setShowModal(false);
+            loadData();
+            showMessage('success', 'Webhook salvo com sucesso!');
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function WebhookModal({ webhook, onClose, onSave }: {
+  webhook: any | null;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: webhook?.name || '',
+    url: webhook?.url || '',
+    description: webhook?.description || '',
+    events: webhook?.events || [],
+    secret: webhook?.secret || '',
+    enabled: webhook?.enabled ?? true,
+    max_retries: webhook?.max_retries || 3,
+    retry_delay: webhook?.retry_delay || 60,
+    timeout: webhook?.timeout || 30
+  });
+  const [saving, setSaving] = useState(false);
+
+  const availableEvents = [
+    'user.created', 'user.updated', 'user.deleted',
+    'payment.created', 'payment.approved', 'payment.failed',
+    'subscription.created', 'subscription.cancelled',
+    'idea.created', 'idea.updated', 'custom'
+  ];
+
+  const handleSave = async () => {
+    if (!formData.name || !formData.url) {
+      alert('Nome e URL são obrigatórios');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { webhookService } = await import('@/lib/services/webhook-service');
+
+      if (webhook) {
+        await webhookService.instance.updateWebhook(webhook.id, formData);
+      } else {
+        await webhookService.instance.createWebhook(formData as any);
+      }
+
+      onSave();
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      alert('Erro ao salvar webhook');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleEvent = (event: string) => {
+    const newEvents = formData.events.includes(event)
+      ? formData.events.filter((e: string) => e !== event)
+      : [...formData.events, event];
+    setFormData({ ...formData, events: newEvents });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-900">
+            {webhook ? 'Editar Webhook' : 'Novo Webhook'}
+          </h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">
+            ×
+          </button>
         </div>
 
-        <div className="pt-4">
-          <button className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
-            Adicionar Webhook
+        <div className="space-y-4">
+          {/* Nome */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nome *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Meu Webhook"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL *
+            </label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              placeholder="https://api.exemplo.com/webhook"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
+            />
+          </div>
+
+          {/* Descrição */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Descrição
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Descreva o propósito deste webhook..."
+              rows={2}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Eventos */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Eventos que este webhook escuta
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {availableEvents.map((event) => (
+                <button
+                  key={event}
+                  onClick={() => toggleEvent(event)}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    formData.events.includes(event)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {event}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Secret */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Secret (Opcional)
+            </label>
+            <input
+              type="password"
+              value={formData.secret}
+              onChange={(e) => setFormData({ ...formData, secret: e.target.value })}
+              placeholder="chave-secreta-para-validacao"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Será enviado no header X-Webhook-Secret para validação
+            </p>
+          </div>
+
+          {/* Configurações Avançadas */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tentativas
+              </label>
+              <input
+                type="number"
+                value={formData.max_retries}
+                onChange={(e) => setFormData({ ...formData, max_retries: parseInt(e.target.value) })}
+                min="1"
+                max="10"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Delay (s)
+              </label>
+              <input
+                type="number"
+                value={formData.retry_delay}
+                onChange={(e) => setFormData({ ...formData, retry_delay: parseInt(e.target.value) })}
+                min="10"
+                max="300"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Timeout (s)
+              </label>
+              <input
+                type="number"
+                value={formData.timeout}
+                onChange={(e) => setFormData({ ...formData, timeout: parseInt(e.target.value) })}
+                min="5"
+                max="120"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Habilitado */}
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={formData.enabled}
+              onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
+              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+            />
+            <label className="text-sm font-medium text-gray-700">
+              Webhook habilitado
+            </label>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+          >
+            {saving ? 'Salvando...' : 'Salvar Webhook'}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }
