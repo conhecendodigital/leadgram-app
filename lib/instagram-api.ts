@@ -1,9 +1,9 @@
 // Service para integrar com RapidAPI Instagram Scraper
 // Com timeout, retry e error handling melhorado
 //
-// IMPORTANTE: Este código está configurado para usar a API "Instagram Scraper API2"
-// Host: instagram-scraper-api2.p.rapidapi.com
-// Endpoints: v1.2/user-info, v1.2/user-posts, v1.2/hashtag-posts
+// IMPORTANTE: Este código está configurado para usar a API "Instagram Scraper 2025"
+// Host: instagram-scraper-20251.p.rapidapi.com
+// Endpoints: userinfo, userposts, hashtagposts
 //
 // Se você estiver usando uma API diferente do Instagram na RapidAPI,
 // você precisará ajustar os endpoints nos métodos getProfile(), getUserPosts() e getTopPostsByHashtag()
@@ -130,19 +130,20 @@ export class InstagramAPI {
     try {
       console.log('📱 Buscando perfil:', username)
 
-      const data = await this.fetchFromRapidAPI('v1.2/user-info', { username_or_id_or_url: username })
+      const response = await this.fetchFromRapidAPI('userinfo', { username_or_id: username })
+      const data = response.data || response
 
       return {
         username: data.username || username,
         full_name: data.full_name || '',
         biography: data.biography || '',
-        profile_pic_url: data.profile_pic_url || '',
-        followers: data.follower_count || 0,
-        following: data.following_count || 0,
-        media_count: data.media_count || 0,
+        profile_pic_url: data.profile_pic_url || data.profile_pic_url_hd || '',
+        followers: data.follower_count || data.edge_followed_by?.count || 0,
+        following: data.following_count || data.edge_follow?.count || 0,
+        media_count: data.media_count || data.edge_owner_to_timeline_media?.count || 0,
         is_verified: data.is_verified || false,
         is_business_account: data.is_business_account || false,
-        category: data.category_name || undefined,
+        category: data.category_name || data.category || undefined,
       }
     } catch (error) {
       console.error('❌ Error fetching profile:', error)
@@ -155,19 +156,22 @@ export class InstagramAPI {
     try {
       console.log('📸 Buscando posts:', { username, count })
 
-      const data = await this.fetchFromRapidAPI('v1.2/user-posts', {
-        username_or_id_or_url: username,
+      const response = await this.fetchFromRapidAPI('userposts', {
+        username_or_id: username,
         count: count.toString(),
       })
 
-      if (!data.items || !Array.isArray(data.items)) {
+      const data = response.data || response
+      const items = data.items || data.data?.items || []
+
+      if (!items || !Array.isArray(items)) {
         console.warn('⚠️ Nenhum post encontrado')
         return []
       }
 
-      console.log(`✅ ${data.items.length} posts encontrados`)
+      console.log(`✅ ${items.length} posts encontrados`)
 
-      return data.items.map((item: any) => {
+      return items.map((item: any) => {
         const likeCount = item.like_count || 0
         const commentCount = item.comment_count || 0
         const followers = data.follower_count || 1000
@@ -199,16 +203,19 @@ export class InstagramAPI {
     try {
       console.log('🔥 Buscando top posts:', { hashtag, count })
 
-      const data = await this.fetchFromRapidAPI('v1.2/hashtag-posts', {
-        hashtag_name: hashtag,
+      const response = await this.fetchFromRapidAPI('hashtagposts', {
+        keyword: hashtag,
         count: count.toString(),
       })
 
-      if (!data.items || !Array.isArray(data.items)) {
+      const data = response.data || response
+      const items = data.items || data.data?.items || []
+
+      if (!items || !Array.isArray(items)) {
         return []
       }
 
-      return data.items.map((item: any) => ({
+      return items.map((item: any) => ({
         id: item.id || item.pk,
         shortcode: item.code || item.shortcode || '',
         caption: item.caption?.text || '',
