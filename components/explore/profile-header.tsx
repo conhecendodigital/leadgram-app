@@ -17,9 +17,14 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
             <div className="w-full h-full rounded-full overflow-hidden">
               {profile.profile_pic_url ? (
                 <img
-                  src={profile.profile_pic_url}
+                  src={`/api/proxy-image?url=${encodeURIComponent(profile.profile_pic_url)}`}
                   alt={profile.username}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback para imagem padrão se falhar
+                    e.currentTarget.style.display = 'none'
+                    e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold">${profile.username?.[0]?.toUpperCase() || '?'}</div>`
+                  }}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold">
