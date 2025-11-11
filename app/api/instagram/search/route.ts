@@ -120,20 +120,75 @@ const POPULAR_PROFILES = [
   { username: 'tatawerneck', name: 'Tatá Werneck', category: 'Entertainment' },
 ]
 
+// Buscar fotos dos perfis populares (com cache)
+async function getProfileWithPhoto(username: string) {
+  const cached = profileCache.get(username)
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data
+  }
+
+  try {
+    const profile = await instagramAPI.getProfile(username)
+    const data = {
+      username: profile.username,
+      name: profile.full_name || profile.username,
+      category: profile.category || (profile.is_verified ? 'Verified' : 'Popular'),
+      profile_pic_url: profile.profile_pic_url,
+      followers: profile.followers,
+      is_verified: profile.is_verified
+    }
+
+    profileCache.set(username, {
+      data,
+      timestamp: Date.now()
+    })
+
+    return data
+  } catch (error) {
+    console.error(`Failed to fetch photo for ${username}:`, error)
+    return null
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get('q')
 
     if (!query || query.length < 1) {
-      // Retornar perfis populares com fotos quando não há busca
+      // Retornar perfis populares COM FOTOS
       const topProfiles = POPULAR_PROFILES.slice(0, 12)
 
+      console.log('🔄 Buscando fotos dos perfis populares...')
+
+      // Buscar fotos de todos os perfis em paralelo
+      const profilesWithPhotos = await Promise.all(
+        topProfiles.map(async (profile) => {
+          const cached = profileCache.get(profile.username)
+          if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+            return cached.data
+          }
+
+          // Se não está em cache, buscar na API
+          const fullProfile = await getProfileWithPhoto(profile.username)
+          if (fullProfile) {
+            return fullProfile
+          }
+
+          // Fallback: retornar perfil sem foto
+          return {
+            ...profile,
+            profile_pic_url: null,
+            followers: undefined,
+            is_verified: false
+          }
+        })
+      )
+
+      console.log('✅ Fotos dos perfis populares carregadas')
+
       return NextResponse.json({
-        suggestions: topProfiles.map(p => ({
-          ...p,
-          profile_pic_url: null // Frontend mostrará avatar com inicial
-        }))
+        suggestions: profilesWithPhotos
       })
     }
 
@@ -153,13 +208,36 @@ export async function GET(request: NextRequest) {
       )
       .slice(0, 10)
 
-    // 2. Se encontrou matches locais, retornar
+    // 2. Se encontrou matches locais, retornar COM FOTOS
     if (localMatches.length > 0) {
+      console.log(`🔍 Encontrou ${localMatches.length} perfis locais, buscando fotos...`)
+
+      // Buscar fotos dos perfis encontrados em paralelo
+      const matchesWithPhotos = await Promise.all(
+        localMatches.map(async (profile) => {
+          const cached = profileCache.get(profile.username)
+          if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+            return cached.data
+          }
+
+          // Buscar foto na API
+          const fullProfile = await getProfileWithPhoto(profile.username)
+          if (fullProfile) {
+            return fullProfile
+          }
+
+          // Fallback: retornar perfil sem foto
+          return {
+            ...profile,
+            profile_pic_url: null,
+            followers: undefined,
+            is_verified: false
+          }
+        })
+      )
+
       return NextResponse.json({
-        suggestions: localMatches.map(p => ({
-          ...p,
-          profile_pic_url: null // Sem foto para economizar API requests
-        }))
+        suggestions: matchesWithPhotos
       })
     }
 
