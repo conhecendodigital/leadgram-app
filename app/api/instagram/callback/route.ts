@@ -134,11 +134,17 @@ export async function GET(request: NextRequest) {
     // PASSO 5: Buscar dados do Instagram Business Account
     console.log('👤 Passo 5: Buscando dados do perfil Instagram...')
     const profileResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${instagramAccount.id}?fields=id,username,name,profile_picture_url,followers_count,media_count&access_token=${pageAccessToken}`
+      `https://graph.facebook.com/v18.0/${instagramAccount.id}?fields=id,username,name,profile_picture_url,followers_count,follows_count,media_count&access_token=${pageAccessToken}`
     )
 
     const profileData = await profileResponse.json()
-    console.log('✅ Dados do perfil:', { username: profileData.username, id: profileData.id })
+    console.log('✅ Dados do perfil:', {
+      username: profileData.username,
+      id: profileData.id,
+      followers: profileData.followers_count,
+      following: profileData.follows_count,
+      posts: profileData.media_count
+    })
 
     // Usar o Page Access Token como token final (não expira)
     const finalToken = pageAccessToken
@@ -157,6 +163,9 @@ export async function GET(request: NextRequest) {
         username: profileData.username,
         instagram_user_id: profileData.id,
         access_token: finalToken, // Page Access Token (não expira)
+        profile_picture_url: profileData.profile_picture_url || null,
+        followers_count: profileData.followers_count || 0,
+        follows_count: profileData.follows_count || 0,
         media_count: profileData.media_count || 0,
         token_expires_at: new Date(
           Date.now() + (365 * 24 * 60 * 60 * 1000) // 1 ano (Page tokens não expiram, mas precisamos de uma data)
