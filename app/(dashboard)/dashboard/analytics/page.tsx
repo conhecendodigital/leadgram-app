@@ -37,17 +37,25 @@ export default async function AnalyticsPage() {
   }
 
   // Verificar se tem Instagram conectado
-  const { data: instagramAccount } = await supabase
+  const { data: instagramAccount, error: igError } = await supabase
     .from('instagram_accounts')
     .select('id')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .single()
 
+  console.log('🔍 [ANALYTICS] Verificando Instagram:')
+  console.log('   User ID:', user.id)
+  console.log('   Instagram Account:', instagramAccount)
+  console.log('   Error:', igError)
+
   // Se tiver Instagram conectado, redireciona para analytics do Instagram
   if (instagramAccount) {
+    console.log('✅ [ANALYTICS] Instagram encontrado! Redirecionando...')
     redirect('/dashboard/analytics/instagram')
   }
+
+  console.log('⚠️ [ANALYTICS] Instagram não encontrado. Mostrando analytics de ideias.')
 
   // Buscar dados para analytics com tratamento de erro
   let ideas = []
