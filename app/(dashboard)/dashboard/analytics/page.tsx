@@ -36,21 +36,22 @@ export default async function AnalyticsPage() {
     redirect('/login')
   }
 
-  // Verificar se tem Instagram conectado
-  const { data: instagramAccount, error: igError } = await supabase
+  // Verificar se tem Instagram conectado (REMOVIDO .single() para evitar erro)
+  const { data: instagramAccounts, error: igError } = await supabase
     .from('instagram_accounts')
     .select('id')
     .eq('user_id', user.id)
     .eq('is_active', true)
-    .single()
+    .limit(1)
 
   console.log('🔍 [ANALYTICS] Verificando Instagram:')
   console.log('   User ID:', user.id)
-  console.log('   Instagram Account:', instagramAccount)
+  console.log('   Instagram Accounts:', instagramAccounts)
+  console.log('   Count:', instagramAccounts?.length || 0)
   console.log('   Error:', igError)
 
   // Se tiver Instagram conectado, redireciona para analytics do Instagram
-  if (instagramAccount) {
+  if (instagramAccounts && instagramAccounts.length > 0) {
     console.log('✅ [ANALYTICS] Instagram encontrado! Redirecionando...')
     redirect('/dashboard/analytics/instagram')
   }
