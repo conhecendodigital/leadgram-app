@@ -51,60 +51,97 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/instagram/callback`
     console.log('📍 Redirect URI:', redirectUri)
 
-    // Trocar code por access_token usando Instagram OAuth API
-    const tokenParams = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
-      client_secret: process.env.FACEBOOK_APP_SECRET,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-      code: code,
-    })
+    // PASSO 1: Trocar code por Facebook access_token
+    console.log('🔑 Passo 1: Trocando code por Facebook token...')
+    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    tokenUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID)
+    tokenUrl.searchParams.set('client_secret', process.env.FACEBOOK_APP_SECRET)
+    tokenUrl.searchParams.set('redirect_uri', redirectUri)
+    tokenUrl.searchParams.set('code', code)
 
-    const tokenResponse = await fetch('https://api.instagram.com/oauth/access_token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: tokenParams.toString(),
-    })
+    const tokenResponse = await fetch(tokenUrl.toString())
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json().catch(() => ({}))
-      console.error('❌ Token exchange failed:', {
+      console.error('❌ Facebook token exchange failed:', {
         status: tokenResponse.status,
         statusText: tokenResponse.statusText,
         error: errorData,
         redirectUri,
       })
       throw new Error(
-        `Failed to exchange code for token: ${errorData.error_message || errorData.error || 'Unknown error'}`
+        `Failed to exchange code for token: ${errorData.error?.message || errorData.error || 'Unknown error'}`
       )
     }
 
     const tokenData = await tokenResponse.json()
-    console.log('✅ Token received:', { user_id: tokenData.user_id })
+    console.log('✅ Facebook token received')
 
-    // Buscar long-lived token do Instagram
-    const longLivedUrl = new URL('https://graph.instagram.com/access_token')
-    longLivedUrl.searchParams.set('grant_type', 'ig_exchange_token')
+    // PASSO 2: Trocar por long-lived Facebook token
+    console.log('🔑 Passo 2: Trocando por long-lived token...')
+    const longLivedUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    longLivedUrl.searchParams.set('grant_type', 'fb_exchange_token')
+    longLivedUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID)
     longLivedUrl.searchParams.set('client_secret', process.env.FACEBOOK_APP_SECRET)
-    longLivedUrl.searchParams.set('access_token', tokenData.access_token)
+    longLivedUrl.searchParams.set('fb_exchange_token', tokenData.access_token)
 
     const longLivedResponse = await fetch(longLivedUrl.toString())
-
     const longLivedData = await longLivedResponse.json()
-    const finalToken = longLivedData.access_token || tokenData.access_token
+    const fbToken = longLivedData.access_token || tokenData.access_token
     const expiresIn = longLivedData.expires_in || 3600
 
-    console.log('🔐 Long-lived token received')
+    console.log('✅ Long-lived Facebook token received')
 
-    // Buscar dados do perfil
+    // PASSO 3: Buscar Facebook Pages do usuário
+    console.log('📄 Passo 3: Buscando Facebook Pages...')
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v18.0/me/accounts?access_token=${fbToken}`
+    )
+
+    const pagesData = await pagesResponse.json()
+
+    if (!pagesData.data || pagesData.data.length === 0) {
+      console.error('❌ Nenhuma página do Facebook encontrada')
+      throw new Error('Você precisa ter uma Página do Facebook para conectar o Instagram Business')
+    }
+
+    console.log(`✅ Encontrou ${pagesData.data.length} página(s) do Facebook`)
+
+    // PASSO 4: Encontrar qual page tem Instagram Business conectado
+    console.log('📱 Passo 4: Procurando Instagram Business nas páginas...')
+    let instagramAccount = null
+    let pageAccessToken = null
+
+    for (const page of pagesData.data) {
+      const igResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
+      )
+      const igData = await igResponse.json()
+
+      if (igData.instagram_business_account) {
+        instagramAccount = igData.instagram_business_account
+        pageAccessToken = page.access_token
+        console.log(`✅ Instagram Business encontrado na página: ${page.name}`)
+        break
+      }
+    }
+
+    if (!instagramAccount) {
+      console.error('❌ Nenhuma conta Instagram Business conectada às páginas')
+      throw new Error('Nenhuma conta Instagram Business encontrada. Conecte seu Instagram à sua Página do Facebook')
+    }
+
+    // PASSO 5: Buscar dados do Instagram Business Account
+    console.log('👤 Passo 5: Buscando dados do perfil Instagram...')
     const profileResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${finalToken}`
+      `https://graph.facebook.com/v18.0/${instagramAccount.id}?fields=id,username,name,profile_picture_url,followers_count,media_count&access_token=${pageAccessToken}`
     )
 
     const profileData = await profileResponse.json()
-    console.log('👤 Profile data:', profileData)
+    console.log('✅ Dados do perfil:', { username: profileData.username, id: profileData.id })
+
+    // Usar o Page Access Token como token final (não expira)
+    const finalToken = pageAccessToken
 
     // Desativar contas antigas
     await (supabase
@@ -119,10 +156,10 @@ export async function GET(request: NextRequest) {
         user_id: user.id,
         username: profileData.username,
         instagram_user_id: profileData.id,
-        access_token: finalToken,
+        access_token: finalToken, // Page Access Token (não expira)
         media_count: profileData.media_count || 0,
         token_expires_at: new Date(
-          Date.now() + expiresIn * 1000
+          Date.now() + (365 * 24 * 60 * 60 * 1000) // 1 ano (Page tokens não expiram, mas precisamos de uma data)
         ).toISOString(),
         is_active: true,
       })
