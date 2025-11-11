@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Sparkles, LayoutDashboard, Lightbulb, BarChart3, Instagram, Settings, Search, ChevronDown, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const navItems = [
   {
@@ -53,6 +53,13 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname()
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
+
+  // Auto-abrir submenu se estiver na rota analytics (sem causar hidratação error)
+  useEffect(() => {
+    if (pathname.startsWith('/dashboard/analytics')) {
+      setOpenSubmenu('/dashboard/analytics')
+    }
+  }, [pathname])
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
