@@ -51,23 +51,16 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/instagram/callback`
     console.log('📍 Redirect URI:', redirectUri)
 
-    // Trocar code por access_token
-    const tokenResponse = await fetch(
-      'https://api.instagram.com/oauth/access_token',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
-          client_secret: process.env.FACEBOOK_APP_SECRET,
-          grant_type: 'authorization_code',
-          redirect_uri: redirectUri,
-          code,
-        }),
-      }
-    )
+    // Trocar code por access_token usando Facebook Graph API
+    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    tokenUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID)
+    tokenUrl.searchParams.set('client_secret', process.env.FACEBOOK_APP_SECRET)
+    tokenUrl.searchParams.set('redirect_uri', redirectUri)
+    tokenUrl.searchParams.set('code', code)
+
+    const tokenResponse = await fetch(tokenUrl.toString(), {
+      method: 'GET',
+    })
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json().catch(() => ({}))
@@ -85,10 +78,14 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json()
     console.log('✅ Token received:', { user_id: tokenData.user_id })
 
-    // Buscar long-lived token
-    const longLivedResponse = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.FACEBOOK_APP_SECRET}&access_token=${tokenData.access_token}`
-    )
+    // Buscar long-lived token do Facebook
+    const longLivedUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    longLivedUrl.searchParams.set('grant_type', 'fb_exchange_token')
+    longLivedUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID)
+    longLivedUrl.searchParams.set('client_secret', process.env.FACEBOOK_APP_SECRET)
+    longLivedUrl.searchParams.set('fb_exchange_token', tokenData.access_token)
+
+    const longLivedResponse = await fetch(longLivedUrl.toString())
 
     const longLivedData = await longLivedResponse.json()
     const finalToken = longLivedData.access_token || tokenData.access_token
