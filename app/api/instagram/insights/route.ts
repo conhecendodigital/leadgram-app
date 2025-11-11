@@ -44,7 +44,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('📊 Buscando insights para:', account.username)
+    // Type assertion para TypeScript
+    const validAccount = account as { username: string; instagram_user_id: string; access_token: string; followers_count: number; [key: string]: any }
+
+    console.log('📊 Buscando insights para:', validAccount.username)
 
     // Buscar insights dos últimos 30 dias
     const since = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60 // 30 dias atrás
@@ -52,13 +55,13 @@ export async function GET(request: NextRequest) {
 
     // PASSO 1: Buscar insights da conta (métricas gerais)
     const accountMetricsUrl = new URL(
-      `https://graph.facebook.com/v18.0/${account.instagram_user_id}/insights`
+      `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/insights`
     )
     accountMetricsUrl.searchParams.set('metric', 'impressions,reach,profile_views,follower_count')
     accountMetricsUrl.searchParams.set('period', 'day')
     accountMetricsUrl.searchParams.set('since', since.toString())
     accountMetricsUrl.searchParams.set('until', until.toString())
-    accountMetricsUrl.searchParams.set('access_token', account.access_token)
+    accountMetricsUrl.searchParams.set('access_token', validAccount.access_token)
 
     console.log('🔍 Buscando métricas gerais...')
     const accountMetricsResponse = await fetch(accountMetricsUrl.toString())
@@ -77,11 +80,11 @@ export async function GET(request: NextRequest) {
 
     // PASSO 2: Buscar posts recentes com métricas
     const postsUrl = new URL(
-      `https://graph.facebook.com/v18.0/${account.instagram_user_id}/media`
+      `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/media`
     )
     postsUrl.searchParams.set('fields', 'id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,insights.metric(impressions,reach,engagement,saved)')
     postsUrl.searchParams.set('limit', '50')
-    postsUrl.searchParams.set('access_token', account.access_token)
+    postsUrl.searchParams.set('access_token', validAccount.access_token)
 
     console.log('📱 Buscando posts com insights...')
     const postsResponse = await fetch(postsUrl.toString())
@@ -112,8 +115,8 @@ export async function GET(request: NextRequest) {
     }, 0)
 
     const totalEngagement = totalLikes + totalComments
-    const engagementRate = account.followers_count > 0
-      ? ((totalEngagement / totalPosts) / account.followers_count) * 100
+    const engagementRate = validAccount.followers_count > 0
+      ? ((totalEngagement / totalPosts) / validAccount.followers_count) * 100
       : 0
 
     // PASSO 4: Processar dados diários (últimos 30 dias)
@@ -170,10 +173,10 @@ export async function GET(request: NextRequest) {
     const response = {
       success: true,
       account: {
-        username: account.username,
-        followers: account.followers_count,
-        following: account.follows_count,
-        posts: account.media_count,
+        username: validAccount.username,
+        followers: validAccount.followers_count,
+        following: validAccount.follows_count,
+        posts: validAccount.media_count,
       },
       summary: {
         total_posts: totalPosts,
@@ -190,13 +193,13 @@ export async function GET(request: NextRequest) {
     }
 
     // PASSO 7: Salvar snapshot no banco para histórico
-    await supabase.from('instagram_insights').insert({
-      instagram_account_id: account.id,
+    await (supabase.from('instagram_insights') as any).insert({
+      instagram_account_id: validAccount.id,
       date: new Date().toISOString().split('T')[0],
       impressions: totalPostImpressions,
       reach: totalPostReach,
       profile_views: dailyData[dailyData.length - 1]?.profile_views || 0,
-      follower_count: account.followers_count,
+      follower_count: validAccount.followers_count,
       engagement_rate: parseFloat(engagementRate.toFixed(2)),
       total_likes: totalLikes,
       total_comments: totalComments,

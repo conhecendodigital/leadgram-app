@@ -16,14 +16,14 @@ export default async function InstagramAnalyticsPage() {
   }
 
   // Verificar se tem Instagram conectado
-  const { data: account } = await supabase
+  const { data: accountData } = await supabase
     .from('instagram_accounts')
     .select('*')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .single()
 
-  if (!account) {
+  if (!accountData) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center max-w-md">
@@ -46,6 +46,16 @@ export default async function InstagramAnalyticsPage() {
         </div>
       </div>
     )
+  }
+
+  // Type narrowing - accountData is not null here
+  const account = accountData as {
+    id: string
+    username: string
+    followers_count: number
+    follows_count: number
+    media_count: number
+    [key: string]: any
   }
 
   // Buscar histórico de insights (últimos 30 dias)
