@@ -10,6 +10,9 @@ const errorMessages: Record<string, string> = {
   no_pages: 'Nenhuma página do Facebook encontrada. Você precisa ter uma página conectada.',
   no_instagram_account: 'Nenhuma conta Instagram Business conectada à sua página do Facebook',
   database: 'Erro ao salvar dados no banco',
+  'NEXT_PUBLIC_FACEBOOK_APP_ID não configurado': 'Variável NEXT_PUBLIC_FACEBOOK_APP_ID não está configurada nas variáveis de ambiente',
+  'FACEBOOK_APP_SECRET não configurado': 'Variável FACEBOOK_APP_SECRET não está configurada nas variáveis de ambiente',
+  'NEXT_PUBLIC_APP_URL não configurado': 'Variável NEXT_PUBLIC_APP_URL não está configurada nas variáveis de ambiente',
   unknown: 'Erro desconhecido ao conectar',
 }
 
