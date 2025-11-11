@@ -4,7 +4,9 @@
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" pr merge 20 --squash --delete-branch)",
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 3)",
       "WebFetch(domain:vercel.com)",
-      "Bash(Stop-Process -Id 12212 -Force)"
+      "Bash(Stop-Process -Id 12212 -Force)",
+      "Bash(echo:*)",
+      "Bash(.gitignore)"
     ],
     "deny": [],
     "ask": []
