@@ -36,6 +36,19 @@ export default async function AnalyticsPage() {
     redirect('/login')
   }
 
+  // Verificar se tem Instagram conectado
+  const { data: instagramAccount } = await supabase
+    .from('instagram_accounts')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .single()
+
+  // Se tiver Instagram conectado, redireciona para analytics do Instagram
+  if (instagramAccount) {
+    redirect('/dashboard/analytics/instagram')
+  }
+
   // Buscar dados para analytics com tratamento de erro
   let ideas = []
 
