@@ -1,13 +1,29 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, User, TrendingUp } from 'lucide-react'
+import { Search, User, TrendingUp, BadgeCheck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 interface Suggestion {
   username: string
   name: string
   category: string
+  profile_pic_url?: string | null
+  followers?: number
+  is_verified?: boolean
+}
+
+// Helper para formatar números de seguidores
+function formatFollowers(count?: number): string {
+  if (!count) return ''
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`
+  }
+  return count.toString()
 }
 
 export default function ExploreSearchForm() {
@@ -158,14 +174,33 @@ export default function ExploreSearchForm() {
                         index === selectedIndex ? 'bg-gray-50' : ''
                       }`}
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold flex-shrink-0">
-                        {suggestion.username[0].toUpperCase()}
-                      </div>
+                      {/* Avatar - Foto real ou inicial */}
+                      {suggestion.profile_pic_url ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-gray-200">
+                          <Image
+                            src={`/api/proxy-image?url=${encodeURIComponent(suggestion.profile_pic_url)}`}
+                            alt={suggestion.username}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold flex-shrink-0">
+                          {suggestion.username[0].toUpperCase()}
+                        </div>
+                      )}
+
+                      {/* Informações do perfil */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <span className="font-semibold text-gray-900">
                             @{suggestion.username}
                           </span>
+                          {suggestion.is_verified && (
+                            <BadgeCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-gray-600 truncate">{suggestion.name}</span>
@@ -175,8 +210,17 @@ export default function ExploreSearchForm() {
                               <span className="text-gray-500 text-xs">{suggestion.category}</span>
                             </>
                           )}
+                          {suggestion.followers && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-gray-500 text-xs">
+                                {formatFollowers(suggestion.followers)} seguidores
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
+
                       <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     </button>
                   ))}
