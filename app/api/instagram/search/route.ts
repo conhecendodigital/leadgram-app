@@ -156,39 +156,18 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q')
 
     if (!query || query.length < 1) {
-      // Retornar perfis populares COM FOTOS
+      // Retornar perfis populares SEM FOTOS (economizar API)
       const topProfiles = POPULAR_PROFILES.slice(0, 12)
 
-      console.log('🔄 Buscando fotos dos perfis populares...')
-
-      // Buscar fotos de todos os perfis em paralelo
-      const profilesWithPhotos = await Promise.all(
-        topProfiles.map(async (profile) => {
-          const cached = profileCache.get(profile.username)
-          if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-            return cached.data
-          }
-
-          // Se não está em cache, buscar na API
-          const fullProfile = await getProfileWithPhoto(profile.username)
-          if (fullProfile) {
-            return fullProfile
-          }
-
-          // Fallback: retornar perfil sem foto
-          return {
-            ...profile,
-            profile_pic_url: null,
-            followers: undefined,
-            is_verified: false
-          }
-        })
-      )
-
-      console.log('✅ Fotos dos perfis populares carregadas')
+      console.log('📋 Retornando perfis populares sem fotos (modo economia)')
 
       return NextResponse.json({
-        suggestions: profilesWithPhotos
+        suggestions: topProfiles.map(profile => ({
+          ...profile,
+          profile_pic_url: null,
+          followers: undefined,
+          is_verified: false
+        }))
       })
     }
 
@@ -208,45 +187,26 @@ export async function GET(request: NextRequest) {
       )
       .slice(0, 10)
 
-    // 2. Se encontrou matches locais, retornar COM FOTOS
+    // 2. Se encontrou matches locais, retornar SEM FOTOS (economizar API)
     if (localMatches.length > 0) {
-      console.log(`🔍 Encontrou ${localMatches.length} perfis locais, buscando fotos...`)
-
-      // Buscar fotos dos perfis encontrados em paralelo
-      const matchesWithPhotos = await Promise.all(
-        localMatches.map(async (profile) => {
-          const cached = profileCache.get(profile.username)
-          if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-            return cached.data
-          }
-
-          // Buscar foto na API
-          const fullProfile = await getProfileWithPhoto(profile.username)
-          if (fullProfile) {
-            return fullProfile
-          }
-
-          // Fallback: retornar perfil sem foto
-          return {
-            ...profile,
-            profile_pic_url: null,
-            followers: undefined,
-            is_verified: false
-          }
-        })
-      )
+      console.log(`🔍 Encontrou ${localMatches.length} perfis locais (sem fotos - modo economia)`)
 
       return NextResponse.json({
-        suggestions: matchesWithPhotos
+        suggestions: localMatches.map(profile => ({
+          ...profile,
+          profile_pic_url: null,
+          followers: undefined,
+          is_verified: false
+        }))
       })
     }
 
-    // 3. Se não encontrou nada local E o usuário digitou um username específico (min 3 chars)
-    // Tentar buscar na API real (apenas se parecer um username válido)
+    // 3. BUSCA DINÂMICA DESABILITADA (economizar API RapidAPI)
+    // TODO: Reabilitar quando limite da API for aumentado
+    /*
     if (cleanQuery.length >= 3 && /^[a-z0-9._]+$/.test(cleanQuery)) {
       console.log('🔍 Buscando perfil na RapidAPI:', cleanQuery)
 
-      // Verificar cache primeiro
       const cached = profileCache.get(cleanQuery)
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
         console.log('✅ Perfil encontrado no cache:', cleanQuery)
@@ -256,7 +216,6 @@ export async function GET(request: NextRequest) {
       }
 
       try {
-        // Buscar perfil real na API
         const profile = await instagramAPI.getProfile(cleanQuery)
 
         const suggestion = {
@@ -268,7 +227,6 @@ export async function GET(request: NextRequest) {
           is_verified: profile.is_verified
         }
 
-        // Salvar no cache
         profileCache.set(cleanQuery, {
           data: suggestion,
           timestamp: Date.now()
@@ -282,13 +240,13 @@ export async function GET(request: NextRequest) {
       } catch (apiError: any) {
         console.log('❌ Perfil não encontrado na RapidAPI:', cleanQuery, apiError.message)
 
-        // Se não encontrou na API, retornar vazio
         return NextResponse.json({
           suggestions: [],
           message: 'Perfil não encontrado. Tente outro username.'
         })
       }
     }
+    */
 
     // Se não encontrou nada, retornar vazio
     return NextResponse.json({
