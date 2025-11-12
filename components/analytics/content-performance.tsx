@@ -8,42 +8,104 @@ interface ContentPerformanceProps {
   ideas?: any[]
 }
 
+// Helper to format numbers
+function formatNumber(num: number): string {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+  return num.toString()
+}
+
+// Calculate performance metrics for each idea
+function calculateTopContent(ideas: any[]) {
+  const ideasWithMetrics = ideas
+    .map((idea) => {
+      let totalViews = 0
+      let totalLikes = 0
+      let totalComments = 0
+      let totalShares = 0
+
+      if (idea.idea_platforms && Array.isArray(idea.idea_platforms)) {
+        idea.idea_platforms.forEach((platform: any) => {
+          if (platform.metrics && Array.isArray(platform.metrics) && platform.metrics.length > 0) {
+            const latestMetric = platform.metrics[0]
+            totalViews += latestMetric.views || 0
+            totalLikes += latestMetric.likes || 0
+            totalComments += latestMetric.comments || 0
+            totalShares += latestMetric.shares || 0
+          }
+        })
+      }
+
+      // Calculate performance score: views + (likes * 2) + (comments * 3)
+      const performanceScore = totalViews + (totalLikes * 2) + (totalComments * 3)
+
+      // Calculate engagement rate
+      const engagementRate = totalViews > 0
+        ? (((totalLikes + totalComments + totalShares) / totalViews) * 100).toFixed(1)
+        : '0.0'
+
+      return {
+        id: idea.id,
+        title: idea.title,
+        thumbnail: idea.thumbnail_url || 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',
+        views: formatNumber(totalViews),
+        viewsRaw: totalViews,
+        likes: formatNumber(totalLikes),
+        comments: formatNumber(totalComments),
+        shares: formatNumber(totalShares),
+        engagement: `${engagementRate}%`,
+        performanceScore,
+        trend: 'up' as const,
+      }
+    })
+    .filter((idea) => idea.viewsRaw > 0) // Only ideas with views
+    .sort((a, b) => b.performanceScore - a.performanceScore) // Sort by performance
+    .slice(0, 3) // Top 3
+
+  return ideasWithMetrics
+}
+
 export default function ContentPerformance({ ideas = [] }: ContentPerformanceProps) {
-  const topContent = [
-    {
-      id: 1,
-      title: '10 Dicas para Aumentar Engajamento',
-      thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',
-      views: '45.2K',
-      likes: '3.8K',
-      comments: '234',
-      shares: '156',
-      engagement: '8.9%',
-      trend: 'up',
-    },
-    {
-      id: 2,
-      title: 'Como Criar Conteúdo Viral',
-      thumbnail: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400',
-      views: '38.5K',
-      likes: '3.2K',
-      comments: '189',
-      shares: '142',
-      engagement: '8.5%',
-      trend: 'up',
-    },
-    {
-      id: 3,
-      title: 'Estratégias de Marketing Digital',
-      thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400',
-      views: '32.1K',
-      likes: '2.9K',
-      comments: '167',
-      shares: '98',
-      engagement: '7.8%',
-      trend: 'up',
-    },
-  ]
+  const topContentReal = calculateTopContent(ideas)
+
+  // Use real data if available, otherwise use mock data
+  const topContent = topContentReal.length > 0
+    ? topContentReal
+    : [
+        {
+          id: 1,
+          title: '10 Dicas para Aumentar Engajamento',
+          thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',
+          views: '45.2K',
+          likes: '3.8K',
+          comments: '234',
+          shares: '156',
+          engagement: '8.9%',
+          trend: 'up' as const,
+        },
+        {
+          id: 2,
+          title: 'Como Criar Conteúdo Viral',
+          thumbnail: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400',
+          views: '38.5K',
+          likes: '3.2K',
+          comments: '189',
+          shares: '142',
+          engagement: '8.5%',
+          trend: 'up' as const,
+        },
+        {
+          id: 3,
+          title: 'Estratégias de Marketing Digital',
+          thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400',
+          views: '32.1K',
+          likes: '2.9K',
+          comments: '167',
+          shares: '98',
+          engagement: '7.8%',
+          trend: 'up' as const,
+        },
+      ]
 
   return (
     <motion.div

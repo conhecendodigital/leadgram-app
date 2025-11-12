@@ -2,56 +2,137 @@
 
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { FaInstagram, FaTiktok, FaYoutube } from 'react-icons/fa'
+import { FaInstagram, FaTiktok, FaYoutube, FaFacebook } from 'react-icons/fa'
 
 interface PlatformComparisonProps {
   ideas?: any[]
 }
 
+// Helper function to format numbers
+function formatNumber(num: number): string {
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`
+  }
+  return num.toString()
+}
+
+// Calculate platform metrics from ideas
+function calculatePlatformMetrics(ideas: any[]) {
+  const platformData: Record<string, {
+    totalEngagement: number
+    totalViews: number
+    postCount: number
+  }> = {
+    instagram: { totalEngagement: 0, totalViews: 0, postCount: 0 },
+    tiktok: { totalEngagement: 0, totalViews: 0, postCount: 0 },
+    youtube: { totalEngagement: 0, totalViews: 0, postCount: 0 },
+    facebook: { totalEngagement: 0, totalViews: 0, postCount: 0 },
+  }
+
+  ideas.forEach((idea) => {
+    if (idea.idea_platforms && Array.isArray(idea.idea_platforms)) {
+      idea.idea_platforms.forEach((platform: any) => {
+        const platformName = platform.platform?.toLowerCase()
+
+        if (platformName && platformData[platformName] && platform.metrics && Array.isArray(platform.metrics) && platform.metrics.length > 0) {
+          const latestMetric = platform.metrics[0]
+          const engagement = (latestMetric.likes || 0) + (latestMetric.comments || 0) + (latestMetric.shares || 0)
+
+          platformData[platformName].totalEngagement += engagement
+          platformData[platformName].totalViews += latestMetric.views || 0
+          platformData[platformName].postCount++
+        }
+      })
+    }
+  })
+
+  return platformData
+}
+
 export default function PlatformComparison({ ideas = [] }: PlatformComparisonProps) {
-  const data = [
-    {
-      month: 'Jan',
-      instagram: 4000,
-      tiktok: 2400,
-      youtube: 1800,
-    },
-    {
-      month: 'Fev',
-      instagram: 3000,
-      tiktok: 1398,
-      youtube: 2200,
-    },
-    {
-      month: 'Mar',
-      instagram: 2000,
-      tiktok: 9800,
-      youtube: 2900,
-    },
-    {
-      month: 'Abr',
-      instagram: 2780,
-      tiktok: 3908,
-      youtube: 3200,
-    },
-    {
-      month: 'Mai',
-      instagram: 1890,
-      tiktok: 4800,
-      youtube: 3800,
-    },
-    {
-      month: 'Jun',
-      instagram: 2390,
-      tiktok: 3800,
-      youtube: 4300,
-    },
-  ]
+  // Calculate real data from ideas
+  const platformMetrics = calculatePlatformMetrics(ideas)
+
+  // Check if we have real data
+  const hasRealData = Object.values(platformMetrics).some(p => p.postCount > 0)
+
+  // Use real data if available, otherwise use mock data
+  const data = hasRealData
+    ? [
+        {
+          month: 'Engajamento',
+          instagram: platformMetrics.instagram.totalEngagement,
+          tiktok: platformMetrics.tiktok.totalEngagement,
+          youtube: platformMetrics.youtube.totalEngagement,
+        },
+      ]
+    : [
+        {
+          month: 'Jan',
+          instagram: 4000,
+          tiktok: 2400,
+          youtube: 1800,
+        },
+        {
+          month: 'Fev',
+          instagram: 3000,
+          tiktok: 1398,
+          youtube: 2200,
+        },
+        {
+          month: 'Mar',
+          instagram: 2000,
+          tiktok: 9800,
+          youtube: 2900,
+        },
+        {
+          month: 'Abr',
+          instagram: 2780,
+          tiktok: 3908,
+          youtube: 3200,
+        },
+        {
+          month: 'Mai',
+          instagram: 1890,
+          tiktok: 4800,
+          youtube: 3800,
+        },
+        {
+          month: 'Jun',
+          instagram: 2390,
+          tiktok: 3800,
+          youtube: 4300,
+        },
+      ]
 
   const platforms = [
-    { name: 'Instagram', color: '#E4405F', icon: FaInstagram, followers: '127.5K' },
-    { name: 'TikTok', color: '#000000', icon: FaTiktok, followers: '89.2K' },
-    { name: 'YouTube', color: '#FF0000', icon: FaYoutube, followers: '45.8K' },
+    {
+      name: 'Instagram',
+      color: '#E4405F',
+      icon: FaInstagram,
+      followers: hasRealData
+        ? `${platformMetrics.instagram.postCount} posts`
+        : '127.5K'
+    },
+    {
+      name: 'TikTok',
+      color: '#000000',
+      icon: FaTiktok,
+      followers: hasRealData
+        ? `${platformMetrics.tiktok.postCount} posts`
+        : '89.2K'
+    },
+    {
+      name: 'YouTube',
+      color: '#FF0000',
+      icon: FaYoutube,
+      followers: hasRealData
+        ? `${platformMetrics.youtube.postCount} posts`
+        : '45.8K'
+    },
   ]
 
   return (

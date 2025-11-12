@@ -44,7 +44,7 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
       transition={{ delay: 0.3 }}
       className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
     >
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
           <Users className="w-5 h-5 text-white" />
         </div>
@@ -56,6 +56,18 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
             Conheça melhor seu público
           </p>
         </div>
+      </div>
+
+      {/* Info Banner */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+        <p className="text-sm text-blue-800">
+          <strong>📊 Dados Simulados:</strong> Os insights demográficos abaixo são ilustrativos.
+          Para visualizar dados reais da sua audiência, conecte sua conta Instagram Business em{' '}
+          <a href="/dashboard/analytics/instagram" className="underline hover:text-blue-900">
+            Analytics → Instagram
+          </a>
+          .
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
