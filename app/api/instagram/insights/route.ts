@@ -68,9 +68,21 @@ export async function GET(request: NextRequest) {
 
     if (!accountMetricsResponse.ok) {
       const error = await accountMetricsResponse.json()
-      console.error('❌ Erro ao buscar métricas:', error)
+      console.error('❌ Erro ao buscar métricas da API do Facebook:', {
+        status: accountMetricsResponse.status,
+        error: error,
+        url: accountMetricsUrl.toString().replace(validAccount.access_token, 'TOKEN_HIDDEN'),
+      })
+
+      // Retornar erro detalhado para o cliente
       return NextResponse.json(
-        { error: 'Erro ao buscar insights da conta', details: error },
+        {
+          error: 'Erro ao buscar insights da API do Facebook',
+          details: error.error?.message || error.message || 'Erro desconhecido',
+          error_code: error.error?.code || 'unknown',
+          type: error.error?.type || 'unknown',
+          fbtrace_id: error.error?.fbtrace_id || null,
+        },
         { status: accountMetricsResponse.status }
       )
     }

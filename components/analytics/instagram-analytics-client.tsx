@@ -44,7 +44,14 @@ export default function InstagramAnalyticsClient({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao buscar insights')
+        // Log detalhado do erro
+        console.error('Erro detalhado da API:', data)
+
+        const errorMessage = data.details
+          ? `${data.error}: ${data.details}`
+          : data.error || 'Erro ao buscar insights'
+
+        throw new Error(errorMessage)
       }
 
       setInsights(data)
