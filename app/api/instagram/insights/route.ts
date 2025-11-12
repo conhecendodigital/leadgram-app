@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     }, 0)
 
     const totalEngagement = totalLikes + totalComments
-    const engagementRate = validAccount.followers_count > 0
+    const engagementRate = validAccount.followers_count > 0 && totalPosts > 0
       ? ((totalEngagement / totalPosts) / validAccount.followers_count) * 100
       : 0
 
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
         total_comments: totalComments,
         total_impressions: totalPostImpressions,
         total_reach: totalPostReach,
-        engagement_rate: parseFloat(engagementRate.toFixed(2)),
+        engagement_rate: isNaN(engagementRate) ? 0 : parseFloat(engagementRate.toFixed(2)),
         follower_growth: followerGrowth,
       },
       daily_data: dailyData,
@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
       reach: totalPostReach, // De posts individuais
       profile_views: 0, // Não disponível na API atual
       follower_count: validAccount.followers_count,
-      engagement_rate: parseFloat(engagementRate.toFixed(2)),
+      engagement_rate: isNaN(engagementRate) ? 0 : parseFloat(engagementRate.toFixed(2)),
       total_likes: totalLikes,
       total_comments: totalComments,
     })
