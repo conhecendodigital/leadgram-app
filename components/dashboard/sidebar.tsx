@@ -24,21 +24,6 @@ const navItems = [
     name: 'Analytics',
     href: '/dashboard/analytics',
     icon: BarChart3,
-    isParent: true,
-  },
-  {
-    name: 'Instagram',
-    href: '/dashboard/analytics/instagram',
-    icon: Instagram,
-    isChild: true,
-    indent: true,
-  },
-  {
-    name: 'Ideias',
-    href: '/dashboard/analytics/ideias',
-    icon: Lightbulb,
-    isChild: true,
-    indent: true,
   },
   {
     name: 'Instagram',
@@ -71,7 +56,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.isParent && pathname.startsWith(item.href + '/'))
+            const isActive = pathname === item.href
             const Icon = item.icon
 
             return (
@@ -79,19 +64,15 @@ export default function Sidebar() {
                 <Link
                   href={item.href}
                   className={`
-                    flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200
-                    ${item.indent ? 'px-6 ml-3' : 'px-3'}
-                    ${item.isChild ? 'text-sm' : 'font-medium'}
+                    flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200 font-medium
                     ${
                       isActive
-                        ? item.isChild
-                          ? 'bg-primary/10 text-primary font-medium'
-                          : 'bg-primary text-white shadow-lg shadow-primary/50'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/50'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
                 >
-                  <Icon className={item.isChild ? 'w-4 h-4' : 'w-5 h-5'} />
+                  <Icon className="w-5 h-5" />
                   <span>{item.name}</span>
                 </Link>
               </li>

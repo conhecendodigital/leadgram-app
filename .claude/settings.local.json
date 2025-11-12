@@ -6,7 +6,22 @@
       "WebFetch(domain:vercel.com)",
       "Bash(Stop-Process -Id 12212 -Force)",
       "Bash(echo:*)",
-      "Bash(.gitignore)"
+      "Bash(.gitignore)",
+      "Bash(npm run build:*)",
+      "Bash(Select-String -Pattern \"error|Error|ERROR\" -Context 2,2)",
+      "Bash(vercel ls:*)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" api repos/conhecendodigital/leadgram-app/deployments --jq '.[:5] | .[] | {created_at, environment, description}')",
+      "WebFetch(domain:formulareal.online)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Refatora componentes de Analytics para usar dados reais das ideias\n\nRefatora os 5 componentes de analytics para calcular métricas baseadas nos dados reais das ideias cadastradas:\n\n1. AnalyticsOverview\n   - Calcula totais reais: visualizações, engajamento, alcance, comentários\n   - Formata números (K/M)\n   - Mantém fallback para zeros quando sem dados\n\n2. PlatformComparison\n   - Agrupa métricas por plataforma (Instagram/TikTok/YouTube)\n   - Mostra engajamento total por plataforma\n   - Exibe quantidade de posts por plataforma\n\n3. ContentPerformance  \n   - Calcula score de performance (views + likes*2 + comments*3)\n   - Ordena ideias por performance\n   - Exibe Top 3 com métricas reais e taxa de engajamento\n\n4. AudienceInsights\n   - Mantém dados mockados (não há dados demográficos nas ideias)\n   - Adiciona banner informativo sobre dados simulados\n   - Link para Analytics do Instagram para dados reais\n\n5. GrowthMetrics\n   - Agrupa métricas por data (recorded_at)\n   - Calcula taxa de crescimento entre períodos\n   - Mostra evolução de visualizações e engajamento ao longo do tempo\n   - Remove gráfico de seguidores (não disponível em ideias)\n\nTodos componentes mantém dados mockados como fallback quando não há dados reais disponíveis, garantindo uma experiência visual consistente.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" api repos/conhecendodigital/leadgram-app/deployments --jq '.[:3] | .[] | {id, sha: .sha[0:7], created_at, environment}')",
+      "Bash(git commit:*)",
+      "Bash(timeout 30 bash -c 'while true; do clear; echo \"\"=== Verificando deployments na Vercel ===\"\"; echo \"\"\"\"; \"\"C:\\Program Files\\GitHub CLI\\gh.exe\"\" api repos/conhecendodigital/leadgram-app/deployments --jq \"\".[:2] | .[] | {sha: .sha[0:7], created: .created_at, env: .environment}\"\" 2>/dev/null; echo \"\"\"\"; echo \"\"Aguardando... (Ctrl+C para sair)\"\"; sleep 10; done')",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" api repos/conhecendodigital/leadgram-app/commits/main --jq '{sha: .sha[0:7], message: .commit.message | split(\"\"\\n\"\")[0], date: .commit.author.date}')",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(Select-String -Pattern \"error|Error|ERROR|✓ Compiled|Route \\(app\\)\" -Context 2,2)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

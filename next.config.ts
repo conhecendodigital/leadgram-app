@@ -29,6 +29,21 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Redirect old analytics routes to new unified route
+      {
+        source: '/dashboard/analytics/instagram',
+        destination: '/dashboard/analytics',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/analytics/ideias',
+        destination: '/dashboard/analytics',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
