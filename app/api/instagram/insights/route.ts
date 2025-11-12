@@ -58,9 +58,8 @@ export async function GET(request: NextRequest) {
     const accountMetricsUrl = new URL(
       `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/insights`
     )
-    accountMetricsUrl.searchParams.set('metric', 'reach,follower_count,accounts_engaged,total_interactions')
+    accountMetricsUrl.searchParams.set('metric', 'reach,follower_count')
     accountMetricsUrl.searchParams.set('period', 'day')
-    accountMetricsUrl.searchParams.set('metric_type', 'total_value')
     accountMetricsUrl.searchParams.set('since', since.toString())
     accountMetricsUrl.searchParams.set('until', until.toString())
     accountMetricsUrl.searchParams.set('access_token', validAccount.access_token)
@@ -139,16 +138,14 @@ export async function GET(request: NextRequest) {
     if (accountMetrics.data && accountMetrics.data.length > 0) {
       // Processar métricas disponíveis por dia
       const reachMetric = accountMetrics.data.find((m: any) => m.name === 'reach')
-      const accountsEngagedMetric = accountMetrics.data.find((m: any) => m.name === 'accounts_engaged')
-      const totalInteractionsMetric = accountMetrics.data.find((m: any) => m.name === 'total_interactions')
+      const followerMetric = accountMetrics.data.find((m: any) => m.name === 'follower_count')
 
       if (reachMetric?.values) {
         reachMetric.values.forEach((value: any, index: number) => {
           dailyData.push({
             date: value.end_time,
             reach: value.value || 0,
-            accounts_engaged: accountsEngagedMetric?.values?.[index]?.value || 0,
-            total_interactions: totalInteractionsMetric?.values?.[index]?.value || 0,
+            follower_count: followerMetric?.values?.[index]?.value || 0,
           })
         })
       }
