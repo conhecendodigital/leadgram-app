@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     const postsUrl = new URL(
       `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/media`
     )
-    postsUrl.searchParams.set('fields', 'id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,insights.metric(impressions,reach,engagement,saved)')
+    postsUrl.searchParams.set('fields', 'id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,insights.metric(impressions,reach,saved)')
     postsUrl.searchParams.set('limit', '50')
     postsUrl.searchParams.set('access_token', validAccount.access_token)
 
@@ -161,7 +161,12 @@ export async function GET(request: NextRequest) {
       .map((post: any) => {
         const impressions = post.insights?.data?.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
         const reach = post.insights?.data?.find((i: any) => i.name === 'reach')?.values?.[0]?.value || 0
-        const engagement = post.insights?.data?.find((i: any) => i.name === 'engagement')?.values?.[0]?.value || 0
+        const saved = post.insights?.data?.find((i: any) => i.name === 'saved')?.values?.[0]?.value || 0
+
+        // Calcular engagement manualmente: likes + comments
+        const likes = post.like_count || 0
+        const comments = post.comments_count || 0
+        const engagement = likes + comments
 
         return {
           id: post.id,
@@ -169,11 +174,12 @@ export async function GET(request: NextRequest) {
           media_url: post.media_url,
           permalink: post.permalink,
           timestamp: post.timestamp,
-          likes: post.like_count || 0,
-          comments: post.comments_count || 0,
+          likes,
+          comments,
           impressions,
           reach,
           engagement,
+          saved,
           engagement_rate: reach > 0 ? (engagement / reach) * 100 : 0,
         }
       })
