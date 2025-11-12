@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
     )
     accountMetricsUrl.searchParams.set('metric', 'reach,follower_count,accounts_engaged,total_interactions')
     accountMetricsUrl.searchParams.set('period', 'day')
+    accountMetricsUrl.searchParams.set('metric_type', 'total_value')
     accountMetricsUrl.searchParams.set('since', since.toString())
     accountMetricsUrl.searchParams.set('until', until.toString())
     accountMetricsUrl.searchParams.set('access_token', validAccount.access_token)
