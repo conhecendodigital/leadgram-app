@@ -54,10 +54,11 @@ export async function GET(request: NextRequest) {
     const until = Math.floor(Date.now() / 1000)
 
     // PASSO 1: Buscar insights da conta (métricas gerais)
+    // Métricas permitidas pela API do Facebook Instagram Insights
     const accountMetricsUrl = new URL(
       `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/insights`
     )
-    accountMetricsUrl.searchParams.set('metric', 'impressions,reach,profile_views,follower_count')
+    accountMetricsUrl.searchParams.set('metric', 'reach,follower_count,accounts_engaged,total_interactions')
     accountMetricsUrl.searchParams.set('period', 'day')
     accountMetricsUrl.searchParams.set('since', since.toString())
     accountMetricsUrl.searchParams.set('until', until.toString())
@@ -135,18 +136,18 @@ export async function GET(request: NextRequest) {
     const dailyData: any[] = []
 
     if (accountMetrics.data && accountMetrics.data.length > 0) {
-      // Processar impressions por dia
-      const impressionsMetric = accountMetrics.data.find((m: any) => m.name === 'impressions')
+      // Processar métricas disponíveis por dia
       const reachMetric = accountMetrics.data.find((m: any) => m.name === 'reach')
-      const profileViewsMetric = accountMetrics.data.find((m: any) => m.name === 'profile_views')
+      const accountsEngagedMetric = accountMetrics.data.find((m: any) => m.name === 'accounts_engaged')
+      const totalInteractionsMetric = accountMetrics.data.find((m: any) => m.name === 'total_interactions')
 
-      if (impressionsMetric?.values) {
-        impressionsMetric.values.forEach((value: any, index: number) => {
+      if (reachMetric?.values) {
+        reachMetric.values.forEach((value: any, index: number) => {
           dailyData.push({
             date: value.end_time,
-            impressions: value.value || 0,
-            reach: reachMetric?.values?.[index]?.value || 0,
-            profile_views: profileViewsMetric?.values?.[index]?.value || 0,
+            reach: value.value || 0,
+            accounts_engaged: accountsEngagedMetric?.values?.[index]?.value || 0,
+            total_interactions: totalInteractionsMetric?.values?.[index]?.value || 0,
           })
         })
       }
@@ -208,9 +209,9 @@ export async function GET(request: NextRequest) {
     await (supabase.from('instagram_insights') as any).insert({
       instagram_account_id: validAccount.id,
       date: new Date().toISOString().split('T')[0],
-      impressions: totalPostImpressions,
-      reach: totalPostReach,
-      profile_views: dailyData[dailyData.length - 1]?.profile_views || 0,
+      impressions: totalPostImpressions, // De posts individuais
+      reach: totalPostReach, // De posts individuais
+      profile_views: 0, // Não disponível na API atual
       follower_count: validAccount.followers_count,
       engagement_rate: parseFloat(engagementRate.toFixed(2)),
       total_likes: totalLikes,
