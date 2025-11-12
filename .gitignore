@@ -41,5 +41,8 @@ yarn-error.log*
 next-env.d.ts
 # Arquivos temporários de debug
 image*.png
+problema.md
 print.md
+debug*.log
+temp*.txt
 scripts/verificar-*.js

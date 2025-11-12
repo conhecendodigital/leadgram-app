@@ -89,8 +89,7 @@ export async function GET(request: NextRequest) {
     }
 
     const accountMetrics = await accountMetricsResponse.json()
-    console.log('✅ Métricas gerais recebidas:', accountMetrics.data?.length || 0, 'métricas')
-    console.log('📊 Métricas disponíveis:', accountMetrics.data?.map((m: any) => m.name).join(', '))
+    console.log('✅ Métricas gerais recebidas')
 
     // PASSO 2: Buscar posts recentes com métricas
     const postsUrl = new URL(
@@ -108,9 +107,6 @@ export async function GET(request: NextRequest) {
       const postsData = await postsResponse.json()
       posts = postsData.data || []
       console.log(`✅ ${posts.length} posts recebidos`)
-      if (posts.length > 0) {
-        console.log('📊 Exemplo de post:', JSON.stringify(posts[0], null, 2))
-      }
     } else {
       const errorData = await postsResponse.json()
       console.error('❌ Erro ao buscar posts:', errorData)
@@ -228,14 +224,6 @@ export async function GET(request: NextRequest) {
     })
 
     console.log('✅ Insights processados e salvos')
-    console.log('📤 Resumo:', {
-      total_posts: response.summary.total_posts,
-      total_impressions: response.summary.total_impressions,
-      total_reach: response.summary.total_reach,
-      engagement_rate: response.summary.engagement_rate,
-      daily_data_count: response.daily_data.length,
-      top_posts_count: response.top_posts.length,
-    })
 
     return NextResponse.json(response)
   } catch (error: any) {
