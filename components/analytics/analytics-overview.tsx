@@ -98,6 +98,8 @@ export default function AnalyticsOverview({ ideas = [] }: AnalyticsOverviewProps
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* DEBUG: Versão Refatorada v2 */}
+      <div className="col-span-full text-xs text-gray-400 text-right">v2.0 - Dados Reais</div>
       {stats.map((stat) => (
         <div
           key={stat.label}

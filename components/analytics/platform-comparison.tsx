@@ -147,7 +147,7 @@ export default function PlatformComparison({ ideas = [] }: PlatformComparisonPro
             Comparação de Plataformas
           </h3>
           <p className="text-sm text-gray-600">
-            Engajamento por plataforma nos últimos 6 meses
+            Engajamento por plataforma {hasRealData ? '(dados reais)' : '(demonstração)'}
           </p>
         </div>
       </div>
