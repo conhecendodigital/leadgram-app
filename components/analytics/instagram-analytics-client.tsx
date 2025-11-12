@@ -78,21 +78,22 @@ export default function InstagramAnalyticsClient({
   const { summary, daily_data, top_posts } = insights
 
   // Calcular métricas adicionais
-  const avgDailyImpressions = daily_data.length > 0
-    ? daily_data.reduce((sum: number, d: any) => sum + d.impressions, 0) / daily_data.length
+  // Impressões vêm dos posts individuais, não dos dados diários
+  const avgDailyImpressions = summary.total_impressions && daily_data.length > 0
+    ? summary.total_impressions / daily_data.length
     : 0
 
   const avgDailyReach = daily_data.length > 0
-    ? daily_data.reduce((sum: number, d: any) => sum + d.reach, 0) / daily_data.length
+    ? daily_data.reduce((sum: number, d: any) => sum + (d.reach || 0), 0) / daily_data.length
     : 0
 
   // Crescimento comparando últimos 7 dias vs 7 dias anteriores
   const last7Days = daily_data.slice(0, 7)
   const previous7Days = daily_data.slice(7, 14)
 
-  const last7DaysImpressions = last7Days.reduce((sum: number, d: any) => sum + d.impressions, 0)
-  const previous7DaysImpressions = previous7Days.reduce((sum: number, d: any) => sum + d.impressions, 0)
-  const impressionsGrowth = calculateGrowthPercentage(previous7DaysImpressions, last7DaysImpressions)
+  const last7DaysReach = last7Days.reduce((sum: number, d: any) => sum + (d.reach || 0), 0)
+  const previous7DaysReach = previous7Days.reduce((sum: number, d: any) => sum + (d.reach || 0), 0)
+  const reachGrowth = calculateGrowthPercentage(previous7DaysReach, last7DaysReach)
 
   // Melhor horário e dia para postar
   const postsWithTimestamp = top_posts.map((post: any) => ({
@@ -128,7 +129,7 @@ export default function InstagramAnalyticsClient({
           icon={<Eye className="w-5 h-5" />}
           label="Impressões (30d)"
           value={formatNumber(summary.total_impressions)}
-          change={impressionsGrowth}
+          change={reachGrowth}
           color="blue"
         />
         <MetricCard
@@ -312,19 +313,19 @@ export default function InstagramAnalyticsClient({
       {/* Gráfico de Crescimento (Últimos 30 dias) */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">
-          Impressões e Alcance (Últimos 30 Dias)
+          Alcance (Últimos 30 Dias)
         </h3>
         <div className="h-64 flex items-end justify-between gap-1">
           {daily_data.slice(0, 30).reverse().map((day: any, index: number) => {
-            const maxValue = Math.max(...daily_data.map((d: any) => d.impressions))
-            const height = (day.impressions / maxValue) * 100
+            const maxValue = Math.max(...daily_data.map((d: any) => d.reach || 0))
+            const height = maxValue > 0 ? ((day.reach || 0) / maxValue) * 100 : 0
 
             return (
               <div
                 key={index}
                 className="flex-1 bg-gradient-to-t from-blue-500 to-purple-500 rounded-t hover:opacity-80 transition-opacity cursor-pointer"
                 style={{ height: `${height}%` }}
-                title={`${day.date}: ${formatNumber(day.impressions)} impressões`}
+                title={`${day.date}: ${formatNumber(day.reach || 0)} alcance`}
               />
             )
           })}
