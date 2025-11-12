@@ -92,36 +92,27 @@ export default function GrowthMetrics({ ideas = [] }: GrowthMetricsProps) {
     ? ((totalEngagement / totalViews) * 100).toFixed(1)
     : '0.0'
 
-  // Use real data or mock data
-  const growthData = hasRealData
-    ? growthDataReal
-    : [
-        { date: '01 Mai', visualizacoes: 450000, engajamento: 28000 },
-        { date: '08 Mai', visualizacoes: 520000, engajamento: 32000 },
-        { date: '15 Mai', visualizacoes: 580000, engajamento: 35000 },
-        { date: '22 Mai', visualizacoes: 620000, engajamento: 38000 },
-        { date: '29 Mai', visualizacoes: 680000, engajamento: 42000 },
-        { date: '05 Jun', visualizacoes: 720000, engajamento: 45000 },
-      ]
+  // Use only real data
+  const growthData = growthDataReal
 
   const metrics = [
     {
       label: 'Taxa de Crescimento',
-      value: hasRealData ? growthRate : '+23.4%',
+      value: growthRate,
       icon: TrendingUp,
       color: 'from-green-500 to-emerald-500',
       description: 'Período analisado',
     },
     {
       label: 'Total de Visualizações',
-      value: hasRealData ? formatNumber(totalViews) : '+12.5K',
+      value: formatNumber(totalViews),
       icon: Eye,
       color: 'from-blue-500 to-cyan-500',
       description: 'Total acumulado',
     },
     {
       label: 'Taxa de Engajamento',
-      value: hasRealData ? `${engagementRate}%` : '6.8%',
+      value: `${engagementRate}%`,
       icon: Target,
       color: 'from-purple-500 to-pink-500',
       description: 'Média do período',

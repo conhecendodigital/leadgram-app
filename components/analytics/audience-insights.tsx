@@ -59,11 +59,13 @@ export default function AudienceInsights({ ideas = [] }: AudienceInsightsProps) 
       </div>
 
       {/* Info Banner */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-        <p className="text-sm text-blue-800">
-          <strong>📊 Dados Simulados:</strong> Os insights demográficos abaixo são ilustrativos.
-          Para visualizar dados reais da sua audiência, conecte sua conta Instagram Business em{' '}
-          <a href="/dashboard/analytics/instagram" className="underline hover:text-blue-900">
+      <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-xl">
+        <p className="text-sm text-yellow-900 font-medium">
+          ⚠️ <strong>Dados de Demonstração:</strong> Os gráficos abaixo são apenas exemplos visuais e NÃO representam dados reais.
+        </p>
+        <p className="text-xs text-yellow-800 mt-2">
+          Para visualizar insights reais da sua audiência, conecte sua conta Instagram Business em{' '}
+          <a href="/dashboard/analytics/instagram" className="underline hover:text-yellow-900 font-medium">
             Analytics → Instagram
           </a>
           .

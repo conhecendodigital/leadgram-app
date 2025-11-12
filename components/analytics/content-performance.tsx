@@ -66,46 +66,7 @@ function calculateTopContent(ideas: any[]) {
 }
 
 export default function ContentPerformance({ ideas = [] }: ContentPerformanceProps) {
-  const topContentReal = calculateTopContent(ideas)
-
-  // Use real data if available, otherwise use mock data
-  const topContent = topContentReal.length > 0
-    ? topContentReal
-    : [
-        {
-          id: 1,
-          title: '10 Dicas para Aumentar Engajamento',
-          thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',
-          views: '45.2K',
-          likes: '3.8K',
-          comments: '234',
-          shares: '156',
-          engagement: '8.9%',
-          trend: 'up' as const,
-        },
-        {
-          id: 2,
-          title: 'Como Criar Conteúdo Viral',
-          thumbnail: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400',
-          views: '38.5K',
-          likes: '3.2K',
-          comments: '189',
-          shares: '142',
-          engagement: '8.5%',
-          trend: 'up' as const,
-        },
-        {
-          id: 3,
-          title: 'Estratégias de Marketing Digital',
-          thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400',
-          views: '32.1K',
-          likes: '2.9K',
-          comments: '167',
-          shares: '98',
-          engagement: '7.8%',
-          trend: 'up' as const,
-        },
-      ]
+  const topContent = calculateTopContent(ideas)
 
   return (
     <motion.div
@@ -125,8 +86,14 @@ export default function ContentPerformance({ ideas = [] }: ContentPerformancePro
         </div>
       </div>
 
-      <div className="space-y-4">
-        {topContent.map((content, index) => (
+      {topContent.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">Nenhuma ideia com métricas cadastrada ainda.</p>
+          <p className="text-sm text-gray-400 mt-2">Cadastre ideias e adicione métricas para ver o ranking de performance.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {topContent.map((content, index) => (
           <motion.div
             key={content.id}
             initial={{ opacity: 0, x: -20 }}
@@ -188,8 +155,9 @@ export default function ContentPerformance({ ideas = [] }: ContentPerformancePro
               </div>
             </div>
           </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   )
 }

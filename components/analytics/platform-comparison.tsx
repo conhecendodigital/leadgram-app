@@ -59,79 +59,34 @@ export default function PlatformComparison({ ideas = [] }: PlatformComparisonPro
   // Check if we have real data
   const hasRealData = Object.values(platformMetrics).some(p => p.postCount > 0)
 
-  // Use real data if available, otherwise use mock data
-  const data = hasRealData
-    ? [
-        {
-          month: 'Engajamento',
-          instagram: platformMetrics.instagram.totalEngagement,
-          tiktok: platformMetrics.tiktok.totalEngagement,
-          youtube: platformMetrics.youtube.totalEngagement,
-        },
-      ]
-    : [
-        {
-          month: 'Jan',
-          instagram: 4000,
-          tiktok: 2400,
-          youtube: 1800,
-        },
-        {
-          month: 'Fev',
-          instagram: 3000,
-          tiktok: 1398,
-          youtube: 2200,
-        },
-        {
-          month: 'Mar',
-          instagram: 2000,
-          tiktok: 9800,
-          youtube: 2900,
-        },
-        {
-          month: 'Abr',
-          instagram: 2780,
-          tiktok: 3908,
-          youtube: 3200,
-        },
-        {
-          month: 'Mai',
-          instagram: 1890,
-          tiktok: 4800,
-          youtube: 3800,
-        },
-        {
-          month: 'Jun',
-          instagram: 2390,
-          tiktok: 3800,
-          youtube: 4300,
-        },
-      ]
+  // Use only real data
+  const data = [
+    {
+      month: 'Engajamento',
+      instagram: platformMetrics.instagram.totalEngagement,
+      tiktok: platformMetrics.tiktok.totalEngagement,
+      youtube: platformMetrics.youtube.totalEngagement,
+    },
+  ]
 
   const platforms = [
     {
       name: 'Instagram',
       color: '#E4405F',
       icon: FaInstagram,
-      followers: hasRealData
-        ? `${platformMetrics.instagram.postCount} posts`
-        : '127.5K'
+      followers: `${platformMetrics.instagram.postCount} posts`
     },
     {
       name: 'TikTok',
       color: '#000000',
       icon: FaTiktok,
-      followers: hasRealData
-        ? `${platformMetrics.tiktok.postCount} posts`
-        : '89.2K'
+      followers: `${platformMetrics.tiktok.postCount} posts`
     },
     {
       name: 'YouTube',
       color: '#FF0000',
       icon: FaYoutube,
-      followers: hasRealData
-        ? `${platformMetrics.youtube.postCount} posts`
-        : '45.8K'
+      followers: `${platformMetrics.youtube.postCount} posts`
     },
   ]
 
