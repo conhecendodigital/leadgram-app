@@ -9,6 +9,11 @@ interface StatsOverviewProps {
   totalLikes: number
   totalComments: number
   engagementRate: string
+  viewsGrowth: number
+  likesGrowth: number
+  commentsGrowth: number
+  engagementGrowth: number
+  ideasGrowth: number
 }
 
 export default function StatsOverview({
@@ -17,7 +22,21 @@ export default function StatsOverview({
   totalLikes,
   totalComments,
   engagementRate,
+  viewsGrowth,
+  likesGrowth,
+  commentsGrowth,
+  engagementGrowth,
+  ideasGrowth,
 }: StatsOverviewProps) {
+  // Função para formatar % de crescimento
+  const formatGrowth = (growth: number): string => {
+    const sign = growth > 0 ? '+' : ''
+    return `${sign}${growth.toFixed(1)}%`
+  }
+
+  // Função para determinar trend (up/down)
+  const getTrend = (growth: number): 'up' | 'down' => growth >= 0 ? 'up' : 'down'
+
   const stats = [
     {
       label: 'Visualizações',
@@ -25,8 +44,8 @@ export default function StatsOverview({
       icon: Eye,
       gradient: 'from-blue-500 to-cyan-500',
       bgGradient: 'from-blue-50 to-cyan-50',
-      change: '+12.5%',
-      trend: 'up',
+      change: formatGrowth(viewsGrowth),
+      trend: getTrend(viewsGrowth),
     },
     {
       label: 'Curtidas',
@@ -34,8 +53,8 @@ export default function StatsOverview({
       icon: Heart,
       gradient: 'from-pink-500 to-rose-500',
       bgGradient: 'from-pink-50 to-rose-50',
-      change: '+8.2%',
-      trend: 'up',
+      change: formatGrowth(likesGrowth),
+      trend: getTrend(likesGrowth),
     },
     {
       label: 'Comentários',
@@ -43,8 +62,8 @@ export default function StatsOverview({
       icon: MessageCircle,
       gradient: 'from-purple-500 to-indigo-500',
       bgGradient: 'from-purple-50 to-indigo-50',
-      change: '+15.3%',
-      trend: 'up',
+      change: formatGrowth(commentsGrowth),
+      trend: getTrend(commentsGrowth),
     },
     {
       label: 'Engajamento',
@@ -52,8 +71,8 @@ export default function StatsOverview({
       icon: Zap,
       gradient: 'from-orange-500 to-amber-500',
       bgGradient: 'from-orange-50 to-amber-50',
-      change: '+5.7%',
-      trend: 'up',
+      change: formatGrowth(engagementGrowth),
+      trend: getTrend(engagementGrowth),
     },
     {
       label: 'Total de Conteúdos',
@@ -61,8 +80,8 @@ export default function StatsOverview({
       icon: TrendingUp,
       gradient: 'from-green-500 to-emerald-500',
       bgGradient: 'from-green-50 to-emerald-50',
-      change: '+23.1%',
-      trend: 'up',
+      change: formatGrowth(ideasGrowth),
+      trend: getTrend(ideasGrowth),
     },
   ]
 
@@ -97,8 +116,10 @@ export default function StatsOverview({
 
               {/* Change Badge */}
               <div className="flex items-center gap-1 mt-3">
-                <TrendingUp className="w-3 h-3 text-green-600" />
-                <span className="text-xs font-semibold text-green-600">
+                <TrendingUp
+                  className={`w-3 h-3 ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600 rotate-180'}`}
+                />
+                <span className={`text-xs font-semibold ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
                   {stat.change}
                 </span>
                 <span className="text-xs text-gray-500">vs. mês passado</span>
