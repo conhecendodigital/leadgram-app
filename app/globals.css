@@ -39,14 +39,9 @@ body {
   font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Força background e foreground em elementos principais */
-div, section, main, article, aside, nav, header, footer {
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-}
-
-/* Smooth transitions for theme changes */
-* {
-  @apply transition-colors duration-200;
+/* Transições apenas em elementos interativos e componentes com tema */
+button, a, [role="button"], .theme-transition {
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 @keyframes loading {
