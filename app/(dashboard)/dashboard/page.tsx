@@ -1,12 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import StatsOverview from '@/components/dashboard/stats-overview'
-import ContentGrid from '@/components/dashboard/content-grid'
-import PerformanceChart from '@/components/dashboard/performance-chart'
 import QuickActions from '@/components/dashboard/quick-actions'
-import StoriesCarousel from '@/components/dashboard/stories-carousel'
-import ActivityFeed from '@/components/dashboard/activity-feed'
-import TopContent from '@/components/dashboard/top-content'
+import DashboardClientWrapper from '@/components/dashboard/dashboard-client-wrapper'
 import type { Database } from '@/types/database.types'
 
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
@@ -140,6 +135,19 @@ export default async function DashboardPage() {
     ? ((totalLikes + totalComments) / totalViews * 100).toFixed(2)
     : '0.00'
 
+  const stats = {
+    totalIdeas,
+    totalViews,
+    totalLikes,
+    totalComments,
+    engagementRate,
+    viewsGrowth,
+    likesGrowth,
+    commentsGrowth,
+    engagementGrowth,
+    ideasGrowth,
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       {/* Header Premium */}
@@ -157,37 +165,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <StatsOverview
-        totalIdeas={totalIdeas}
-        totalViews={totalViews}
-        totalLikes={totalLikes}
-        totalComments={totalComments}
-        engagementRate={engagementRate}
-        viewsGrowth={viewsGrowth}
-        likesGrowth={likesGrowth}
-        commentsGrowth={commentsGrowth}
-        engagementGrowth={engagementGrowth}
-        ideasGrowth={ideasGrowth}
+      {/* Dashboard Client Wrapper (gerencia filtros) */}
+      <DashboardClientWrapper
+        ideas={ideas || []}
+        stats={stats}
       />
-
-      {/* Stories Carousel - Suas Ideias em Progresso */}
-      <StoriesCarousel ideas={ideas?.slice(0, 10) || []} />
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6">
-        {/* Left Column - 2/3 */}
-        <div className="lg:col-span-2 space-y-4 md:space-y-6">
-          <PerformanceChart ideas={ideas || []} />
-          <ContentGrid ideas={postedIdeas.slice(0, 9)} />
-        </div>
-
-        {/* Right Column - 1/3 */}
-        <div className="space-y-4 md:space-y-6">
-          <TopContent ideas={postedIdeas.slice(0, 5)} />
-          <ActivityFeed ideas={ideas?.slice(0, 5) || []} />
-        </div>
-      </div>
     </div>
   )
 }

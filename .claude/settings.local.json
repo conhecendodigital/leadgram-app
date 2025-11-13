@@ -4,7 +4,12 @@
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" pr merge 28 --squash --delete-branch)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" pr create --title \"feat: Adiciona busca de ideias\" --body \"Implementa busca em tempo real para filtrar ideias por título, tema ou roteiro.\" --base main)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" pr merge 29 --squash --delete-branch)",
+      "Bash(git stash:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
