@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { title, theme, script, editor_instructions, status, funnel_stage, platforms } = body
+    const { title, theme, script, editor_instructions, status, funnel_stage, platforms, thumbnail_url, video_url } = body
 
     // Validação
     if (!title || !funnel_stage) {
@@ -104,6 +104,8 @@ export async function POST(request: Request) {
         editor_instructions: editor_instructions || null,
         status: status || 'idea',
         funnel_stage,
+        thumbnail_url: thumbnail_url || null,
+        video_url: video_url || null,
       })
       .select()
       .single()
