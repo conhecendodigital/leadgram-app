@@ -1,13 +1,11 @@
 'use client'
 
-import { LogOut, Menu } from 'lucide-react'
-import { useState } from 'react'
+import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import NotificationBell from './notification-bell'
 
 export default function AdminHeader({ user }: { user: any }) {
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -19,16 +17,8 @@ export default function AdminHeader({ user }: { user: any }) {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 gap-3">
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setShowMobileMenu(!showMobileMenu)}
-          className="lg:hidden p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg sm:rounded-xl"
-        >
-          <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-        </button>
-
-        {/* Search or Title */}
-        <div className="flex-1 lg:ml-0 ml-2 sm:ml-4 min-w-0">
+        {/* Title */}
+        <div className="flex-1 min-w-0">
           <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
             Painel Administrativo
           </h2>
