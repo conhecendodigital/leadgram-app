@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Camera, User, Mail, Calendar } from 'lucide-react'
 import { useState } from 'react'
 import { showToast } from '@/lib/toast'
@@ -34,7 +34,7 @@ export default function ProfileHeader({ user, profile }: ProfileHeaderProps) {
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm"
@@ -119,6 +119,6 @@ export default function ProfileHeader({ user, profile }: ProfileHeaderProps) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, X, Image as ImageIcon } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 import { showToast } from '@/lib/toast'
 
 interface ThumbnailUploadProps {
@@ -77,7 +77,7 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
 
       <AnimatePresence mode="wait">
         {preview ? (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -98,7 +98,7 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
                 <X className="w-6 h-6" />
               </button>
             </div>
-          </motion.div>
+          </m.div>
         ) : (
           <div
             {...getRootProps()}
@@ -113,7 +113,7 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
           >
             <input {...getInputProps()} />
 
-            <motion.div
+            <m.div
               animate={isDragActive ? { scale: 1.1 } : { scale: 1 }}
               className="flex flex-col items-center gap-4"
             >
@@ -141,7 +141,7 @@ export default function ThumbnailUpload({ value, onChange }: ThumbnailUploadProp
                   PNG, JPG, WEBP até 5MB
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Mail, Calendar, CreditCard, MoreVertical } from 'lucide-react'
 
 interface CustomersTableProps {
@@ -27,7 +27,7 @@ export default function CustomersTable({ users }: CustomersTableProps) {
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
@@ -71,7 +71,7 @@ export default function CustomersTable({ users }: CustomersTableProps) {
               const statusBadge = getStatusBadge(status)
 
               return (
-                <motion.tr
+                <m.tr
                   key={user.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -117,7 +117,7 @@ export default function CustomersTable({ users }: CustomersTableProps) {
                       <MoreVertical className="w-4 h-4 text-gray-600" />
                     </button>
                   </td>
-                </motion.tr>
+                </m.tr>
               )
             })}
           </tbody>
@@ -129,6 +129,6 @@ export default function CustomersTable({ users }: CustomersTableProps) {
           </div>
         )}
       </div>
-    </motion.div>
+    </m.div>
   )
 }

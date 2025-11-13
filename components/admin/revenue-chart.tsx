@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { DollarSign } from 'lucide-react'
 
@@ -15,7 +15,7 @@ export default function RevenueChart() {
   ]
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
@@ -64,6 +64,6 @@ export default function RevenueChart() {
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

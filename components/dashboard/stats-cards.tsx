@@ -1,7 +1,7 @@
 'use client'
 
 import { Lightbulb, Video, CheckCircle, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 interface StatsCardsProps {
   totalIdeas: number
@@ -47,7 +47,7 @@ export default function StatsCards({
   return (
     <div className="grid gap-6 md:grid-cols-3">
       {stats.map((stat, index) => (
-        <motion.div
+        <m.div
           key={stat.name}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,7 +95,7 @@ export default function StatsCards({
             {/* Progress Bar */}
             <div className="mt-4">
               <div className="h-1.5 bg-white/50 rounded-full overflow-hidden">
-                <motion.div
+                <m.div
                   initial={{ width: 0 }}
                   animate={{ width: `${totalIdeas > 0 ? (stat.value / totalIdeas) * 100 : 0}%` }}
                   transition={{ delay: index * 0.2, duration: 1 }}
@@ -104,7 +104,7 @@ export default function StatsCards({
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       ))}
     </div>
   )

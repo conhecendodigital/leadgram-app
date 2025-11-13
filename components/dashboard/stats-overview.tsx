@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Eye, Heart, MessageCircle, TrendingUp, Zap } from 'lucide-react'
 
 interface StatsOverviewProps {
@@ -69,7 +69,7 @@ export default function StatsOverview({
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" data-tour="stats">
       {stats.map((stat, index) => (
-        <motion.div
+        <m.div
           key={stat.label}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -108,7 +108,7 @@ export default function StatsOverview({
             {/* Shine Effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 group-hover:translate-x-full transition-all duration-1000" />
           </div>
-        </motion.div>
+        </m.div>
       ))}
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { Users, UserCheck, UserPlus, UserX } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 interface CustomersStatsProps {
   users: any[]
@@ -47,7 +47,7 @@ export default function CustomersStats({ users }: CustomersStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat, index) => (
-        <motion.div
+        <m.div
           key={stat.label}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -64,7 +64,7 @@ export default function CustomersStats({ users }: CustomersStatsProps) {
             </p>
             <p className="text-sm text-gray-600">{stat.label}</p>
           </div>
-        </motion.div>
+        </m.div>
       ))}
     </div>
   )

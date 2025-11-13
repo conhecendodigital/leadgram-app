@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 import { Menu, X, Home, Lightbulb, BarChart3, Instagram, Settings, LogOut, User, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -41,7 +41,7 @@ export default function MobileMenu() {
       {/* Backdrop */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -54,7 +54,7 @@ export default function MobileMenu() {
       {/* Menu Slide */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -81,7 +81,7 @@ export default function MobileMenu() {
                   const isActive = pathname === item.href
 
                   return (
-                    <motion.div
+                    <m.div
                       key={item.href}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -101,7 +101,7 @@ export default function MobileMenu() {
                         <item.icon className="w-5 h-5" />
                         {item.label}
                       </Link>
-                    </motion.div>
+                    </m.div>
                   )
                 })}
               </nav>
@@ -118,7 +118,7 @@ export default function MobileMenu() {
                 Sair
               </button>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

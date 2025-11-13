@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Eye, Heart, MessageCircle, Play } from 'lucide-react'
 import Link from 'next/link'
 
@@ -44,7 +44,7 @@ export default function ContentGrid({ ideas }: ContentGridProps) {
 
           return (
             <Link key={idea.id} href={`/dashboard/ideas/${idea.id}`}>
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
@@ -86,7 +86,7 @@ export default function ContentGrid({ ideas }: ContentGridProps) {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             </Link>
           )
         })}

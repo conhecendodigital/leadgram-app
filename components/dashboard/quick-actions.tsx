@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 import { Plus, Upload, Zap, Instagram, Sparkles, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -38,7 +38,7 @@ export default function QuickActions() {
   return (
     <div className="relative" data-tour="quick-actions">
       {/* Main Button */}
-      <motion.button
+      <m.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
@@ -47,7 +47,7 @@ export default function QuickActions() {
         <Sparkles className="w-5 h-5" />
         <span>Ações Rápidas</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </motion.button>
+      </m.button>
 
       {/* Dropdown Menu */}
       <AnimatePresence>
@@ -60,7 +60,7 @@ export default function QuickActions() {
             />
 
             {/* Menu */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -69,7 +69,7 @@ export default function QuickActions() {
             >
               {actions.map((action, index) => (
                 <Link key={action.label} href={action.href}>
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
@@ -82,10 +82,10 @@ export default function QuickActions() {
                     <span className="font-medium text-gray-900 group-hover:text-primary transition-colors">
                       {action.label}
                     </span>
-                  </motion.div>
+                  </m.div>
                 </Link>
               ))}
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

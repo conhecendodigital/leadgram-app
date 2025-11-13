@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Shield, Bell, Lock, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { showToast } from '@/lib/toast'
@@ -28,7 +28,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
@@ -150,6 +150,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

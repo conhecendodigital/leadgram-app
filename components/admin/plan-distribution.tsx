@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { Package } from 'lucide-react'
 
@@ -23,7 +23,7 @@ export default function PlanDistribution({ subscriptions }: PlanDistributionProp
   ]
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
@@ -65,6 +65,6 @@ export default function PlanDistribution({ subscriptions }: PlanDistributionProp
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

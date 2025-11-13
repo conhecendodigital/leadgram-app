@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { CheckCircle, CreditCard, ExternalLink, Key, AlertCircle } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 
@@ -51,7 +51,7 @@ export default function MercadoPagoConnection({ connection }: MercadoPagoConnect
 
   if (connection) {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm"
@@ -115,12 +115,12 @@ export default function MercadoPagoConnection({ connection }: MercadoPagoConnect
             </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     )
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm"
@@ -207,6 +207,6 @@ export default function MercadoPagoConnection({ connection }: MercadoPagoConnect
           </button>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

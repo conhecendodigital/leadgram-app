@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Clock, CheckCircle, Video, Lightbulb, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
@@ -65,7 +65,7 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.2 }}
@@ -88,7 +88,7 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
           const activityText = getActivityText(idea)
 
           return (
-            <motion.div
+            <m.div
               key={idea.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -113,7 +113,7 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
                   </span>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )
         })}
       </div>
@@ -123,6 +123,6 @@ export default function ActivityFeed({ ideas }: ActivityFeedProps) {
           Ver tudo
         </button>
       </Link>
-    </motion.div>
+    </m.div>
   )
 }

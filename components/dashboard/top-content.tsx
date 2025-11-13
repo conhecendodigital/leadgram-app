@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Trophy, Eye, Heart, TrendingUp, Play } from 'lucide-react'
 import Link from 'next/link'
 
@@ -46,7 +46,7 @@ export default function TopContent({ ideas }: TopContentProps) {
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-lg transition-shadow"
@@ -70,7 +70,7 @@ export default function TopContent({ ideas }: TopContentProps) {
 
           return (
             <Link key={idea.id} href={`/dashboard/ideas/${idea.id}`}>
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -119,7 +119,7 @@ export default function TopContent({ ideas }: TopContentProps) {
 
                   {/* Trending Arrow */}
                   <TrendingUp className="w-4 h-4 text-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </motion.div>
+              </m.div>
             </Link>
           )
         })}
@@ -130,6 +130,6 @@ export default function TopContent({ ideas }: TopContentProps) {
           Ver todos os conteúdos →
         </button>
       </Link>
-    </motion.div>
+    </m.div>
   )
 }

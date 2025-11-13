@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 export function Skeleton({ className }: { className?: string }) {
   return (
-    <motion.div
+    <m.div
       animate={{
         opacity: [0.5, 1, 0.5],
       }}

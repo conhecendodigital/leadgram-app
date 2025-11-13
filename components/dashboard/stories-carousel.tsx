@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Plus, Lightbulb, Video, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -40,7 +40,7 @@ export default function StoriesCarousel({ ideas }: StoriesCarouselProps) {
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
         {/* Add New Story */}
         <Link href="/dashboard/ideas/new">
-          <motion.div
+          <m.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="flex-shrink-0"
@@ -50,7 +50,7 @@ export default function StoriesCarousel({ ideas }: StoriesCarouselProps) {
               <Plus className="w-8 h-8 text-gray-400 group-hover:text-gray-600 transition-colors" />
             </div>
             <p className="text-xs text-center mt-2 text-gray-600 font-medium">Nova</p>
-          </motion.div>
+          </m.div>
         </Link>
 
         {/* Ideas as Stories */}
@@ -60,7 +60,7 @@ export default function StoriesCarousel({ ideas }: StoriesCarouselProps) {
 
           return (
             <Link key={idea.id} href={`/dashboard/ideas/${idea.id}`}>
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -95,7 +95,7 @@ export default function StoriesCarousel({ ideas }: StoriesCarouselProps) {
                 <p className="text-xs text-center mt-2 text-gray-900 font-medium truncate w-24">
                   {idea.title}
                 </p>
-              </motion.div>
+              </m.div>
             </Link>
           )
         })}

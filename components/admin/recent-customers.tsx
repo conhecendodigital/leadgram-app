@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Users, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
@@ -36,7 +36,7 @@ export default function RecentCustomers() {
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
@@ -58,7 +58,7 @@ export default function RecentCustomers() {
 
       <div className="space-y-3">
         {customers.map((customer, index) => (
-          <motion.div
+          <m.div
             key={customer.id}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -94,7 +94,7 @@ export default function RecentCustomers() {
                 {new Date(customer.created_at).toLocaleDateString('pt-BR')}
               </div>
             </div>
-          </motion.div>
+          </m.div>
         ))}
 
         {customers.length === 0 && (
@@ -103,6 +103,6 @@ export default function RecentCustomers() {
           </div>
         )}
       </div>
-    </motion.div>
+    </m.div>
   )
 }
