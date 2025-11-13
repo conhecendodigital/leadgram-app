@@ -1,10 +1,20 @@
 import type { NextConfig } from "next";
 
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const nextConfig: NextConfig = {
   // Otimizações de performance
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+
+  // Experimental features para melhor performance
+  experimental: {
+    optimizePackageImports: ['recharts', 'lucide-react', 'date-fns', 'react-icons', 'framer-motion'],
+    webpackMemoryOptimizations: true,
+  },
 
   // Otimização de imagens
   images: {
@@ -71,4 +81,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
