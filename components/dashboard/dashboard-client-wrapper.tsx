@@ -8,6 +8,7 @@ import PerformanceChart from './performance-chart'
 import StoriesCarousel from './stories-carousel'
 import ActivityFeed from './activity-feed'
 import TopContent from './top-content'
+import PlatformComparison from './platform-comparison'
 
 interface DashboardClientWrapperProps {
   ideas: any[]
@@ -79,6 +80,7 @@ export default function DashboardClientWrapper({
         {/* Left Column - 2/3 */}
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           <PerformanceChart ideas={filteredIdeas} />
+          <PlatformComparison ideas={filteredIdeas} />
           <ContentGrid ideas={postedIdeas.slice(0, 9)} />
         </div>
 
