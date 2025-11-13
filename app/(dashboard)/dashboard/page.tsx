@@ -47,10 +47,71 @@ export default async function DashboardPage() {
 
   const ideas = data as IdeaWithRelations[] | null
 
-  // Calcular métricas totais
-  const totalIdeas = ideas?.length || 0
-  const postedIdeas = ideas?.filter((i) => i.status === 'posted') || []
+  // Datas para comparação
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
+  // Filtrar ideias por período
+  const postedIdeas = ideas?.filter((i) => i.status === 'posted') || []
+  const currentPeriodIdeas = postedIdeas.filter(i => new Date(i.created_at) >= thirtyDaysAgo)
+  const previousPeriodIdeas = postedIdeas.filter(i => {
+    const date = new Date(i.created_at)
+    return date >= sixtyDaysAgo && date < thirtyDaysAgo
+  })
+
+  // Função auxiliar para calcular métricas
+  const calculateMetrics = (ideasList: typeof postedIdeas) => {
+    const views = ideasList.reduce((sum, idea) => {
+      const v = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+        const latestMetric = platform.metrics?.[0]
+        return pSum + (latestMetric?.views || 0)
+      }, 0) || 0
+      return sum + v
+    }, 0)
+
+    const likes = ideasList.reduce((sum, idea) => {
+      const l = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+        const latestMetric = platform.metrics?.[0]
+        return pSum + (latestMetric?.likes || 0)
+      }, 0) || 0
+      return sum + l
+    }, 0)
+
+    const comments = ideasList.reduce((sum, idea) => {
+      const c = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+        const latestMetric = platform.metrics?.[0]
+        return pSum + (latestMetric?.comments || 0)
+      }, 0) || 0
+      return sum + c
+    }, 0)
+
+    const engagement = views > 0 ? ((likes + comments) / views * 100) : 0
+
+    return { views, likes, comments, engagement, count: ideasList.length }
+  }
+
+  // Métricas do período atual (últimos 30 dias)
+  const currentMetrics = calculateMetrics(currentPeriodIdeas)
+
+  // Métricas do período anterior (30-60 dias atrás)
+  const previousMetrics = calculateMetrics(previousPeriodIdeas)
+
+  // Função para calcular % de crescimento
+  const calculateGrowth = (current: number, previous: number): number => {
+    if (previous === 0) return current > 0 ? 100 : 0
+    return ((current - previous) / previous) * 100
+  }
+
+  // Calcular crescimentos
+  const viewsGrowth = calculateGrowth(currentMetrics.views, previousMetrics.views)
+  const likesGrowth = calculateGrowth(currentMetrics.likes, previousMetrics.likes)
+  const commentsGrowth = calculateGrowth(currentMetrics.comments, previousMetrics.comments)
+  const engagementGrowth = calculateGrowth(currentMetrics.engagement, previousMetrics.engagement)
+  const ideasGrowth = calculateGrowth(currentMetrics.count, previousMetrics.count)
+
+  // Totais (de todos os posts, não só dos últimos 30 dias)
+  const totalIdeas = ideas?.length || 0
   const totalViews = postedIdeas.reduce((sum, idea) => {
     const views = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
       const latestMetric = platform.metrics?.[0]
@@ -103,6 +164,11 @@ export default async function DashboardPage() {
         totalLikes={totalLikes}
         totalComments={totalComments}
         engagementRate={engagementRate}
+        viewsGrowth={viewsGrowth}
+        likesGrowth={likesGrowth}
+        commentsGrowth={commentsGrowth}
+        engagementGrowth={engagementGrowth}
+        ideasGrowth={ideasGrowth}
       />
 
       {/* Stories Carousel - Suas Ideias em Progresso */}
