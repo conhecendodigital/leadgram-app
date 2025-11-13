@@ -41,7 +41,7 @@ export default function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col">
       {/* Logo */}
       <div className="p-6">
         <Link href="/dashboard" className="flex items-center gap-3">

@@ -35,7 +35,7 @@ export default function ContentGrid({ ideas }: ContentGridProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-1">
         {ideas.map((idea, index) => {
           const metrics = idea.idea_platforms?.[0]?.metrics?.[0]
           const views = metrics?.views || 0

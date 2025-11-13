@@ -76,28 +76,28 @@ export default function IdeasPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Minhas Ideias</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Minhas Ideias</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
               {filteredIdeas.length} {filteredIdeas.length === 1 ? 'ideia' : 'ideias'} encontrada{filteredIdeas.length !== 1 && 's'}
             </p>
           </div>
           <Link
             href="/dashboard/ideas/new"
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90 transition-all duration-200"
+            className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto justify-center"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
             Nova Ideia
           </Link>
         </div>
 
         {/* Filtros */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Filtros:</span>
@@ -107,7 +107,7 @@ export default function IdeasPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos os status</option>
               <option value="idea">Ideia</option>
@@ -119,7 +119,7 @@ export default function IdeasPage() {
             <select
               value={funnelFilter}
               onChange={(e) => setFunnelFilter(e.target.value as any)}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos os funis</option>
               <option value="top">Topo</option>

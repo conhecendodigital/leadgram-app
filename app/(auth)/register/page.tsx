@@ -76,7 +76,7 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
@@ -93,21 +93,21 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
-              <Sparkles className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Leadgram
             </h1>
           </div>
-          <p className="text-gray-600">Gerenciamento de conteúdo para criadores</p>
+          <p className="text-sm sm:text-base text-gray-600">Gerenciamento de conteúdo para criadores</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Criar nova conta</h2>
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">Criar nova conta</h2>
 
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
