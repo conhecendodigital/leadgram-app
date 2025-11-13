@@ -4,10 +4,10 @@ import IdeaForm from '@/components/ideas/idea-form'
 
 export default function NewIdeaPage() {
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 sm:mb-6">
           <Link href="/dashboard/ideas" className="hover:text-primary transition-colors">
             Ideias
           </Link>
@@ -16,15 +16,15 @@ export default function NewIdeaPage() {
         </div>
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Nova Ideia</h1>
-          <p className="text-gray-600">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Criar Nova Ideia</h1>
+          <p className="text-sm sm:text-base text-gray-600">
             Preencha os detalhes da sua nova ideia de conteúdo
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-8">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 lg:p-8">
           <IdeaForm mode="create" />
         </div>
       </div>

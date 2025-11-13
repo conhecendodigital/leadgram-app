@@ -9,13 +9,18 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Sidebar - visible only on desktop */}
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+
+      {/* Main content - full width on mobile, with sidebar on desktop */}
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         <Header />
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>
+
+      {/* Mobile menu - visible only on mobile */}
       <MobileMenu />
     </div>
   )
