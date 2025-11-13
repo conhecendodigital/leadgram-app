@@ -74,14 +74,23 @@ export default function AdminMobileMenu({ user }: { user: any }) {
             className="lg:hidden fixed right-0 top-0 bottom-0 w-80 bg-gray-900 shadow-2xl z-50 flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-800">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
-                <span className="text-white font-bold text-xl">A</span>
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">A</span>
+                </div>
+                <div>
+                  <h1 className="text-white font-bold text-lg">Admin Panel</h1>
+                  <p className="text-xs text-gray-400">Leadgram</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-white font-bold text-lg">Admin Panel</h1>
-                <p className="text-xs text-gray-400">Leadgram</p>
-              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 hover:bg-gray-800 rounded-xl transition-colors"
+                aria-label="Fechar menu"
+              >
+                <X className="w-6 h-6 text-gray-400" />
+              </button>
             </div>
 
             {/* Menu Items */}
