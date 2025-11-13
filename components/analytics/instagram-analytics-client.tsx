@@ -116,15 +116,16 @@ export default function InstagramAnalyticsClient({
         <button
           onClick={fetchInsights}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+          className="flex items-center justify-center gap-2 px-4 sm:px-4 py-2 sm:py-2 bg-primary hover:bg-primary/90 text-white rounded-lg sm:rounded-xl font-medium transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? 'Atualizando...' : 'Atualizar'}
+          <span className="hidden sm:inline">{loading ? 'Atualizando...' : 'Atualizar'}</span>
+          <span className="sm:hidden">{loading ? 'Carregando...' : 'Atualizar'}</span>
         </button>
       </div>
 
       {/* Cards de Métricas Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           icon={<Eye className="w-5 h-5" />}
           label="Impressões (30d)"
@@ -156,7 +157,7 @@ export default function InstagramAnalyticsClient({
       </div>
 
       {/* Métricas Diárias Médias */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -198,7 +199,7 @@ export default function InstagramAnalyticsClient({
       </div>
 
       {/* Melhor Horário e Dia para Postar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Melhor Horário */}
         {bestTime && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
@@ -264,7 +265,7 @@ export default function InstagramAnalyticsClient({
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {top_posts.slice(0, 5).map((post: any, index: number) => (
             <a
               key={post.id}
