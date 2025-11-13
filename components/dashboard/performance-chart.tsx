@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { m } from 'framer-motion'
 import { TrendingUp, Calendar } from 'lucide-react'
 import {
@@ -15,15 +16,19 @@ import {
 import { format, subDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
+type PeriodType = 7 | 30 | 90
+
 interface PerformanceChartProps {
   ideas: any[]
 }
 
 export default function PerformanceChart({ ideas }: PerformanceChartProps) {
-  // Gerar dados dos últimos 7 dias
+  const [period, setPeriod] = useState<PeriodType>(7)
+
+  // Gerar dados baseado no período selecionado
   const generateChartData = () => {
     const data = []
-    for (let i = 6; i >= 0; i--) {
+    for (let i = period - 1; i >= 0; i--) {
       const date = subDays(new Date(), i)
       const dayIdeas = ideas.filter((idea) => {
         const ideaDate = new Date(idea.created_at)
@@ -45,8 +50,11 @@ export default function PerformanceChart({ ideas }: PerformanceChartProps) {
         return sum + (metrics?.comments || 0)
       }, 0)
 
+      // Formato de data baseado no período
+      const dateFormat = period === 7 ? 'EEE' : 'dd/MM'
+
       data.push({
-        date: format(date, 'EEE', { locale: ptBR }),
+        date: format(date, dateFormat, { locale: ptBR }),
         views,
         likes,
         comments,
@@ -57,22 +65,62 @@ export default function PerformanceChart({ ideas }: PerformanceChartProps) {
 
   const chartData = generateChartData()
 
+  // Textos dinâmicos baseados no período
+  const getPeriodText = () => {
+    switch (period) {
+      case 7:
+        return 'Últimos 7 dias'
+      case 30:
+        return 'Últimos 30 dias'
+      case 90:
+        return 'Últimos 90 dias'
+    }
+  }
+
+  const getChartTitle = () => {
+    switch (period) {
+      case 7:
+        return 'Desempenho da Semana'
+      case 30:
+        return 'Desempenho do Mês'
+      case 90:
+        return 'Desempenho do Trimestre'
+    }
+  }
+
   // Se não houver dados, mostrar placeholder
   if (chartData.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Performance</h3>
             <p className="text-sm text-gray-500 mt-1">
               Acompanhe suas métricas ao longo do tempo
             </p>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-            <Calendar className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">
-              Últimos 7 dias
-            </span>
+
+          {/* Period Selector */}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+              {[7, 30, 90].map((days) => (
+                <button
+                  key={days}
+                  onClick={() => setPeriod(days as PeriodType)}
+                  className={`
+                    px-3 py-1.5 rounded-md text-sm font-medium transition-all
+                    ${
+                      period === days
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  {days}d
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -110,21 +158,38 @@ export default function PerformanceChart({ ideas }: PerformanceChartProps) {
       className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-lg transition-shadow"
       data-tour="chart"
     >
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-primary" />
-            Desempenho da Semana
+            {getChartTitle()}
           </h3>
           <p className="text-sm text-gray-600 mt-1">
             Visualizações, curtidas e comentários
           </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
-          <Calendar className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-primary">
-            Últimos 7 dias
-          </span>
+
+        {/* Period Selector */}
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-gray-400" />
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {[7, 30, 90].map((days) => (
+              <button
+                key={days}
+                onClick={() => setPeriod(days as PeriodType)}
+                className={`
+                  px-3 py-1.5 rounded-md text-sm font-medium transition-all
+                  ${
+                    period === days
+                      ? 'bg-primary text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }
+                `}
+              >
+                {days}d
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
