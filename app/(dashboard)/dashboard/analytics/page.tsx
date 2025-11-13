@@ -25,26 +25,24 @@ export default async function AnalyticsPage() {
 
   if (!accountData) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto min-h-screen flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-3xl mb-6">
-              <Instagram className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              Instagram não conectado
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Conecte sua conta Instagram Business para visualizar analytics detalhados
-            </p>
-            <a
-              href="/dashboard/instagram"
-              className="inline-flex items-center gap-2 px-6 py-3 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
-            >
-              <Instagram className="w-5 h-5" />
-              Conectar Instagram
-            </a>
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-3xl mb-6">
+            <Instagram className="w-10 h-10 text-white" />
           </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            Instagram não conectado
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Conecte sua conta Instagram Business para visualizar analytics detalhados
+          </p>
+          <a
+            href="/dashboard/instagram"
+            className="inline-flex items-center gap-2 px-6 py-3 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+          >
+            <Instagram className="w-5 h-5" />
+            Conectar Instagram
+          </a>
         </div>
       </div>
     )
@@ -69,31 +67,29 @@ export default async function AnalyticsPage() {
     .limit(30)
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 sm:p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl sm:rounded-2xl">
-                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Analytics
-              </h1>
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2.5 sm:p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl sm:rounded-2xl">
+              <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <p className="text-sm sm:text-base text-gray-600">
-              @{account.username} • Métricas em tempo real
-            </p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Analytics
+            </h1>
           </div>
+          <p className="text-sm sm:text-base text-gray-600">
+            @{account.username} • Métricas em tempo real
+          </p>
         </div>
-
-        {/* Client Component com dados dinâmicos */}
-        <InstagramAnalyticsClient
-          account={account}
-          historicalData={insights || []}
-        />
       </div>
+
+      {/* Client Component com dados dinâmicos */}
+      <InstagramAnalyticsClient
+        account={account}
+        historicalData={insights || []}
+      />
     </div>
   )
 }
