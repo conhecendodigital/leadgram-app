@@ -64,6 +64,29 @@ export default function IdeaCard({ idea }: IdeaCardProps) {
           <p className="text-sm text-gray-600 mb-3">{idea.theme}</p>
         )}
 
+        {/* Plataformas */}
+        {idea.platforms && idea.platforms.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-3">
+            {idea.platforms.map((platform) => {
+              const platformIcons: Record<string, string> = {
+                instagram: '📸',
+                tiktok: '🎵',
+                youtube: '📺',
+                facebook: '👍',
+              }
+              return (
+                <span
+                  key={platform.id}
+                  className="text-lg"
+                  title={platform.platform}
+                >
+                  {platformIcons[platform.platform] || '📱'}
+                </span>
+              )
+            })}
+          </div>
+        )}
+
         {/* Métricas */}
         {totalMetrics && (totalMetrics.views > 0 || totalMetrics.likes > 0) && (
           <div className="grid grid-cols-4 gap-2 mb-3 pt-3 border-t border-gray-100">
