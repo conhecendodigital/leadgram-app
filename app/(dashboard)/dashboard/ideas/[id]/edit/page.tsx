@@ -42,31 +42,35 @@ export default async function EditIdeaPage({ params }: PageProps) {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 sm:mb-6">
           <Link href="/dashboard/ideas" className="hover:text-primary transition-colors">
             Ideias
           </Link>
-          <ChevronRight className="w-4 h-4" />
-          <Link href={`/dashboard/ideas/${idea!.id}`} className="hover:text-primary transition-colors">
+          <ChevronRight className="w-4 h-4 flex-shrink-0" />
+          <Link
+            href={`/dashboard/ideas/${idea!.id}`}
+            className="hover:text-primary transition-colors truncate max-w-[120px] sm:max-w-[200px]"
+            title={idea!.title}
+          >
             {idea!.title}
           </Link>
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4 flex-shrink-0" />
           <span className="text-gray-900 font-medium">Editar</span>
         </div>
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Editar Ideia</h1>
-          <p className="text-gray-600">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Editar Ideia</h1>
+          <p className="text-sm sm:text-base text-gray-600">
             Atualize os detalhes da sua ideia de conteúdo
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-8">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 lg:p-8">
           <IdeaForm mode="edit" idea={idea!} />
         </div>
       </div>
