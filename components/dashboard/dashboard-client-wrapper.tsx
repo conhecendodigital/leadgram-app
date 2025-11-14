@@ -10,6 +10,7 @@ import ActivityFeed from './activity-feed'
 import TopContent from './top-content'
 import PlatformComparison from './platform-comparison'
 import GoalsCards from './goals-cards'
+import ScheduledPosts from './scheduled-posts'
 
 interface DashboardClientWrapperProps {
   ideas: any[]
@@ -89,6 +90,7 @@ export default function DashboardClientWrapper({
         <div className="space-y-4 md:space-y-6">
           <TopContent ideas={postedIdeas.slice(0, 5)} />
           <GoalsCards ideas={filteredIdeas} stats={stats} />
+          <ScheduledPosts ideas={filteredIdeas} />
           <ActivityFeed ideas={filteredIdeas.slice(0, 5)} />
         </div>
       </div>
