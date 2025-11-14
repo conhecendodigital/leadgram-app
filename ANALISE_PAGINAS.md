@@ -9,9 +9,9 @@
 ## 📊 Status Geral
 
 **Total de Páginas:** 18
-- ✅ Concluídas: 4
+- ✅ Concluídas: 5
 - 🔄 Em Progresso: 0
-- ⏳ Pendentes: 14
+- ⏳ Pendentes: 13
 
 ---
 
@@ -71,25 +71,29 @@
 
 ---
 
-#### ⏳ 5. `/dashboard/ideas/[id]` - Detalhes da Ideia
-**Status:** ⏳ PENDENTE
-**Prioridade:** 🔴 ALTA
-**Análise Necessária:**
-- Layout de detalhes (informações completas)
-- Exibição de métricas por plataforma
-- Ações disponíveis (editar, deletar, compartilhar)
-- Histórico de métricas (gráfico temporal?)
-- Timeline de atividades
-- Performance com dados grandes
+#### ✅ 5. `/dashboard/ideas/[id]` - Detalhes da Ideia
+**Status:** ✅ CONCLUÍDO
+**Data:** 14/01/2025
+**Melhorias:**
+- Exibição de mídia (thumbnail/vídeo)
+- Link para post na plataforma
+- Error handling profissional no delete
+- Estado vazio para métricas
+- Botão manual de sincronizar métricas
+- Loading skeleton profissional
+- Responsividade mobile completa
+- Correção de tipos TypeScript
+**PR:** #42 - Mergeado
 
-**Pontos a Avaliar:**
-- [ ] Loading state
-- [ ] Error handling (ideia não encontrada)
-- [ ] Métricas bem formatadas
-- [ ] Ações funcionais
-- [ ] Performance
-- [ ] Responsividade
-- [ ] Informações relevantes (sem poluição visual)
+**Detalhes das Correções:**
+- ✅ FIX #1: Video player + thumbnail com aspect ratio 16:9
+- ✅ FIX #2: Link "Ver post" com ExternalLink icon (target="_blank")
+- ✅ FIX #3: Banner de erro em vez de alert() nativo
+- ✅ FIX #4: Mensagem diferente se posted vs não posted
+- ✅ FIX #5: Componente SyncMetricsButton com estados visuais
+- ✅ FIX #6: Loading.tsx com skeleton matching
+- ✅ FIX #7: Layout flex-col mobile, grid responsivo, padding adaptável
+- ✅ FIX #8: Tipo video_url adicionado a IdeaWithRelations
 
 ---
 
@@ -300,7 +304,7 @@
 
 ## 🎯 Próxima Página a Analisar
 
-**PRÓXIMA:** `/dashboard/ideas/[id]` - Detalhes da Ideia
+**PRÓXIMA:** `/dashboard/ideas/[id]/edit` - Editar Ideia
 
 ---
 
@@ -359,6 +363,6 @@
 
 ---
 
-**Última atualização:** 14/01/2025 - 13:30
-**Páginas concluídas:** 4/18 (22.2%)
-**Próxima página:** `/dashboard/ideas/[id]`
+**Última atualização:** 14/01/2025 - 14:45
+**Páginas concluídas:** 5/18 (27.8%)
+**Próxima página:** `/dashboard/ideas/[id]/edit`
