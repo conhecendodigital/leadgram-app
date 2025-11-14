@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { RefreshCw, TrendingUp, Users, Eye, Heart, MessageCircle, Award, Calendar, Clock } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 import {
@@ -33,6 +34,7 @@ export default function InstagramAnalyticsClient({
   // Buscar insights ao carregar
   useEffect(() => {
     fetchInsights()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchInsights = async () => {
@@ -95,6 +97,19 @@ export default function InstagramAnalyticsClient({
   const previous7DaysReach = previous7Days.reduce((sum: number, d: any) => sum + (d.reach || 0), 0)
   const reachGrowth = calculateGrowthPercentage(previous7DaysReach, last7DaysReach)
 
+  // Calcular crescimento de engajamento (últimos 7 posts vs 7 anteriores)
+  const recentPosts = top_posts.slice(0, 7)
+  const olderPosts = top_posts.slice(7, 14)
+
+  const recentEngagement = recentPosts.reduce((sum: number, p: any) => sum + (p.likes || 0) + (p.comments || 0), 0)
+  const olderEngagement = olderPosts.reduce((sum: number, p: any) => sum + (p.likes || 0) + (p.comments || 0), 0)
+  const engagementGrowth = calculateGrowthPercentage(olderEngagement, recentEngagement)
+
+  // Calcular crescimento de comentários
+  const recentComments = recentPosts.reduce((sum: number, p: any) => sum + (p.comments || 0), 0)
+  const olderComments = olderPosts.reduce((sum: number, p: any) => sum + (p.comments || 0), 0)
+  const commentsGrowth = calculateGrowthPercentage(olderComments, recentComments)
+
   // Melhor horário e dia para postar
   const postsWithTimestamp = top_posts.map((post: any) => ({
     timestamp: post.timestamp,
@@ -137,21 +152,21 @@ export default function InstagramAnalyticsClient({
           icon={<Users className="w-5 h-5" />}
           label="Alcance (30d)"
           value={formatNumber(summary.total_reach)}
-          change={0}
+          change={reachGrowth}
           color="purple"
         />
         <MetricCard
           icon={<Heart className="w-5 h-5" />}
           label="Taxa de Engajamento"
           value={formatPercentage(summary.engagement_rate)}
-          change={0}
+          change={engagementGrowth}
           color="pink"
         />
         <MetricCard
           icon={<MessageCircle className="w-5 h-5" />}
           label="Total Comentários"
           value={formatNumber(summary.total_comments)}
-          change={0}
+          change={commentsGrowth}
           color="green"
         />
       </div>
@@ -192,7 +207,9 @@ export default function InstagramAnalyticsClient({
             <h3 className="font-semibold text-gray-900">Taxa de Alcance</h3>
           </div>
           <p className="text-3xl font-bold text-green-600">
-            {formatPercentage((avgDailyReach / account.followers_count) * 100)}
+            {account.followers_count > 0
+              ? formatPercentage((avgDailyReach / account.followers_count) * 100)
+              : formatPercentage(0)}
           </p>
           <p className="text-sm text-gray-600 mt-1">Do total de seguidores</p>
         </div>
@@ -281,11 +298,15 @@ export default function InstagramAnalyticsClient({
 
               {/* Image */}
               {post.media_url && (
-                <img
-                  src={post.media_url}
-                  alt={post.caption}
-                  className="w-full aspect-square object-cover"
-                />
+                <div className="relative w-full aspect-square">
+                  <Image
+                    src={post.media_url}
+                    alt={post.caption || `Post ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                  />
+                </div>
               )}
 
               {/* Overlay com Métricas */}
@@ -333,6 +354,7 @@ export default function InstagramAnalyticsClient({
         </div>
         <div className="flex justify-between mt-4 text-xs text-gray-600">
           <span>30 dias atrás</span>
+          <span className="hidden sm:inline">~15 dias</span>
           <span>Hoje</span>
         </div>
       </div>
