@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   Target,
@@ -10,8 +10,11 @@ import {
   Eye,
   Heart,
   MessageCircle,
-  CheckCircle2
+  CheckCircle2,
+  Settings
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import GoalsConfigModal from './goals-config-modal'
 
 interface GoalsCardsProps {
   ideas: any[]
@@ -36,6 +39,52 @@ type Goal = {
 }
 
 export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [userGoals, setUserGoals] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch user goals from database
+  useEffect(() => {
+    const fetchUserGoals = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('user_goals')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (!error && data) {
+        setUserGoals(data)
+      }
+      setLoading(false)
+    }
+
+    fetchUserGoals()
+  }, [])
+
+  const handleGoalsSaved = async () => {
+    // Refetch goals after saving
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data } = await supabase
+        .from('user_goals')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (data) {
+        setUserGoals(data)
+      }
+    }
+  }
+
   // Calcular métricas para as metas
   const postedIdeas = useMemo(() => {
     return ideas.filter((i: any) => i.status === 'posted')
@@ -53,53 +102,60 @@ export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
     return postedIdeas.filter((i: any) => new Date(i.created_at) >= thirtyDaysAgo).length
   }, [postedIdeas])
 
-  // Definir metas
-  const goals: Goal[] = useMemo(() => [
-    {
-      id: 'views',
-      title: 'Meta de Visualizações',
-      description: 'Alcance 10.000 visualizações',
-      icon: Eye,
-      current: stats.totalViews,
-      target: 10000,
-      unit: 'views',
-      color: 'text-blue-600',
-      gradient: 'from-blue-500 to-cyan-500'
-    },
-    {
-      id: 'engagement',
-      title: 'Taxa de Engajamento',
-      description: 'Mantenha acima de 5%',
-      icon: Heart,
-      current: parseFloat(stats.engagementRate),
-      target: 5,
-      unit: '%',
-      color: 'text-pink-600',
-      gradient: 'from-pink-500 to-rose-500'
-    },
-    {
-      id: 'weekly-posts',
-      title: 'Posts Semanais',
-      description: 'Poste 3 vezes por semana',
-      icon: Calendar,
-      current: thisWeekPosts,
-      target: 3,
-      unit: 'posts',
-      color: 'text-purple-600',
-      gradient: 'from-purple-500 to-indigo-500'
-    },
-    {
-      id: 'monthly-posts',
-      title: 'Posts Mensais',
-      description: 'Mantenha 12 posts por mês',
-      icon: TrendingUp,
-      current: thisMonthPosts,
-      target: 12,
-      unit: 'posts',
-      color: 'text-green-600',
-      gradient: 'from-green-500 to-emerald-500'
-    }
-  ], [stats, thisWeekPosts, thisMonthPosts])
+  // Definir metas (usando valores customizados ou padrões)
+  const goals: Goal[] = useMemo(() => {
+    const viewsTarget = userGoals.find(g => g.goal_type === 'views')?.target_value || 10000
+    const engagementTarget = userGoals.find(g => g.goal_type === 'engagement')?.target_value || 5
+    const weeklyTarget = userGoals.find(g => g.goal_type === 'weekly_posts')?.target_value || 3
+    const monthlyTarget = userGoals.find(g => g.goal_type === 'monthly_posts')?.target_value || 12
+
+    return [
+      {
+        id: 'views',
+        title: 'Meta de Visualizações',
+        description: `Alcance ${viewsTarget.toLocaleString()} visualizacoes`,
+        icon: Eye,
+        current: stats.totalViews,
+        target: viewsTarget,
+        unit: 'views',
+        color: 'text-blue-600',
+        gradient: 'from-blue-500 to-cyan-500'
+      },
+      {
+        id: 'engagement',
+        title: 'Taxa de Engajamento',
+        description: `Mantenha acima de ${engagementTarget}%`,
+        icon: Heart,
+        current: parseFloat(stats.engagementRate),
+        target: engagementTarget,
+        unit: '%',
+        color: 'text-pink-600',
+        gradient: 'from-pink-500 to-rose-500'
+      },
+      {
+        id: 'weekly-posts',
+        title: 'Posts Semanais',
+        description: `Poste ${weeklyTarget} vezes por semana`,
+        icon: Calendar,
+        current: thisWeekPosts,
+        target: weeklyTarget,
+        unit: 'posts',
+        color: 'text-purple-600',
+        gradient: 'from-purple-500 to-indigo-500'
+      },
+      {
+        id: 'monthly-posts',
+        title: 'Posts Mensais',
+        description: `Mantenha ${monthlyTarget} posts por mes`,
+        icon: TrendingUp,
+        current: thisMonthPosts,
+        target: monthlyTarget,
+        unit: 'posts',
+        color: 'text-green-600',
+        gradient: 'from-green-500 to-emerald-500'
+      }
+    ]
+  }, [stats, thisWeekPosts, thisMonthPosts, userGoals])
 
   // Calcular progresso geral
   const overallProgress = useMemo(() => {
@@ -154,15 +210,26 @@ export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
           </div>
         </div>
 
-        {/* Badge de progresso geral */}
-        <div className="flex items-center gap-2">
-          <div className="text-right">
-            <p className="text-2xl font-bold text-amber-600">{overallProgress}%</p>
-            <p className="text-xs text-gray-500">Completo</p>
+        {/* Badge de progresso geral + Settings button */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+            aria-label="Configurar metas"
+            title="Configurar metas"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <p className="text-2xl font-bold text-amber-600">{overallProgress}%</p>
+              <p className="text-xs text-gray-500">Completo</p>
+            </div>
+            {overallProgress === 100 && (
+              <Award className="w-6 h-6 text-amber-500" />
+            )}
           </div>
-          {overallProgress === 100 && (
-            <Award className="w-6 h-6 text-amber-500" />
-          )}
         </div>
       </div>
 
@@ -273,6 +340,14 @@ export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
           <p className="text-amber-100 text-xs mt-1">Continue assim para manter o excelente desempenho</p>
         </motion.div>
       )}
+
+      {/* Goals Configuration Modal */}
+      <GoalsConfigModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        currentGoals={userGoals}
+        onSave={handleGoalsSaved}
+      />
     </div>
   )
 }
