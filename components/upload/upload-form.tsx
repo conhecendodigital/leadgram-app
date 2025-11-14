@@ -13,6 +13,7 @@ export default function UploadForm() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -131,13 +132,23 @@ export default function UploadForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Validação: arquivo selecionado
     if (!file) {
       setError('Selecione um arquivo para fazer upload')
       return
     }
 
+    // FIX #4: Validação - Plataforma obrigatória
+    if (formData.platforms.length === 0) {
+      setError('Selecione pelo menos uma plataforma para publicar')
+      return
+    }
+
     setUploading(true)
+    setUploadProgress(0)
     setError(null)
+
+    let uploadedFilePath: string | null = null
 
     try {
       const supabase = createClient()
@@ -147,23 +158,55 @@ export default function UploadForm() {
         throw new Error('Usuário não autenticado')
       }
 
+      // FIX #1: Verificar limites do plano
+      setUploadProgress(5)
+      const limitsResponse = await fetch('/api/user/limits')
+      if (!limitsResponse.ok) {
+        throw new Error('Erro ao verificar limites do plano')
+      }
+      const limits = await limitsResponse.json()
+
+      if (limits.ideas.used >= limits.ideas.limit) {
+        throw new Error(`Você atingiu o limite de ${limits.ideas.limit} ideias do seu plano. Faça upgrade para continuar!`)
+      }
+
       // 1. Upload do arquivo para Supabase Storage
+      setUploadProgress(10)
       const fileExt = file.name.split('.').pop()
       const fileName = `${user.id}/${Date.now()}.${fileExt}`
       const filePath = `uploads/${fileName}`
+      uploadedFilePath = filePath // Salvar para cleanup se necessário
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      // FIX #2: Simular progresso durante upload
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev < 70) return prev + 5
+          return prev
+        })
+      }, 200)
+
+      const { error: uploadError } = await supabase.storage
         .from('content')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      clearInterval(progressInterval)
 
       if (uploadError) {
+        uploadedFilePath = null // Falhou, não precisa cleanup
         throw new Error(`Erro ao fazer upload: ${uploadError.message}`)
       }
+
+      setUploadProgress(80)
 
       // 2. Obter URL pública do arquivo
       const { data: { publicUrl } } = supabase.storage
         .from('content')
         .getPublicUrl(filePath)
+
+      setUploadProgress(90)
 
       // 3. Criar ideia com o arquivo
       const response = await fetch('/api/ideas', {
@@ -179,10 +222,22 @@ export default function UploadForm() {
 
       if (!response.ok) {
         const data = await response.json()
+
+        // FIX #3: Cleanup de arquivo órfão se criação da ideia falhar
+        if (uploadedFilePath) {
+          await supabase.storage
+            .from('content')
+            .remove([uploadedFilePath])
+            .catch(() => {
+              // Ignorar erro de cleanup, já vamos mostrar erro principal
+            })
+        }
+
         throw new Error(data.error || 'Erro ao criar ideia')
       }
 
       // Sucesso!
+      setUploadProgress(100)
       setSuccess(true)
       setTimeout(() => {
         router.push('/dashboard/ideas')
@@ -191,6 +246,7 @@ export default function UploadForm() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer upload')
+      setUploadProgress(0)
     } finally {
       setUploading(false)
     }
@@ -420,7 +476,7 @@ export default function UploadForm() {
       {/* Plataformas */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
-          Plataformas
+          Plataformas *
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
@@ -468,6 +524,26 @@ export default function UploadForm() {
           })}
         </div>
       </div>
+
+      {/* Barra de Progresso */}
+      {uploading && uploadProgress > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-gray-700">
+              {uploadProgress < 80 ? 'Enviando arquivo...' :
+               uploadProgress < 95 ? 'Criando ideia...' :
+               'Finalizando...'}
+            </span>
+            <span className="font-semibold text-primary">{uploadProgress}%</span>
+          </div>
+          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Botões */}
       <div className="flex gap-3 pt-4">
