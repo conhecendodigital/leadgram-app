@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, User, TrendingUp, BadgeCheck } from 'lucide-react'
+import { Search, User, TrendingUp, BadgeCheck, SearchX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 
@@ -73,8 +73,9 @@ export default function ExploreSearchForm() {
       }
     }
 
-    const timeoutId = setTimeout(fetchSuggestions, 300)
+    const timeoutId = setTimeout(fetchSuggestions, 500)
     return () => clearTimeout(timeoutId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username])
 
   // Fechar sugestões ao clicar fora
@@ -151,12 +152,12 @@ export default function ExploreSearchForm() {
               />
 
               {/* Dropdown de sugestões */}
-              {showSuggestions && suggestions.length > 0 && (
+              {showSuggestions && (suggestions.length > 0 || (username.length >= 2 && !loading)) && (
                 <div
                   ref={suggestionsRef}
                   className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-96 overflow-y-auto"
                 >
-                  {username.length === 0 && (
+                  {username.length === 0 && suggestions.length > 0 && (
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <TrendingUp className="w-4 h-4" />
@@ -165,7 +166,16 @@ export default function ExploreSearchForm() {
                     </div>
                   )}
 
-                  {suggestions.map((suggestion, index) => (
+                  {suggestions.length === 0 && username.length >= 2 && !loading ? (
+                    <div className="px-4 py-8 text-center">
+                      <SearchX className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-600 font-medium mb-1">Nenhum perfil encontrado</p>
+                      <p className="text-sm text-gray-500">
+                        Tente buscar por @{username} diretamente
+                      </p>
+                    </div>
+                  ) : (
+                    suggestions.map((suggestion, index) => (
                     <button
                       key={suggestion.username}
                       type="button"
@@ -223,7 +233,8 @@ export default function ExploreSearchForm() {
 
                       <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     </button>
-                  ))}
+                    ))
+                  )}
 
                   {loading && (
                     <div className="px-4 py-8 text-center text-gray-500 text-sm">
