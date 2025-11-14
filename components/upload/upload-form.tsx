@@ -462,27 +462,11 @@ export default function UploadForm() {
                       Em breve
                     </span>
                   )}
-
-                  {/* Badge "Publicação direta" para Instagram */}
-                  {isAvailable && platform.value === 'instagram' && (
-                    <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold rounded-full shadow-lg">
-                      Publicação direta
-                    </span>
-                  )}
                 </label>
               </div>
             )
           })}
         </div>
-
-        {/* Dica sobre Instagram */}
-        {formData.platforms.includes('instagram') && (
-          <div className="mt-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200">
-            <p className="text-sm text-gray-700">
-              ✨ <span className="font-semibold">Instagram</span>: Após o upload, você poderá publicar direto no Instagram sem sair do Leadgram!
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Botões */}
