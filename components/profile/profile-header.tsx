@@ -1,6 +1,7 @@
 'use client'
 
 import { m } from 'framer-motion'
+import Image from 'next/image'
 import { Camera, User, Mail, Calendar } from 'lucide-react'
 import { useState } from 'react'
 import { showToast } from '@/lib/toast'
@@ -12,6 +13,7 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({ user, profile }: ProfileHeaderProps) {
   const [uploading, setUploading] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -43,12 +45,15 @@ export default function ProfileHeader({ user, profile }: ProfileHeaderProps) {
         {/* Avatar */}
         <div className="relative group">
           <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-1">
-            <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-              {profile?.avatar_url ? (
-                <img
+            <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden relative">
+              {profile?.avatar_url && !imageError ? (
+                <Image
                   src={profile.avatar_url}
-                  alt={profile.full_name}
-                  className="w-full h-full object-cover"
+                  alt={profile.full_name || 'Avatar'}
+                  fill
+                  className="object-cover"
+                  sizes="128px"
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <User className="w-16 h-16 text-gray-400" />
@@ -57,7 +62,7 @@ export default function ProfileHeader({ user, profile }: ProfileHeaderProps) {
           </div>
 
           {/* Upload Button */}
-          <label className="absolute bottom-0 right-0 p-2 bg-primary hover:bg-primary rounded-full cursor-pointer shadow-lg transition-colors group-hover:scale-110 transform duration-200">
+          <label className="absolute bottom-0 right-0 p-2 bg-primary hover:bg-primary/90 rounded-full cursor-pointer shadow-lg transition-all group-hover:scale-110 transform duration-200">
             <Camera className="w-5 h-5 text-white" />
             <input
               type="file"
@@ -93,30 +98,18 @@ export default function ProfileHeader({ user, profile }: ProfileHeaderProps) {
           </div>
 
           {/* Badges */}
-          <div className="flex gap-2 mt-4 justify-center md:justify-start">
-            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-              Pro Member
-            </span>
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-              Verificado
-            </span>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-6 md:mt-0">
-          <div className="text-center p-4 rounded-xl bg-gray-50">
-            <p className="text-2xl font-bold text-gray-900">48</p>
-            <p className="text-xs text-gray-600">Posts</p>
-          </div>
-          <div className="text-center p-4 rounded-xl bg-gray-50">
-            <p className="text-2xl font-bold text-gray-900">2.4K</p>
-            <p className="text-xs text-gray-600">Seguidores</p>
-          </div>
-          <div className="text-center p-4 rounded-xl bg-gray-50">
-            <p className="text-2xl font-bold text-gray-900">4.8%</p>
-            <p className="text-xs text-gray-600">Engajamento</p>
-          </div>
+          {profile?.subscription_tier && (
+            <div className="flex gap-2 mt-4 justify-center md:justify-start">
+              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                {profile.subscription_tier === 'pro' ? 'Pro Member' : 'Free Plan'}
+              </span>
+              {user.email_confirmed_at && (
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                  Verificado
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </m.div>
