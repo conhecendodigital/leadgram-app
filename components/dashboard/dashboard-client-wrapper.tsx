@@ -11,6 +11,7 @@ import TopContent from './top-content'
 import PlatformComparison from './platform-comparison'
 import GoalsCards from './goals-cards'
 import ScheduledPosts from './scheduled-posts'
+import InsightsWidget from './insights-widget'
 
 interface DashboardClientWrapperProps {
   ideas: any[]
@@ -83,6 +84,7 @@ export default function DashboardClientWrapper({
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           <PerformanceChart ideas={filteredIdeas} />
           <PlatformComparison ideas={filteredIdeas} />
+          <InsightsWidget ideas={filteredIdeas} stats={stats} />
           <ContentGrid ideas={postedIdeas.slice(0, 9)} />
         </div>
 
