@@ -480,46 +480,31 @@ export default function UploadForm() {
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { value: 'instagram', label: 'Instagram', available: true, icon: '📸' },
-            { value: 'tiktok', label: 'TikTok', available: false, icon: '🎵' },
-            { value: 'youtube', label: 'YouTube', available: false, icon: '📺' },
-            { value: 'facebook', label: 'Facebook', available: false, icon: '👍' },
+            { value: 'instagram', label: 'Instagram', icon: '📸' },
+            { value: 'tiktok', label: 'TikTok', icon: '🎵' },
+            { value: 'youtube', label: 'YouTube', icon: '📺' },
+            { value: 'facebook', label: 'Facebook', icon: '👍' },
           ].map((platform) => {
             const isSelected = formData.platforms.includes(platform.value as Platform)
-            const isAvailable = platform.available
 
             return (
-              <div key={platform.value} className="relative">
-                <label
-                  className={`flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${
-                    isAvailable
-                      ? 'cursor-pointer hover:border-primary/30'
-                      : 'cursor-not-allowed opacity-60'
-                  }`}
-                  style={{
-                    borderColor: isSelected && isAvailable ? '#0866FF' : '#e5e7eb',
-                    backgroundColor: isSelected && isAvailable ? '#eff6ff' : 'white',
-                  }}
-                  title={!isAvailable ? 'Plataforma em breve!' : undefined}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => isAvailable && togglePlatform(platform.value as Platform)}
-                    disabled={!isAvailable}
-                    className="sr-only"
-                  />
-                  <span className="text-2xl">{platform.icon}</span>
-                  <span className="text-sm font-medium text-gray-700">{platform.label}</span>
-
-                  {/* Badge "Em breve" */}
-                  {!isAvailable && (
-                    <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-orange-400 to-pink-500 text-white text-xs font-bold rounded-full shadow-lg">
-                      Em breve
-                    </span>
-                  )}
-                </label>
-              </div>
+              <label
+                key={platform.value}
+                className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 cursor-pointer hover:border-primary/30 transition-all"
+                style={{
+                  borderColor: isSelected ? '#0866FF' : '#e5e7eb',
+                  backgroundColor: isSelected ? '#eff6ff' : 'white',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => togglePlatform(platform.value as Platform)}
+                  className="sr-only"
+                />
+                <span className="text-2xl">{platform.icon}</span>
+                <span className="text-sm font-medium text-gray-700">{platform.label}</span>
+              </label>
             )
           })}
         </div>
