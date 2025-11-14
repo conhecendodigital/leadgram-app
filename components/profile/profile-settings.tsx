@@ -44,7 +44,6 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
 
       showToast.success('Perfil atualizado com sucesso!')
     } catch (error) {
-      console.error(error)
       showToast.error('Erro ao atualizar perfil')
     } finally {
       setLoading(false)
