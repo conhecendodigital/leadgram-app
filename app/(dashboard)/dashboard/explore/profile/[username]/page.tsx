@@ -11,8 +11,6 @@ async function getProfileData(username: string) {
     // Chamar API interna que usa RapidAPI
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-    console.log('🔍 Fetching profile:', username)
-
     const [profileRes, postsRes] = await Promise.all([
       fetch(`${baseUrl}/api/instagram/profile?username=${username}`, {
         cache: 'no-store',
@@ -23,12 +21,10 @@ async function getProfileData(username: string) {
     ])
 
     if (!profileRes.ok) {
-      console.error('Profile fetch failed:', await profileRes.text())
       return null
     }
 
     if (!postsRes.ok) {
-      console.error('Posts fetch failed:', await postsRes.text())
       return null
     }
 
@@ -40,7 +36,6 @@ async function getProfileData(username: string) {
       posts: posts || [],
     }
   } catch (error) {
-    console.error('Error fetching profile data:', error)
     return null
   }
 }
@@ -91,7 +86,7 @@ export default async function ProfileAnalysisPage({
 
         <a
           href="/dashboard/explore"
-          className="px-6 py-3 bg-primary hover:bg-primary text-white rounded-xl font-semibold transition-colors"
+          className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold transition-colors"
         >
           ← Voltar
         </a>
