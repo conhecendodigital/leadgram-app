@@ -15,6 +15,7 @@ export default function UploadForm() {
   const [uploading, setUploading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -64,6 +65,57 @@ export default function UploadForm() {
     setPreview(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const droppedFile = e.dataTransfer.files?.[0]
+    if (!droppedFile) return
+
+    // Validar tipo de arquivo
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm']
+    if (!validTypes.includes(droppedFile.type)) {
+      setError('Tipo de arquivo inválido. Use imagens (JPG, PNG, GIF, WEBP) ou vídeos (MP4, MOV, WEBM)')
+      return
+    }
+
+    // Validar tamanho (max 100MB)
+    const maxSize = 100 * 1024 * 1024 // 100MB
+    if (droppedFile.size > maxSize) {
+      setError('Arquivo muito grande. Tamanho máximo: 100MB')
+      return
+    }
+
+    setFile(droppedFile)
+    setError(null)
+
+    // Gerar preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPreview(reader.result as string)
+    }
+    reader.readAsDataURL(droppedFile)
+
+    // Sugerir título baseado no nome do arquivo
+    if (!formData.title) {
+      const fileName = droppedFile.name.replace(/\.[^/.]+$/, '') // Remove extensão
+      setFormData(prev => ({ ...prev, title: fileName }))
     }
   }
 
@@ -188,14 +240,23 @@ export default function UploadForm() {
         {!file ? (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-12 text-center cursor-pointer hover:border-primary hover:bg-purple-50/50 transition-all group"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all group ${
+              isDragging
+                ? 'border-primary bg-purple-100 scale-105'
+                : 'border-gray-300 hover:border-primary hover:bg-purple-50/50'
+            }`}
           >
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className={`w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-4 transition-transform ${
+                isDragging ? 'scale-125 animate-pulse' : 'group-hover:scale-110'
+              }`}>
                 <Upload className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Clique para selecionar um arquivo
+                {isDragging ? 'Solte o arquivo aqui!' : 'Clique para selecionar um arquivo'}
               </h3>
               <p className="text-sm text-gray-600 mb-4">
                 ou arraste e solte aqui
@@ -363,28 +424,48 @@ export default function UploadForm() {
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { value: 'instagram', label: 'Instagram' },
-            { value: 'tiktok', label: 'TikTok' },
-            { value: 'youtube', label: 'YouTube' },
-            { value: 'facebook', label: 'Facebook' },
-          ].map((platform) => (
-            <label
-              key={platform.value}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all hover:border-primary/30"
-              style={{
-                borderColor: formData.platforms.includes(platform.value as Platform) ? '#0866FF' : '#e5e7eb',
-                backgroundColor: formData.platforms.includes(platform.value as Platform) ? '#eff6ff' : 'white',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={formData.platforms.includes(platform.value as Platform)}
-                onChange={() => togglePlatform(platform.value as Platform)}
-                className="sr-only"
-              />
-              <span className="text-sm font-medium text-gray-700">{platform.label}</span>
-            </label>
-          ))}
+            { value: 'instagram', label: 'Instagram', available: true, icon: '📸' },
+            { value: 'tiktok', label: 'TikTok', available: false, icon: '🎵' },
+            { value: 'youtube', label: 'YouTube', available: false, icon: '📺' },
+            { value: 'facebook', label: 'Facebook', available: false, icon: '👍' },
+          ].map((platform) => {
+            const isSelected = formData.platforms.includes(platform.value as Platform)
+            const isAvailable = platform.available
+
+            return (
+              <div key={platform.value} className="relative">
+                <label
+                  className={`flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${
+                    isAvailable
+                      ? 'cursor-pointer hover:border-primary/30'
+                      : 'cursor-not-allowed opacity-60'
+                  }`}
+                  style={{
+                    borderColor: isSelected && isAvailable ? '#0866FF' : '#e5e7eb',
+                    backgroundColor: isSelected && isAvailable ? '#eff6ff' : 'white',
+                  }}
+                  title={!isAvailable ? 'Plataforma em breve!' : undefined}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => isAvailable && togglePlatform(platform.value as Platform)}
+                    disabled={!isAvailable}
+                    className="sr-only"
+                  />
+                  <span className="text-2xl">{platform.icon}</span>
+                  <span className="text-sm font-medium text-gray-700">{platform.label}</span>
+
+                  {/* Badge "Em breve" */}
+                  {!isAvailable && (
+                    <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-orange-400 to-pink-500 text-white text-xs font-bold rounded-full shadow-lg">
+                      Em breve
+                    </span>
+                  )}
+                </label>
+              </div>
+            )
+          })}
         </div>
       </div>
 
