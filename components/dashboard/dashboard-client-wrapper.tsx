@@ -9,6 +9,7 @@ import StoriesCarousel from './stories-carousel'
 import ActivityFeed from './activity-feed'
 import TopContent from './top-content'
 import PlatformComparison from './platform-comparison'
+import GoalsCards from './goals-cards'
 
 interface DashboardClientWrapperProps {
   ideas: any[]
@@ -87,6 +88,7 @@ export default function DashboardClientWrapper({
         {/* Right Column - 1/3 */}
         <div className="space-y-4 md:space-y-6">
           <TopContent ideas={postedIdeas.slice(0, 5)} />
+          <GoalsCards ideas={filteredIdeas} stats={stats} />
           <ActivityFeed ideas={filteredIdeas.slice(0, 5)} />
         </div>
       </div>

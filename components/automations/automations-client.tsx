@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Check,
   X,
+  Zap,
 } from 'lucide-react'
 
 interface Automation {
