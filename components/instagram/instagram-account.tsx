@@ -1,6 +1,7 @@
 'use client'
 
-import { Instagram, Users, Image, Calendar, RefreshCw, XCircle, Loader } from 'lucide-react'
+import NextImage from 'next/image'
+import { Instagram, Users, Image, Calendar, RefreshCw, XCircle, Loader, AlertTriangle, X } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { showToast } from '@/lib/toast'
@@ -22,6 +23,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   const router = useRouter()
   const [syncing, setSyncing] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false)
 
   const handleSync = async () => {
     setSyncing(true)
@@ -61,10 +63,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   }
 
   const handleDisconnect = async () => {
-    if (!confirm('Tem certeza que deseja desconectar sua conta do Instagram?')) {
-      return
-    }
-
+    setShowDisconnectModal(false)
     setDisconnecting(true)
 
     try {
@@ -95,16 +94,20 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
-      <div className="flex items-start justify-between mb-6">
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 lg:p-8 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           {/* Profile Picture */}
           {account.profile_picture_url ? (
-            <img
-              src={account.profile_picture_url}
-              alt={account.username}
-              className="w-16 h-16 rounded-full border-2 border-gray-200"
-            />
+            <div className="relative w-16 h-16 rounded-full border-2 border-gray-200 overflow-hidden">
+              <NextImage
+                src={account.profile_picture_url}
+                alt={account.username}
+                fill
+                className="object-cover"
+                sizes="64px"
+              />
+            </div>
           ) : (
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
               <Instagram className="w-8 h-8 text-white" />
@@ -112,43 +115,43 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
           )}
 
           {/* Account Info */}
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="flex-1">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex flex-wrap items-center gap-2">
               @{account.username}
               <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
                 Conectado
               </span>
             </h3>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               Conectado em {formatDate(account.connected_at)}
             </p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {syncing ? (
               <>
                 <Loader className="w-4 h-4 animate-spin" />
-                Sincronizando...
+                <span className="hidden sm:inline">Sincronizando...</span>
               </>
             ) : (
               <>
                 <RefreshCw className="w-4 h-4" />
-                Sincronizar
+                <span className="hidden sm:inline">Sincronizar</span>
               </>
             )}
           </button>
 
           <button
-            onClick={handleDisconnect}
+            onClick={() => setShowDisconnectModal(true)}
             disabled={disconnecting}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {disconnecting ? (
               <>
@@ -158,7 +161,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
             ) : (
               <>
                 <XCircle className="w-4 h-4" />
-                Desconectar
+                <span className="hidden sm:inline">Desconectar</span>
               </>
             )}
           </button>
@@ -166,7 +169,7 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-gray-50 rounded-xl p-4">
           <div className="flex items-center gap-2 text-gray-600 mb-2">
             <Users className="w-4 h-4" />
@@ -203,6 +206,69 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
         <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
           <Calendar className="w-4 h-4" />
           Última sincronização: {formatDate(account.last_sync_at)}
+        </div>
+      )}
+
+      {/* Disconnect Confirmation Modal */}
+      {showDisconnectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Desconectar Instagram
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDisconnectModal(false)}
+                disabled={disconnecting}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="mb-6">
+              <p className="text-gray-700 mb-3">
+                Tem certeza que deseja desconectar sua conta <strong>@{account.username}</strong>?
+              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-sm text-amber-800">
+                  <strong>Atenção:</strong> Seus posts e métricas importadas não serão excluídos, mas você não poderá mais sincronizar novos dados até reconectar.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDisconnectModal(false)}
+                disabled={disconnecting}
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {disconnecting ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Desconectando...
+                  </>
+                ) : (
+                  'Desconectar'
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
