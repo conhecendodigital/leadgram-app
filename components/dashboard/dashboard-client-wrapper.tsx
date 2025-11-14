@@ -12,6 +12,7 @@ import PlatformComparison from './platform-comparison'
 import GoalsCards from './goals-cards'
 import ScheduledPosts from './scheduled-posts'
 import InsightsWidget from './insights-widget'
+import OnboardingTour from './onboarding-tour'
 
 interface DashboardClientWrapperProps {
   ideas: any[]
@@ -96,6 +97,9 @@ export default function DashboardClientWrapper({
           <ActivityFeed ideas={filteredIdeas.slice(0, 5)} />
         </div>
       </div>
+
+      {/* Onboarding Tour */}
+      <OnboardingTour />
     </>
   )
 }
