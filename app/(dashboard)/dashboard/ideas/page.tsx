@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Filter, Search, X } from 'lucide-react'
@@ -23,9 +23,15 @@ export default function IdeasPage() {
     fetchIdeas()
   }, [])
 
+  // FIX #2: Resetar paginação quando filtros mudam
+  useEffect(() => {
+    setItemsToShow(20)
+  }, [searchQuery, statusFilter, funnelFilter, sortBy])
+
   const fetchIdeas = async () => {
     try {
       setError(null)
+      setLoading(true) // FIX #3: Mostrar loading ao retry
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -66,45 +72,48 @@ export default function IdeasPage() {
     }
   }
 
-  const filteredAndSortedIdeas = ideas
-    .filter((idea) => {
-      // Filtro de busca (título, tema, script)
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        const matchesTitle = idea.title?.toLowerCase().includes(query)
-        const matchesTheme = idea.theme?.toLowerCase().includes(query)
-        const matchesScript = idea.script?.toLowerCase().includes(query)
+  // FIX #1: useMemo para performance (evita re-filtrar/re-ordenar a cada render)
+  const filteredAndSortedIdeas = useMemo(() => {
+    return ideas
+      .filter((idea) => {
+        // Filtro de busca (título, tema, script)
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase()
+          const matchesTitle = idea.title?.toLowerCase().includes(query)
+          const matchesTheme = idea.theme?.toLowerCase().includes(query)
+          const matchesScript = idea.script?.toLowerCase().includes(query)
 
-        if (!matchesTitle && !matchesTheme && !matchesScript) {
-          return false
+          if (!matchesTitle && !matchesTheme && !matchesScript) {
+            return false
+          }
         }
-      }
 
-      // Filtro de status
-      if (statusFilter !== 'all' && idea.status !== statusFilter) return false
+        // Filtro de status
+        if (statusFilter !== 'all' && idea.status !== statusFilter) return false
 
-      // Filtro de funil
-      if (funnelFilter !== 'all' && idea.funnel_stage !== funnelFilter) return false
+        // Filtro de funil
+        if (funnelFilter !== 'all' && idea.funnel_stage !== funnelFilter) return false
 
-      return true
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'newest':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        case 'oldest':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        case 'most-views': {
-          const aViews = a.platforms?.reduce((sum, p) => sum + (p.metrics?.[0]?.views || 0), 0) || 0
-          const bViews = b.platforms?.reduce((sum, p) => sum + (p.metrics?.[0]?.views || 0), 0) || 0
-          return bViews - aViews
+        return true
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'newest':
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          case 'oldest':
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          case 'most-views': {
+            const aViews = a.platforms?.reduce((sum, p) => sum + (p.metrics?.[0]?.views || 0), 0) || 0
+            const bViews = b.platforms?.reduce((sum, p) => sum + (p.metrics?.[0]?.views || 0), 0) || 0
+            return bViews - aViews
+          }
+          case 'title-asc':
+            return a.title.localeCompare(b.title)
+          default:
+            return 0
         }
-        case 'title-asc':
-          return a.title.localeCompare(b.title)
-        default:
-          return 0
-      }
-    })
+      })
+  }, [ideas, searchQuery, statusFilter, funnelFilter, sortBy])
 
   const paginatedIdeas = filteredAndSortedIdeas.slice(0, itemsToShow)
   const hasMore = filteredAndSortedIdeas.length > itemsToShow
