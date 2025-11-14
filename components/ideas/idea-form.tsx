@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, CheckCircle2, Video } from 'lucide-react'
 import type { IdeaFormData, Idea, Platform } from '@/types/idea.types'
@@ -15,6 +15,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
 
   const [formData, setFormData] = useState<IdeaFormData>({
     title: idea?.title || '',
@@ -26,19 +27,64 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
     platforms: idea?.platforms?.map(p => p.platform) || [],
   })
 
+  // FIX #4: Detectar mudanças no formulário
+  useEffect(() => {
+    const hasAnyData = !!(formData.title || formData.theme || formData.script ||
+                       formData.editor_instructions || formData.platforms.length > 0)
+    setHasChanges(hasAnyData)
+  }, [formData])
+
+  // FIX #4: Confirmação ao sair com dados preenchidos
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges && !success) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasChanges, success])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // FIX #2: Validar plataformas obrigatórias
+    if (formData.platforms.length === 0) {
+      setError('Selecione pelo menos uma plataforma para publicar')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
+      // FIX #1: Verificar limites do plano (apenas no modo create)
+      if (mode === 'create') {
+        const limitsResponse = await fetch('/api/user/limits')
+        if (!limitsResponse.ok) {
+          throw new Error('Erro ao verificar limites do plano')
+        }
+        const limits = await limitsResponse.json()
+
+        if (limits.ideas.used >= limits.ideas.limit) {
+          throw new Error(`Você atingiu o limite de ${limits.ideas.limit} ideias do seu plano. Faça upgrade para continuar!`)
+        }
+      }
+
       const url = mode === 'create' ? '/api/ideas' : `/api/ideas/${idea?.id}`
       const method = mode === 'create' ? 'POST' : 'PATCH'
+
+      // FIX #3: Forçar status='idea' no modo create
+      const dataToSend = mode === 'create'
+        ? { ...formData, status: 'idea' }
+        : formData
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       })
 
       if (!response.ok) {
@@ -190,11 +236,15 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
             className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+            disabled={mode === 'create'}
           >
             <option value="idea">Ideia</option>
-            <option value="recorded">Gravado</option>
-            <option value="posted">Postado</option>
+            {mode === 'edit' && <option value="recorded">Gravado</option>}
+            {mode === 'edit' && <option value="posted">Postado</option>}
           </select>
+          {mode === 'create' && (
+            <p className="text-xs text-gray-500 mt-1">Status fixo ao criar nova ideia</p>
+          )}
         </div>
 
         {/* Funil */}
