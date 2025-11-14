@@ -9,6 +9,7 @@ import StatusBadge from '@/components/ideas/status-badge'
 import FunnelBadge from '@/components/ideas/funnel-badge'
 import DeleteButton from './delete-button'
 import SyncMetricsButton from './sync-metrics-button'
+import LinkPostButton from './link-post-button'
 
 import type { Database } from '@/types/database.types'
 
@@ -248,24 +249,34 @@ export default async function IdeaDetailPage({ params }: PageProps) {
 
                 return (
                   <div key={platform.id} className="border border-gray-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center text-white">
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900 capitalize">{platform.platform}</h3>
-                          <p className="text-sm text-gray-600">
-                            {platform.is_posted ? 'Postado' : 'Não postado'}
-                          </p>
-                        </div>
+                    {/* Header da Plataforma */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center text-white">
+                        <Icon className="w-5 h-5" />
                       </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 capitalize">{platform.platform}</h3>
+                        <p className="text-sm text-gray-600">
+                          {platform.is_posted ? 'Postado' : 'Não postado'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Ações da Plataforma */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <LinkPostButton
+                        ideaId={idea.id}
+                        platformId={platform.id}
+                        platformName={platform.platform}
+                        currentUrl={platform.post_url}
+                        isPosted={platform.is_posted}
+                      />
                       {platform.is_posted && platform.post_url && (
                         <a
                           href={platform.post_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-sm text-primary hover:opacity-80 transition-opacity"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
                         >
                           <span className="hidden sm:inline">Ver post</span>
                           <ExternalLink className="w-4 h-4" />
