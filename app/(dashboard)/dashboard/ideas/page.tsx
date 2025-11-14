@@ -1,31 +1,46 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Filter, Search, X } from 'lucide-react'
 import IdeaCard from '@/components/ideas/idea-card'
 import type { Idea, IdeaStatus, FunnelStage } from '@/types/idea.types'
 
+type SortOption = 'newest' | 'oldest' | 'most-views' | 'title-asc'
+
 export default function IdeasPage() {
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<IdeaStatus | 'all'>('all')
   const [funnelFilter, setFunnelFilter] = useState<FunnelStage | 'all'>('all')
+  const [sortBy, setSortBy] = useState<SortOption>('newest')
+  const [itemsToShow, setItemsToShow] = useState(20)
 
   useEffect(() => {
     fetchIdeas()
   }, [])
 
+  // FIX #2: Resetar paginação quando filtros mudam
+  useEffect(() => {
+    setItemsToShow(20)
+  }, [searchQuery, statusFilter, funnelFilter, sortBy])
+
   const fetchIdeas = async () => {
     try {
+      setError(null)
+      setLoading(true) // FIX #3: Mostrar loading ao retry
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
-      if (!user) return
+      if (!user) {
+        setError('Usuário não autenticado')
+        return
+      }
 
-      const { data } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('ideas')
         .select(`
           *,
@@ -42,37 +57,66 @@ export default function IdeasPage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
+      if (fetchError) {
+        throw new Error(fetchError.message)
+      }
+
       if (data) {
         setIdeas(data)
       }
     } catch (error) {
       console.error('Error fetching ideas:', error)
+      setError(error instanceof Error ? error.message : 'Erro ao carregar ideias. Tente novamente.')
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredIdeas = ideas.filter((idea) => {
-    // Filtro de busca (título, tema, script)
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      const matchesTitle = idea.title?.toLowerCase().includes(query)
-      const matchesTheme = idea.theme?.toLowerCase().includes(query)
-      const matchesScript = idea.script?.toLowerCase().includes(query)
+  // FIX #1: useMemo para performance (evita re-filtrar/re-ordenar a cada render)
+  const filteredAndSortedIdeas = useMemo(() => {
+    return ideas
+      .filter((idea) => {
+        // Filtro de busca (título, tema, script)
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase()
+          const matchesTitle = idea.title?.toLowerCase().includes(query)
+          const matchesTheme = idea.theme?.toLowerCase().includes(query)
+          const matchesScript = idea.script?.toLowerCase().includes(query)
 
-      if (!matchesTitle && !matchesTheme && !matchesScript) {
-        return false
-      }
-    }
+          if (!matchesTitle && !matchesTheme && !matchesScript) {
+            return false
+          }
+        }
 
-    // Filtro de status
-    if (statusFilter !== 'all' && idea.status !== statusFilter) return false
+        // Filtro de status
+        if (statusFilter !== 'all' && idea.status !== statusFilter) return false
 
-    // Filtro de funil
-    if (funnelFilter !== 'all' && idea.funnel_stage !== funnelFilter) return false
+        // Filtro de funil
+        if (funnelFilter !== 'all' && idea.funnel_stage !== funnelFilter) return false
 
-    return true
-  })
+        return true
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'newest':
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          case 'oldest':
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          case 'most-views': {
+            const aViews = a.platforms?.reduce((sum, p) => sum + (p.metrics?.[0]?.views || 0), 0) || 0
+            const bViews = b.platforms?.reduce((sum, p) => sum + (p.metrics?.[0]?.views || 0), 0) || 0
+            return bViews - aViews
+          }
+          case 'title-asc':
+            return a.title.localeCompare(b.title)
+          default:
+            return 0
+        }
+      })
+  }, [ideas, searchQuery, statusFilter, funnelFilter, sortBy])
+
+  const paginatedIdeas = filteredAndSortedIdeas.slice(0, itemsToShow)
+  const hasMore = filteredAndSortedIdeas.length > itemsToShow
 
   const hasActiveFilters = searchQuery || statusFilter !== 'all' || funnelFilter !== 'all'
 
@@ -103,12 +147,31 @@ export default function IdeasPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">!</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900 mb-1">Erro ao carregar ideias</h3>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+              <button
+                onClick={fetchIdeas}
+                className="text-sm text-red-600 hover:text-red-800 font-medium underline"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Minhas Ideias</h1>
             <p className="text-sm sm:text-base text-gray-600 mt-1">
-              {filteredIdeas.length} {filteredIdeas.length === 1 ? 'ideia' : 'ideias'} encontrada{filteredIdeas.length !== 1 && 's'}
+              {filteredAndSortedIdeas.length} {filteredAndSortedIdeas.length === 1 ? 'ideia' : 'ideias'} encontrada{filteredAndSortedIdeas.length !== 1 && 's'}
             </p>
           </div>
           <Link
@@ -177,6 +240,18 @@ export default function IdeasPage() {
                 <option value="bottom">Fundo</option>
               </select>
 
+              {/* Sort Filter */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="newest">Mais recente</option>
+                <option value="oldest">Mais antigo</option>
+                <option value="most-views">Mais visualizado</option>
+                <option value="title-asc">Título (A-Z)</option>
+              </select>
+
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
@@ -230,7 +305,7 @@ export default function IdeasPage() {
         </div>
 
         {/* Grid de Ideias */}
-        {filteredIdeas.length === 0 ? (
+        {filteredAndSortedIdeas.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <p className="text-gray-600 mb-4">
               {ideas.length === 0
@@ -248,11 +323,25 @@ export default function IdeasPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredIdeas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedIdeas.map((idea) => (
+                <IdeaCard key={idea.id} idea={idea} />
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setItemsToShow(prev => prev + 20)}
+                  className="px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 font-medium rounded-xl hover:border-primary hover:text-primary transition-all"
+                >
+                  Carregar mais ({filteredAndSortedIdeas.length - itemsToShow} restantes)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
