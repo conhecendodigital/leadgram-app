@@ -39,10 +39,10 @@ export default async function DashboardPage() {
 
   const profile = profileData as Database['public']['Tables']['profiles']['Row'] | null
 
-  // Buscar ideias com métricas (com ordenação de métricas)
+  // Buscar ideias com métricas
   const { data, error: ideasError } = await supabase
     .from('ideas')
-    .select('*, idea_platforms(*, metrics(*).order(created_at.desc))')
+    .select('*, idea_platforms(*, metrics(*))')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -52,6 +52,19 @@ export default async function DashboardPage() {
   }
 
   const ideas = data as IdeaWithRelations[] | null
+
+  // Ordenar métricas por data (mais recente primeiro) em cada plataforma
+  ideas?.forEach(idea => {
+    idea.idea_platforms?.forEach(platform => {
+      if (platform.metrics && Array.isArray(platform.metrics)) {
+        platform.metrics.sort((a: any, b: any) => {
+          const dateA = new Date(a.created_at || 0).getTime()
+          const dateB = new Date(b.created_at || 0).getTime()
+          return dateB - dateA // DESC (mais recente primeiro)
+        })
+      }
+    })
+  })
 
   // Datas para comparação
   const now = new Date()
