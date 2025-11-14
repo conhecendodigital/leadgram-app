@@ -9,10 +9,14 @@ interface TopContentProps {
 }
 
 export default function TopContent({ ideas }: TopContentProps) {
-  // Ordenar por visualizações
+  // Ordenar por visualizações (agregando TODAS as plataformas)
   const sortedIdeas = [...ideas].sort((a, b) => {
-    const aViews = a.idea_platforms?.[0]?.metrics?.[0]?.views || 0
-    const bViews = b.idea_platforms?.[0]?.metrics?.[0]?.views || 0
+    const aViews = a.idea_platforms?.reduce((sum: number, p: any) =>
+      sum + (p.metrics?.[0]?.views || 0), 0
+    ) || 0
+    const bViews = b.idea_platforms?.reduce((sum: number, p: any) =>
+      sum + (p.metrics?.[0]?.views || 0), 0
+    ) || 0
     return bViews - aViews
   })
 
@@ -64,9 +68,17 @@ export default function TopContent({ ideas }: TopContentProps) {
 
       <div className="space-y-3">
         {topIdeas.map((idea, index) => {
-          const metrics = idea.idea_platforms?.[0]?.metrics?.[0]
-          const views = metrics?.views || 0
-          const likes = metrics?.likes || 0
+          // Agregar métricas de TODAS as plataformas
+          const aggregated = idea.idea_platforms?.reduce((acc: any, platform: any) => {
+            const latestMetric = platform.metrics?.[0]
+            return {
+              views: acc.views + (latestMetric?.views || 0),
+              likes: acc.likes + (latestMetric?.likes || 0)
+            }
+          }, { views: 0, likes: 0 }) || { views: 0, likes: 0 }
+
+          const views = aggregated.views
+          const likes = aggregated.likes
 
           return (
             <Link key={idea.id} href={`/dashboard/ideas/${idea.id}`}>

@@ -35,19 +35,29 @@ export default function PerformanceChart({ ideas }: PerformanceChartProps) {
         return ideaDate.toDateString() === date.toDateString() && idea.status === 'posted'
       })
 
+      // Agregar métricas de TODAS as plataformas
       const views = dayIdeas.reduce((sum, idea) => {
-        const metrics = idea.idea_platforms?.[0]?.metrics?.[0]
-        return sum + (metrics?.views || 0)
+        const v = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+          const latestMetric = platform.metrics?.[0]
+          return pSum + (latestMetric?.views || 0)
+        }, 0) || 0
+        return sum + v
       }, 0)
 
       const likes = dayIdeas.reduce((sum, idea) => {
-        const metrics = idea.idea_platforms?.[0]?.metrics?.[0]
-        return sum + (metrics?.likes || 0)
+        const l = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+          const latestMetric = platform.metrics?.[0]
+          return pSum + (latestMetric?.likes || 0)
+        }, 0) || 0
+        return sum + l
       }, 0)
 
       const comments = dayIdeas.reduce((sum, idea) => {
-        const metrics = idea.idea_platforms?.[0]?.metrics?.[0]
-        return sum + (metrics?.comments || 0)
+        const c = idea.idea_platforms?.reduce((pSum: number, platform: any) => {
+          const latestMetric = platform.metrics?.[0]
+          return pSum + (latestMetric?.comments || 0)
+        }, 0) || 0
+        return sum + c
       }, 0)
 
       // Formato de data baseado no período

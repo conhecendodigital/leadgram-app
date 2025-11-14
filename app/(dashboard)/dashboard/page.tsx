@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import QuickActions from '@/components/dashboard/quick-actions'
 import DashboardClientWrapper from '@/components/dashboard/dashboard-client-wrapper'
+import DashboardError from '@/components/dashboard/dashboard-error'
 import type { Database } from '@/types/database.types'
 
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
@@ -25,20 +26,30 @@ export default async function DashboardPage() {
   }
 
   // Buscar perfil
-  const { data: profileData } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
+  if (profileError) {
+    console.error('Erro ao buscar perfil:', profileError)
+    return <DashboardError error="Não foi possível carregar seu perfil. Tente novamente." />
+  }
+
   const profile = profileData as Database['public']['Tables']['profiles']['Row'] | null
 
-  // Buscar ideias com métricas
-  const { data } = await supabase
+  // Buscar ideias com métricas (com ordenação de métricas)
+  const { data, error: ideasError } = await supabase
     .from('ideas')
-    .select('*, idea_platforms(*, metrics(*))')
+    .select('*, idea_platforms(*, metrics(*).order(created_at.desc))')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+
+  if (ideasError) {
+    console.error('Erro ao buscar ideias:', ideasError)
+    return <DashboardError error="Não foi possível carregar suas ideias. Tente novamente." />
+  }
 
   const ideas = data as IdeaWithRelations[] | null
 

@@ -37,10 +37,19 @@ export default function ContentGrid({ ideas }: ContentGridProps) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-1">
         {ideas.map((idea, index) => {
-          const metrics = idea.idea_platforms?.[0]?.metrics?.[0]
-          const views = metrics?.views || 0
-          const likes = metrics?.likes || 0
-          const comments = metrics?.comments || 0
+          // Agregar métricas de TODAS as plataformas
+          const aggregated = idea.idea_platforms?.reduce((acc: any, platform: any) => {
+            const latestMetric = platform.metrics?.[0]
+            return {
+              views: acc.views + (latestMetric?.views || 0),
+              likes: acc.likes + (latestMetric?.likes || 0),
+              comments: acc.comments + (latestMetric?.comments || 0)
+            }
+          }, { views: 0, likes: 0, comments: 0 }) || { views: 0, likes: 0, comments: 0 }
+
+          const views = aggregated.views
+          const likes = aggregated.likes
+          const comments = aggregated.comments
 
           return (
             <Link key={idea.id} href={`/dashboard/ideas/${idea.id}`}>
