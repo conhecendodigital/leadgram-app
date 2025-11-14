@@ -37,14 +37,19 @@ export default function QuickFilters({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm mb-6"
+      role="search"
+      aria-label="Filtros do dashboard"
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         {/* Status Filter */}
         <div className="flex-1 w-full sm:w-auto">
-          <label className="text-xs font-medium text-gray-600 mb-2 block">
+          <label
+            id="status-filter-label"
+            className="text-xs font-medium text-gray-600 mb-2 block"
+          >
             Status
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby="status-filter-label">
             {statusOptions.map((option) => {
               const Icon = option.icon
               const isActive = statusFilter === option.value
@@ -53,8 +58,11 @@ export default function QuickFilters({
                 <button
                   key={option.value}
                   onClick={() => onStatusChange(option.value)}
+                  aria-label={`Filtrar por ${option.label}`}
+                  aria-pressed={isActive}
                   className={`
                     flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all
+                    focus:outline-none focus:ring-2 focus:ring-primary/50
                     ${
                       isActive
                         ? 'bg-primary text-white shadow-md'
@@ -62,7 +70,7 @@ export default function QuickFilters({
                     }
                   `}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-4 h-4" aria-hidden="true" />
                   {option.label}
                 </button>
               )
@@ -75,11 +83,14 @@ export default function QuickFilters({
 
         {/* Period Filter */}
         <div className="flex-1 w-full sm:w-auto">
-          <label className="text-xs font-medium text-gray-600 mb-2 block flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
+          <label
+            id="period-filter-label"
+            className="text-xs font-medium text-gray-600 mb-2 block flex items-center gap-1"
+          >
+            <Calendar className="w-3 h-3" aria-hidden="true" />
             Período
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby="period-filter-label">
             {periodOptions.map((option) => {
               const isActive = periodFilter === option.value
 
@@ -87,8 +98,11 @@ export default function QuickFilters({
                 <button
                   key={option.value}
                   onClick={() => onPeriodChange(option.value)}
+                  aria-label={`Filtrar por ${option.label}`}
+                  aria-pressed={isActive}
                   className={`
                     px-3 py-2 rounded-lg font-medium text-sm transition-all
+                    focus:outline-none focus:ring-2 focus:ring-primary/50
                     ${
                       isActive
                         ? 'bg-primary text-white shadow-md'
