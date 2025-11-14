@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { BadgeCheck, Briefcase } from 'lucide-react'
 import Image from 'next/image'
 
@@ -8,23 +9,23 @@ interface ProfileHeaderProps {
 }
 
 export default function ProfileHeader({ profile }: ProfileHeaderProps) {
+  const [imageError, setImageError] = useState(false)
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
       <div className="flex flex-col md:flex-row gap-6 items-start">
         {/* Profile Picture */}
         <div className="relative">
           <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-gradient-to-br from-purple-500 to-pink-500 p-1 bg-white">
-            <div className="w-full h-full rounded-full overflow-hidden">
-              {profile.profile_pic_url ? (
-                <img
+            <div className="w-full h-full rounded-full overflow-hidden relative">
+              {profile.profile_pic_url && !imageError ? (
+                <Image
                   src={`/api/proxy-image?url=${encodeURIComponent(profile.profile_pic_url)}`}
                   alt={profile.username}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Fallback para imagem padrão se falhar
-                    e.currentTarget.style.display = 'none'
-                    e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold">${profile.username?.[0]?.toUpperCase() || '?'}</div>`
-                  }}
+                  fill
+                  className="object-cover"
+                  sizes="128px"
+                  unoptimized
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold">
