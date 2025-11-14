@@ -1,16 +1,19 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createServerClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ChevronRight, Edit, Trash2, Instagram, Youtube, Facebook, Eye, Heart, MessageCircle, Share2, Bookmark } from 'lucide-react'
+import { ChevronRight, Edit, Trash2, Instagram, Youtube, Facebook, Eye, Heart, MessageCircle, Share2, Bookmark, ExternalLink } from 'lucide-react'
 import StatusBadge from '@/components/ideas/status-badge'
 import FunnelBadge from '@/components/ideas/funnel-badge'
 import DeleteButton from './delete-button'
+import SyncMetricsButton from './sync-metrics-button'
 
 import type { Database } from '@/types/database.types'
 
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
+  video_url?: string | null
   platforms?: Array<Database['public']['Tables']['idea_platforms']['Row'] & {
     metrics?: Array<any>
   }>
@@ -79,44 +82,46 @@ export default async function IdeaDetailPage({ params }: PageProps) {
   )
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 sm:mb-6">
           <Link href="/dashboard/ideas" className="hover:text-primary transition-colors">
             Ideias
           </Link>
           <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900 font-medium line-clamp-1">{idea.title}</span>
+          <span className="text-gray-900 font-medium truncate">{idea.title}</span>
         </div>
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm p-8 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
+            <div className="flex-1 w-full">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <StatusBadge status={idea.status} />
                 <FunnelBadge stage={idea.funnel_stage} />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{idea.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{idea.title}</h1>
               {idea.theme && (
-                <p className="text-lg text-gray-600">{idea.theme}</p>
+                <p className="text-base sm:text-lg text-gray-600">{idea.theme}</p>
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Link
                 href={`/dashboard/ideas/${idea.id}/edit`}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-primary rounded-xl hover:bg-blue-100 transition-colors"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-primary rounded-xl hover:bg-blue-100 transition-colors text-sm"
               >
                 <Edit className="w-4 h-4" />
-                Editar
+                <span className="sm:inline">Editar</span>
               </Link>
-              <DeleteButton ideaId={idea.id} />
+              <div className="flex-1 sm:flex-none">
+                <DeleteButton ideaId={idea.id} />
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-4 text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-600">
             <span>
               Criado em {format(new Date(idea.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </span>
@@ -133,10 +138,41 @@ export default async function IdeaDetailPage({ params }: PageProps) {
           </div>
         </div>
 
+        {/* Mídia (Thumbnail ou Vídeo) */}
+        {(idea.thumbnail_url || idea.video_url) && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
+            {idea.video_url ? (
+              <div className="relative aspect-video bg-gray-900">
+                <video
+                  src={idea.video_url}
+                  controls
+                  className="w-full h-full"
+                  preload="metadata"
+                >
+                  Seu navegador não suporta vídeos.
+                </video>
+              </div>
+            ) : idea.thumbnail_url ? (
+              <div className="relative aspect-video bg-gray-100">
+                <Image
+                  src={idea.thumbnail_url}
+                  alt={idea.title}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            ) : null}
+          </div>
+        )}
+
         {/* Métricas Totais */}
-        {totalMetrics && (totalMetrics.views > 0 || totalMetrics.likes > 0) && (
-          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Métricas Totais</h2>
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Métricas Totais</h2>
+            {idea.status === 'posted' && <SyncMetricsButton ideaId={idea.id} />}
+          </div>
+
+          {totalMetrics && (totalMetrics.views > 0 || totalMetrics.likes > 0) ? (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
               <div>
                 <div className="flex items-center gap-2 text-gray-600 mb-1">
@@ -184,8 +220,22 @@ export default async function IdeaDetailPage({ params }: PageProps) {
                 </p>
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8">
+              <Eye className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600 mb-2">
+                {idea.status === 'posted'
+                  ? 'Ainda não há métricas disponíveis'
+                  : 'As métricas aparecerão após a publicação'}
+              </p>
+              {idea.status === 'posted' && (
+                <p className="text-sm text-gray-500">
+                  Clique em "Sincronizar" para atualizar as métricas
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Plataformas */}
         {idea.platforms && idea.platforms.length > 0 && (
@@ -198,16 +248,29 @@ export default async function IdeaDetailPage({ params }: PageProps) {
 
                 return (
                   <div key={platform.id} className="border border-gray-200 rounded-xl p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center text-white">
-                        <Icon className="w-5 h-5" />
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center text-white">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 capitalize">{platform.platform}</h3>
+                          <p className="text-sm text-gray-600">
+                            {platform.is_posted ? 'Postado' : 'Não postado'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 capitalize">{platform.platform}</h3>
-                        <p className="text-sm text-gray-600">
-                          {platform.is_posted ? 'Postado' : 'Não postado'}
-                        </p>
-                      </div>
+                      {platform.is_posted && platform.post_url && (
+                        <a
+                          href={platform.post_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-primary hover:opacity-80 transition-opacity"
+                        >
+                          <span className="hidden sm:inline">Ver post</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
                     </div>
 
                     {latestMetric && (
