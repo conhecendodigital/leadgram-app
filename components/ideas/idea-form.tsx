@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, CheckCircle2, Video } from 'lucide-react'
+import { Loader2, CheckCircle2, Video, Instagram } from 'lucide-react'
 import type { IdeaFormData, Idea, Platform } from '@/types/idea.types'
+import PublishToInstagramModal from './publish-to-instagram-modal'
 
 interface IdeaFormProps {
   idea?: Idea
@@ -15,6 +16,7 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showPublishModal, setShowPublishModal] = useState(false)
 
   const [formData, setFormData] = useState<IdeaFormData>({
     title: idea?.title || '',
@@ -24,6 +26,10 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
     status: idea?.status || 'idea',
     funnel_stage: idea?.funnel_stage || 'top',
     platforms: idea?.platforms?.map(p => p.platform) || [],
+    platform_urls: idea?.platforms?.reduce((acc, p) => ({
+      ...acc,
+      [p.platform]: p.post_url || ''
+    }), {} as Record<Platform, string>) || {} as Record<Platform, string>
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -263,6 +269,82 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
         </div>
       </div>
 
+      {/* URLs dos Posts (apenas se status = posted e tiver plataformas selecionadas) */}
+      {formData.status === 'posted' && formData.platforms.length > 0 && (
+        <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Links dos Posts
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Cole os links dos posts publicados para acompanhar as métricas automaticamente
+          </p>
+
+          <div className="space-y-4">
+            {formData.platforms.map((platform) => (
+              <div key={platform}>
+                <label htmlFor={`url-${platform}`} className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                  {platform === 'instagram' ? 'Instagram' :
+                   platform === 'tiktok' ? 'TikTok' :
+                   platform === 'youtube' ? 'YouTube' : 'Facebook'}
+                </label>
+                <input
+                  id={`url-${platform}`}
+                  type="url"
+                  value={formData.platform_urls?.[platform] || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    platform_urls: {
+                      ...formData.platform_urls,
+                      [platform]: e.target.value
+                    } as Record<Platform, string>
+                  })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  placeholder={
+                    platform === 'instagram' ? 'https://www.instagram.com/p/ABC123/' :
+                    platform === 'tiktok' ? 'https://www.tiktok.com/@user/video/123' :
+                    platform === 'youtube' ? 'https://www.youtube.com/watch?v=ABC123' :
+                    'https://www.facebook.com/watch/?v=123'
+                  }
+                />
+                {platform === 'instagram' && formData.platform_urls?.[platform] && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    ℹ️ Métricas do Instagram serão sincronizadas automaticamente
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Publicar no Instagram (apenas em modo edit, com mídia, e Instagram selecionado) */}
+      {mode === 'edit' &&
+        idea &&
+        (idea.thumbnail_url || idea.video_url) &&
+        formData.platforms.includes('instagram') &&
+        formData.status !== 'posted' && (
+        <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Instagram className="w-5 h-5 text-purple-600" />
+            Publicar no Instagram
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Seu conteúdo está pronto! Publique diretamente no Instagram a partir do Leadgram.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowPublishModal(true)}
+            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center gap-2"
+          >
+            <Instagram className="w-5 h-5" />
+            Publicar no Instagram
+          </button>
+        </div>
+      )}
+
       {/* Botões */}
       <div className="flex gap-3 pt-4">
         <button
@@ -289,6 +371,21 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
           )}
         </button>
       </div>
+
+      {/* Modal de Publicação no Instagram */}
+      {showPublishModal && idea && (idea.thumbnail_url || idea.video_url) && (
+        <PublishToInstagramModal
+          ideaId={idea.id}
+          mediaUrl={idea.video_url || idea.thumbnail_url || ''}
+          mediaType={idea.video_url ? 'video' : 'image'}
+          existingCaption={idea.script || ''}
+          onClose={() => setShowPublishModal(false)}
+          onSuccess={() => {
+            // Refresh da página para mostrar novo status
+            router.refresh()
+          }}
+        />
+      )}
     </form>
   )
 }

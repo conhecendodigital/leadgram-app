@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { Database } from '@/types/database.types'
+import { extractInstagramPostId, normalizeInstagramUrl } from '@/lib/instagram-helpers'
 
 export async function GET(
   request: Request,
@@ -62,7 +63,7 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { title, theme, script, editor_instructions, status, funnel_stage, platforms } = body
+    const { title, theme, script, editor_instructions, status, funnel_stage, platforms, platform_urls } = body
 
     // Atualizar ideia
     const updateData: Database['public']['Tables']['ideas']['Update'] = {
@@ -95,11 +96,34 @@ export async function PATCH(
 
       // Criar novas plataformas
       if (platforms.length > 0) {
-        const platformsData = platforms.map((platform: string) => ({
-          idea_id: idea.id,
-          platform,
-          is_posted: false,
-        }))
+        const platformsData = platforms.map((platform: string) => {
+          const platformData: any = {
+            idea_id: idea.id,
+            platform,
+            is_posted: status === 'posted',
+          }
+
+          // Se tiver URL da plataforma, processar
+          if (platform_urls && platform_urls[platform]) {
+            const url = platform_urls[platform]
+            platformData.post_url = normalizeInstagramUrl(url) || url
+
+            // Se for Instagram, extrair post ID
+            if (platform === 'instagram') {
+              const postId = extractInstagramPostId(url)
+              if (postId) {
+                platformData.platform_post_id = postId
+              }
+            }
+
+            // Se status é posted e tem URL, marcar como postado
+            if (status === 'posted') {
+              platformData.posted_at = new Date().toISOString()
+            }
+          }
+
+          return platformData
+        })
 
         await supabase.from('idea_platforms').insert(platformsData)
       }

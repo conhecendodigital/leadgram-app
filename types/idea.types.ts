@@ -38,6 +38,7 @@ export interface Idea {
   status: IdeaStatus
   funnel_stage: FunnelStage
   thumbnail_url: string | null
+  video_url: string | null
   created_at: string
   updated_at: string
   recorded_at: string | null
@@ -53,4 +54,5 @@ export interface IdeaFormData {
   status: IdeaStatus
   funnel_stage: FunnelStage
   platforms: Platform[]
+  platform_urls?: Record<Platform, string> // URLs dos posts por plataforma
 }

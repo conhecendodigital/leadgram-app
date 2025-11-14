@@ -4,6 +4,7 @@ import QuickActions from '@/components/dashboard/quick-actions'
 import DashboardClientWrapper from '@/components/dashboard/dashboard-client-wrapper'
 import DashboardError from '@/components/dashboard/dashboard-error'
 import SkipLink from '@/components/skip-link'
+import RefreshMetricsButton from '@/components/dashboard/refresh-metrics-button'
 import type { Database } from '@/types/database.types'
 
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
@@ -188,7 +189,10 @@ export default async function DashboardPage() {
                 Acompanhe seu desempenho e gerencie seu conteúdo
               </p>
             </div>
-            <QuickActions />
+            <div className="flex items-center gap-3">
+              <RefreshMetricsButton />
+              <QuickActions />
+            </div>
           </div>
         </header>
 

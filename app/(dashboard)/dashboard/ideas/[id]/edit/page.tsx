@@ -6,6 +6,7 @@ import IdeaForm from '@/components/ideas/idea-form'
 import type { Database } from '@/types/database.types'
 
 type IdeaWithPlatforms = Database['public']['Tables']['ideas']['Row'] & {
+  video_url: string | null
   platforms?: Array<Database['public']['Tables']['idea_platforms']['Row']>
 }
 

@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getIdeaLimit } from '@/lib/settings'
+import { extractInstagramPostId, normalizeInstagramUrl } from '@/lib/instagram-helpers'
 
 export async function GET() {
   try {
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { title, theme, script, editor_instructions, status, funnel_stage, platforms, thumbnail_url, video_url } = body
+    const { title, theme, script, editor_instructions, status, funnel_stage, platforms, platform_urls, thumbnail_url, video_url } = body
 
     // Validação
     if (!title || !funnel_stage) {
@@ -114,11 +115,34 @@ export async function POST(request: Request) {
 
     // Criar plataformas associadas
     if (platforms && platforms.length > 0) {
-      const platformsData = platforms.map((platform: string) => ({
-        idea_id: idea.id,
-        platform,
-        is_posted: false,
-      }))
+      const platformsData = platforms.map((platform: string) => {
+        const platformData: any = {
+          idea_id: idea.id,
+          platform,
+          is_posted: status === 'posted',
+        }
+
+        // Se tiver URL da plataforma, processar
+        if (platform_urls && platform_urls[platform]) {
+          const url = platform_urls[platform]
+          platformData.post_url = normalizeInstagramUrl(url) || url
+
+          // Se for Instagram, extrair post ID
+          if (platform === 'instagram') {
+            const postId = extractInstagramPostId(url)
+            if (postId) {
+              platformData.platform_post_id = postId
+            }
+          }
+
+          // Se status é posted e tem URL, marcar como postado
+          if (status === 'posted') {
+            platformData.posted_at = new Date().toISOString()
+          }
+        }
+
+        return platformData
+      })
 
       const { error: platformsError } = await supabase
         .from('idea_platforms')
