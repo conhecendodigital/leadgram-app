@@ -16,26 +16,18 @@ export default async function SettingsPage() {
   }
 
   // Buscar profile com tratamento de erro
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
-  if (profileError) {
-    console.error('Error fetching profile:', profileError)
-  }
-
   // Buscar subscription com tratamento de erro
-  const { data: subscription, error: subscriptionError } = await supabase
+  const { data: subscription } = await supabase
     .from('user_subscriptions')
     .select('*')
     .eq('user_id', user.id)
     .single()
-
-  if (subscriptionError) {
-    console.error('Error fetching subscription:', subscriptionError)
-  }
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">

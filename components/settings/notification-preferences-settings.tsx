@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Bell, Mail, Smartphone, Target, TrendingUp, RefreshCw, AlertCircle, Check, X } from 'lucide-react'
+import { showToast } from '@/lib/toast'
 
 interface NotificationPreferences {
   email_enabled: boolean
@@ -67,11 +68,30 @@ export default function NotificationPreferencesSettings() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    // Load preferences from localStorage or API
-    const savedPrefs = localStorage.getItem('notificationPreferences')
-    if (savedPrefs) {
-      setPreferences(JSON.parse(savedPrefs))
+    // Load preferences from API
+    const loadPreferences = async () => {
+      try {
+        const response = await fetch('/api/settings/notifications')
+        if (response.ok) {
+          const data = await response.json()
+          setPreferences({
+            email_enabled: data.email_enabled,
+            push_enabled: data.push_enabled,
+            content_ideas: data.content_ideas,
+            goal_achievements: data.goal_achievements,
+            instagram_sync: data.instagram_sync,
+            system_updates: data.system_updates,
+            frequency: data.frequency,
+            quiet_hours_enabled: data.quiet_hours_enabled,
+            quiet_hours_start: data.quiet_hours_start,
+            quiet_hours_end: data.quiet_hours_end,
+          })
+        }
+      } catch (error) {
+        console.error('Error loading notification preferences:', error)
+      }
     }
+    loadPreferences()
   }, [])
 
   const handleToggle = (key: keyof NotificationPreferences) => {
@@ -98,17 +118,21 @@ export default function NotificationPreferencesSettings() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      // Save to localStorage (in production, save to API)
-      localStorage.setItem('notificationPreferences', JSON.stringify(preferences))
+      const response = await fetch('/api/settings/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preferences),
+      })
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      if (!response.ok) {
+        throw new Error('Erro ao salvar preferências')
+      }
 
       setSaved(true)
+      showToast.success('Preferências salvas com sucesso!')
       setTimeout(() => setSaved(false), 3000)
     } catch (error) {
-      console.error('Error saving preferences:', error)
-      alert('Erro ao salvar preferências')
+      showToast.error('Erro ao salvar preferências')
     } finally {
       setSaving(false)
     }

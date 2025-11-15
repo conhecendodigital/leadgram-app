@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Lock, Download, Trash2, Eye, EyeOff, Shield, AlertTriangle, CheckCircle, Users, Database } from 'lucide-react'
+import { showToast } from '@/lib/toast'
 
 export default function PrivacySettings() {
   const [profileVisibility, setProfileVisibility] = useState<'public' | 'private'>('private')
@@ -11,30 +12,80 @@ export default function PrivacySettings() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
 
+  // Load privacy settings from profile
+  useEffect(() => {
+    const loadPrivacySettings = async () => {
+      try {
+        const response = await fetch('/api/settings/profile')
+        if (response.ok) {
+          const data = await response.json()
+          setProfileVisibility(data.visibility || 'private')
+          setShareAnalytics(data.share_analytics || false)
+          setShowInSearch(data.show_in_search || false)
+        }
+      } catch (error) {
+        console.error('Error loading privacy settings:', error)
+      }
+    }
+    loadPrivacySettings()
+  }, [])
+
+  // Save privacy settings
+  const savePrivacySetting = async (field: string, value: any) => {
+    try {
+      const response = await fetch('/api/settings/privacy', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao salvar configuração')
+      }
+
+      showToast.success('Configuração atualizada!')
+    } catch (error) {
+      showToast.error('Erro ao salvar configuração')
+    }
+  }
+
+  const handleVisibilityChange = async (visibility: 'public' | 'private') => {
+    setProfileVisibility(visibility)
+    await savePrivacySetting('visibility', visibility)
+  }
+
+  const handleShareAnalyticsChange = async () => {
+    const newValue = !shareAnalytics
+    setShareAnalytics(newValue)
+    await savePrivacySetting('share_analytics', newValue)
+  }
+
+  const handleShowInSearchChange = async () => {
+    const newValue = !showInSearch
+    setShowInSearch(newValue)
+    await savePrivacySetting('show_in_search', newValue)
+  }
+
   const handleExportData = async () => {
     setExporting(true)
     try {
-      // Simulate API call to export data
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const response = await fetch('/api/settings/export-data')
 
-      // Create download link (in production, download actual data)
-      const data = {
-        profile: {},
-        ideas: [],
-        analytics: {},
-        exportedAt: new Date().toISOString()
+      if (!response.ok) {
+        throw new Error('Erro ao exportar dados')
       }
 
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      // Download do arquivo
+      const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = `leadgram-data-${Date.now()}.json`
       a.click()
       URL.revokeObjectURL(url)
+      showToast.success('Dados exportados com sucesso!')
     } catch (error) {
-      console.error('Error exporting data:', error)
-      alert('Erro ao exportar dados. Tente novamente.')
+      showToast.error('Erro ao exportar dados. Tente novamente.')
     } finally {
       setExporting(false)
     }
@@ -42,7 +93,7 @@ export default function PrivacySettings() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETAR MINHA CONTA') {
-      alert('Por favor, digite "DELETAR MINHA CONTA" para confirmar')
+      showToast.error('Por favor, digite "DELETAR MINHA CONTA" para confirmar')
       return
     }
 
@@ -53,12 +104,15 @@ export default function PrivacySettings() {
       })
 
       if (response.ok) {
-        alert('Conta deletada com sucesso. Você será redirecionado.')
-        window.location.href = '/'
+        showToast.success('Conta deletada com sucesso. Você será redirecionado.')
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 2000)
+      } else {
+        showToast.error('Erro ao deletar conta. Tente novamente.')
       }
     } catch (error) {
-      console.error('Error deleting account:', error)
-      alert('Erro ao deletar conta. Tente novamente.')
+      showToast.error('Erro ao deletar conta. Tente novamente.')
     }
   }
 
@@ -82,7 +136,7 @@ export default function PrivacySettings() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
-            onClick={() => setProfileVisibility('public')}
+            onClick={() => handleVisibilityChange('public')}
             className={`
               p-4 rounded-xl border-2 transition-all text-left
               ${profileVisibility === 'public'
@@ -103,7 +157,7 @@ export default function PrivacySettings() {
           </button>
 
           <button
-            onClick={() => setProfileVisibility('private')}
+            onClick={() => handleVisibilityChange('private')}
             className={`
               p-4 rounded-xl border-2 transition-all text-left
               ${profileVisibility === 'private'
@@ -155,7 +209,7 @@ export default function PrivacySettings() {
               </div>
             </div>
             <button
-              onClick={() => setShareAnalytics(!shareAnalytics)}
+              onClick={handleShareAnalyticsChange}
               className={`
                 relative w-14 h-8 rounded-full transition-colors
                 ${shareAnalytics
@@ -184,7 +238,7 @@ export default function PrivacySettings() {
               </div>
             </div>
             <button
-              onClick={() => setShowInSearch(!showInSearch)}
+              onClick={handleShowInSearchChange}
               className={`
                 relative w-14 h-8 rounded-full transition-colors
                 ${showInSearch

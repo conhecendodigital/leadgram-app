@@ -99,7 +99,6 @@ export default function AppearanceSettings() {
       Object.entries(colorConfig.cssVars).forEach(([key, value]) => {
         root.style.setProperty(key, value)
       })
-      console.log('🎨 Cor de destaque aplicada:', accent)
 
       // Dispara evento para notificar outros componentes
       window.dispatchEvent(new CustomEvent('accentchange', { detail: { accent } }))
@@ -107,7 +106,6 @@ export default function AppearanceSettings() {
   }
 
   const handleAccentChange = (newAccent: string) => {
-    console.log('🎨 Mudando cor de destaque para:', newAccent)
     setAccentColor(newAccent)
     localStorage.setItem('accentColor', newAccent)
     applyAccentColor(newAccent)

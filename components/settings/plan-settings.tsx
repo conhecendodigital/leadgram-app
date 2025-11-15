@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Zap, Crown, Gift, Sparkles } from 'lucide-react'
+import { Check, Zap, Crown, Gift, Sparkles, Lightbulb } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { showToast } from '@/lib/toast'
 
 interface PlanSettingsProps {
   subscription: any
@@ -83,8 +84,7 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
         window.location.href = data.init_point
       }
     } catch (error: any) {
-      console.error('Error creating payment:', error)
-      alert(error.message || 'Erro ao processar pagamento. Tente novamente.')
+      showToast.error(error.message || 'Erro ao processar pagamento. Tente novamente.')
     } finally {
       setLoading(null)
     }
@@ -267,10 +267,13 @@ export default function PlanSettings({ subscription }: PlanSettingsProps) {
 
       {/* Help Text */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm text-blue-800">
-          <strong>💡 Dica:</strong> Você pode fazer upgrade ou downgrade do seu plano a qualquer momento.
-          As mudanças entram em vigor imediatamente e você será cobrado proporcionalmente.
-        </p>
+        <div className="flex items-start gap-3">
+          <Lightbulb className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-blue-800">
+            <strong>Dica:</strong> Você pode fazer upgrade ou downgrade do seu plano a qualquer momento.
+            As mudanças entram em vigor imediatamente e você será cobrado proporcionalmente.
+          </p>
+        </div>
       </div>
     </div>
   )
