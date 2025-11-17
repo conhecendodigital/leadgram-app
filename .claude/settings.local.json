@@ -7,7 +7,20 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(dir /B:*)",
+      "Bash(find:*)",
+      "Bash(where:*)",
+      "Bash(npx supabase --version)",
+      "Bash(npx supabase:*)",
+      "Bash(npm install:*)",
+      "Bash(\"app/(dashboard)/dashboard/ideas/[id]/page.tsx\")",
+      "Bash(\"app/(dashboard)/dashboard/ideas/[id]/page.tsx.backup\")"
     ],
     "deny": [],
     "ask": []
