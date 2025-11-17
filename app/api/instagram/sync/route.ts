@@ -45,9 +45,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar posts do Instagram Graph API
+    console.log('🔍 Iniciando sincronização do Instagram...')
+    console.log('📊 Account info:', {
+      id: account.id,
+      username: account.username,
+      token_expires_at: account.token_expires_at,
+      is_active: account.is_active,
+      token_length: account.access_token?.length || 0
+    })
+
     const instagramResponse = await fetch(
       `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&access_token=${account.access_token}&limit=50`
     )
+
+    console.log('📡 Instagram API response status:', instagramResponse.status)
 
     if (!instagramResponse.ok) {
       let errorData
@@ -56,7 +67,7 @@ export async function POST(request: NextRequest) {
 
       try {
         errorData = await instagramResponse.json()
-        console.error('Instagram API error:', errorData)
+        console.error('❌ Instagram API error:', JSON.stringify(errorData, null, 2))
 
         // Verificar tipos específicos de erro
         if (errorData.error) {
