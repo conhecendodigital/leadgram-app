@@ -11,5 +11,15 @@
       "destination": "https://formulareal.online/:path*",
       "permanent": true
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sync-instagram",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/refresh-tokens",
+      "schedule": "0 3 * * *"
+    }
   ]
 }
