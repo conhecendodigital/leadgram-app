@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se a ideia pertence ao usuário
-    const { data: idea, error: ideaError } = await supabase
-      .from('ideas')
+    const { data: idea, error: ideaError } = await (supabase
+      .from('ideas') as any)
       .select('id, title, user_id')
       .eq('id', ideaId)
       .single();
