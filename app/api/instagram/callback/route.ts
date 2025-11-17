@@ -146,14 +146,46 @@ export async function GET(request: NextRequest) {
       posts: profileData.media_count
     })
 
-    // Usar o Page Access Token como token final (não expira)
-    const finalToken = pageAccessToken
+    // PASSO 6: Converter Page Access Token em Instagram Long-Lived Access Token (60 dias)
+    console.log('🔑 Passo 6: Convertendo para Instagram Long-Lived Token...')
+
+    // Instagram Graph API aceita o Page Access Token diretamente
+    // Mas vamos garantir que temos um long-lived token
+    let finalToken = pageAccessToken
+    let tokenExpiresIn = 60 * 24 * 60 * 60 // 60 dias em segundos
+
+    try {
+      // Tentar obter um long-lived Instagram token
+      const longLivedIgUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.FACEBOOK_APP_SECRET}&access_token=${pageAccessToken}`
+      const longLivedIgResponse = await fetch(longLivedIgUrl)
+
+      if (longLivedIgResponse.ok) {
+        const longLivedIgData = await longLivedIgResponse.json()
+        if (longLivedIgData.access_token) {
+          finalToken = longLivedIgData.access_token
+          tokenExpiresIn = longLivedIgData.expires_in || tokenExpiresIn
+          console.log('✅ Instagram Long-Lived Token obtido (válido por', Math.floor(tokenExpiresIn / (24 * 60 * 60)), 'dias)')
+        }
+      } else {
+        console.log('⚠️ Não foi possível obter Long-Lived Token, usando Page Access Token')
+      }
+    } catch (error) {
+      console.error('⚠️ Erro ao obter Long-Lived Token:', error)
+      console.log('Usando Page Access Token como fallback')
+    }
 
     // Desativar contas antigas
     await (supabase
       .from('instagram_accounts') as any)
       .update({ is_active: false })
       .eq('user_id', user.id)
+
+    // PASSO 7: Salvar no banco de dados
+    console.log('💾 Passo 7: Salvando dados no banco...')
+
+    // Calcular data de expiração
+    const expiresAt = new Date(Date.now() + (tokenExpiresIn * 1000))
+    console.log('📅 Token expira em:', expiresAt.toLocaleString('pt-BR'))
 
     // Inserir nova conexão
     const { data: account, error: insertError } = await (supabase
@@ -162,14 +194,12 @@ export async function GET(request: NextRequest) {
         user_id: user.id,
         username: profileData.username,
         instagram_user_id: profileData.id,
-        access_token: finalToken, // Page Access Token (não expira)
+        access_token: finalToken,
         profile_picture_url: profileData.profile_picture_url || null,
         followers_count: profileData.followers_count || 0,
         follows_count: profileData.follows_count || 0,
         media_count: profileData.media_count || 0,
-        token_expires_at: new Date(
-          Date.now() + (365 * 24 * 60 * 60 * 1000) // 1 ano (Page tokens não expiram, mas precisamos de uma data)
-        ).toISOString(),
+        token_expires_at: expiresAt.toISOString(),
         is_active: true,
       })
       .select()

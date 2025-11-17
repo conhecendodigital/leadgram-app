@@ -33,15 +33,16 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    // Buscar contas com tokens próximos de expirar (menos de 30 dias)
-    const thirtyDaysFromNow = new Date()
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+    // Buscar contas com tokens próximos de expirar (menos de 7 dias)
+    // Instagram long-lived tokens duram 60 dias e devem ser renovados antes de expirar
+    const sevenDaysFromNow = new Date()
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7)
 
     const { data: accounts, error: accountsError } = await supabase
       .from('instagram_accounts')
       .select('*')
       .eq('is_active', true)
-      .lt('token_expires_at', thirtyDaysFromNow.toISOString())
+      .lt('token_expires_at', sevenDaysFromNow.toISOString())
 
     if (accountsError) {
       console.error('❌ [CRON] Erro ao buscar contas:', accountsError)
@@ -72,49 +73,76 @@ export async function GET(request: NextRequest) {
 
         console.log(`🔑 [CRON] Renovando token de @${account.username} (expira em ${daysUntilExpiry} dias)`)
 
-        // IMPORTANTE: Page Access Tokens não expiram!
-        // Se estamos usando Page Access Token, não precisa renovar
-        // Apenas verificar se ainda é válido
+        // Renovar Instagram Long-Lived Access Token
+        // Referência: https://developers.facebook.com/docs/instagram-basic-display-api/guides/long-lived-access-tokens
+        const refreshUrl = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${account.access_token}`
 
-        // Testar se token ainda funciona
-        const testUrl = `https://graph.facebook.com/v18.0/${account.instagram_user_id}?fields=id&access_token=${account.access_token}`
-        const testResponse = await fetch(testUrl)
+        let newToken = account.access_token
+        let newExpiresIn = 60 * 24 * 60 * 60 // 60 dias padrão
 
-        if (!testResponse.ok) {
-          const error = await testResponse.json()
-          console.error(`❌ [CRON] Token de @${account.username} inválido:`, error)
+        try {
+          const refreshResponse = await fetch(refreshUrl)
 
-          // Marcar conta como inativa se token estiver inválido
-          await supabase
-            .from('instagram_accounts')
-            .update({
-              is_active: false,
-              updated_at: new Date().toISOString(),
+          if (!refreshResponse.ok) {
+            const errorData = await refreshResponse.json().catch(() => ({}))
+            console.error(`❌ [CRON] Falha ao renovar token de @${account.username}:`, errorData)
+
+            // Se erro de token inválido, marcar conta como inativa
+            if (errorData.error?.code === 190 || errorData.error?.type === 'OAuthException') {
+              await supabase
+                .from('instagram_accounts')
+                .update({
+                  is_active: false,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', account.id)
+
+              errors.push({
+                username: account.username,
+                error: 'Token inválido - conta desativada. Usuário precisa reconectar.',
+              })
+              continue
+            }
+
+            // Outros erros - tentar novamente depois
+            errors.push({
+              username: account.username,
+              error: `Falha ao renovar: ${errorData.error?.message || 'Erro desconhecido'}`,
             })
-            .eq('id', account.id)
+            continue
+          }
 
+          const refreshData = await refreshResponse.json()
+
+          if (refreshData.access_token) {
+            newToken = refreshData.access_token
+            newExpiresIn = refreshData.expires_in || newExpiresIn
+            console.log(`✅ [CRON] Novo token obtido para @${account.username} (válido por ${Math.floor(newExpiresIn / (24 * 60 * 60))} dias)`)
+          }
+
+        } catch (error: any) {
+          console.error(`❌ [CRON] Erro ao renovar token de @${account.username}:`, error)
           errors.push({
             username: account.username,
-            error: 'Token inválido - conta desativada. Usuário precisa reconectar.',
+            error: error.message,
           })
           continue
         }
 
-        // Token ainda válido - atualizar data de expiração para 1 ano
-        // (Page Access Tokens não expiram, mas mantemos registro)
-        const newExpiryDate = new Date()
-        newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1)
+        // Atualizar token e data de expiração no banco
+        const newExpiryDate = new Date(Date.now() + (newExpiresIn * 1000))
 
         const { error: updateError } = await supabase
           .from('instagram_accounts')
           .update({
+            access_token: newToken,
             token_expires_at: newExpiryDate.toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('id', account.id)
 
         if (updateError) {
-          console.error(`❌ [CRON] Erro ao atualizar @${account.username}:`, updateError)
+          console.error(`❌ [CRON] Erro ao atualizar banco de dados para @${account.username}:`, updateError)
           errors.push({
             username: account.username,
             error: updateError.message,
@@ -122,7 +150,7 @@ export async function GET(request: NextRequest) {
           continue
         }
 
-        console.log(`✅ [CRON] Token de @${account.username} verificado e atualizado`)
+        console.log(`✅ [CRON] Token de @${account.username} renovado com sucesso (expira em ${newExpiryDate.toLocaleString('pt-BR')})`)
         totalRenewed++
 
       } catch (error: any) {

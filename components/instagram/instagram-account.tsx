@@ -26,6 +26,41 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [needsReconnect, setNeedsReconnect] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefreshToken = async () => {
+    setRefreshing(true)
+    const loadingToast = showToast.loading('Renovando token...')
+
+    try {
+      const response = await fetch('/api/instagram/refresh-token', {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao renovar token')
+      }
+
+      showToast.success(
+        `✅ Token renovado! Válido por ${data.daysValid} dias`,
+        { id: loadingToast }
+      )
+
+      setSyncError(null)
+      setNeedsReconnect(false)
+      router.refresh()
+    } catch (error: any) {
+      console.error('Refresh token error:', error)
+      showToast.error(
+        `❌ ${error.message}`,
+        { id: loadingToast }
+      )
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const handleSync = async () => {
     setSyncing(true)
@@ -141,10 +176,10 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             onClick={handleSync}
-            disabled={syncing}
+            disabled={syncing || refreshing}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {syncing ? (
@@ -161,8 +196,27 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
           </button>
 
           <button
+            onClick={handleRefreshToken}
+            disabled={refreshing || syncing}
+            title="Renovar token de acesso do Instagram"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {refreshing ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                <span className="hidden sm:inline">Renovando...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Renovar Token</span>
+              </>
+            )}
+          </button>
+
+          <button
             onClick={() => setShowDisconnectModal(true)}
-            disabled={disconnecting}
+            disabled={disconnecting || syncing || refreshing}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {disconnecting ? (
