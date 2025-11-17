@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 export default function DashboardSkeleton() {
   return (
@@ -35,7 +35,7 @@ export default function DashboardSkeleton() {
       {/* Stats Overview Skeleton */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {[1, 2, 3, 4, 5].map((i) => (
-          <motion.div
+          <m.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -48,7 +48,7 @@ export default function DashboardSkeleton() {
               <div className="h-8 bg-gray-200 rounded w-16 animate-pulse" />
               <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
             </div>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 

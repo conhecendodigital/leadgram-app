@@ -27,8 +27,8 @@ export async function GET() {
 
     // Se não existir, criar com valores padrão
     if (error && error.code === 'PGRST116') {
-      const { data: newPreferences, error: insertError } = await supabase
-        .from('notification_preferences')
+      const { data: newPreferences, error: insertError } = await (supabase
+        .from('notification_preferences') as any)
         .insert({
           user_id: user.id,
           email_enabled: true,
@@ -117,8 +117,8 @@ export async function PUT(request: Request) {
     }
 
     // Atualizar preferências
-    const { data, error } = await supabase
-      .from('notification_preferences')
+    const { data, error } = await (supabase
+      .from('notification_preferences') as any)
       .update(updateData)
       .eq('user_id', user.id)
       .select()

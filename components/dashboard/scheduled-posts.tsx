@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import {
   Calendar,
   Clock,
@@ -196,7 +196,7 @@ export default function ScheduledPosts({ ideas }: ScheduledPostsProps) {
           const StatusIcon = statusBadge.icon
 
           return (
-            <motion.div
+            <m.div
               key={post.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -280,7 +280,7 @@ export default function ScheduledPosts({ ideas }: ScheduledPostsProps) {
                   </div>
                 </div>
               </Link>
-            </motion.div>
+            </m.div>
           )
         })}
       </div>

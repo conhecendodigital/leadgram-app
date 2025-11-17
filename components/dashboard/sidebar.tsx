@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Sparkles, LayoutDashboard, Lightbulb, BarChart3, Instagram, Settings, Search } from 'lucide-react'
+import { Sparkles, LayoutDashboard, Lightbulb, BarChart3, Instagram, Settings, Search, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 const navItems = [
   {
@@ -39,6 +40,26 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch('/api/user/role')
+        if (response.ok) {
+          const data = await response.json()
+          setIsAdmin(data.isAdmin || false)
+        } else {
+          // Se não conseguir verificar, assume que não é admin
+          setIsAdmin(false)
+        }
+      } catch (error) {
+        // Em caso de erro, assume que não é admin (fail-safe)
+        setIsAdmin(false)
+      }
+    }
+    checkAdminStatus()
+  }, [])
 
   return (
     <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col">
@@ -78,6 +99,24 @@ export default function Sidebar() {
               </li>
             )
           })}
+
+          {/* Admin Panel Button - Only visible for admins */}
+          {isAdmin && (
+            <>
+              <li className="pt-2">
+                <div className="border-t border-gray-200 my-2"></div>
+              </li>
+              <li>
+                <Link
+                  href="/admin/dashboard"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200 font-medium text-orange-600 hover:bg-orange-50 hover:text-orange-700 border border-orange-200"
+                >
+                  <Shield className="w-5 h-5" />
+                  <span>Painel Admin</span>
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </nav>
 

@@ -12,7 +12,8 @@ import {
   DollarSign,
   BarChart3,
   Package,
-  LogOut
+  LogOut,
+  ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -93,8 +94,20 @@ export default function AdminMobileMenu({ user }: { user: any }) {
               </button>
             </div>
 
+            {/* Back to Dashboard Button */}
+            <div className="px-3 pt-4 pb-2">
+              <Link
+                href="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-700"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Voltar ao Dashboard
+              </Link>
+            </div>
+
             {/* Menu Items */}
-            <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
               {menuItems.map((item) => {
                 const isActive = pathname === item.href
                 const Icon = item.icon

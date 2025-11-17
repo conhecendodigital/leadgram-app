@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import {
   Sparkles,
   TrendingUp,
@@ -283,7 +283,7 @@ export default function InsightsWidget({ ideas, stats }: InsightsWidgetProps) {
           const Icon = insight.icon
 
           return (
-            <motion.div
+            <m.div
               key={insight.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -316,19 +316,19 @@ export default function InsightsWidget({ ideas, stats }: InsightsWidgetProps) {
                         className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
                       >
                         {insight.action.label}
-                        <motion.span
+                        <m.span
                           className="inline-block"
                           initial={{ x: 0 }}
                           whileHover={{ x: 3 }}
                         >
                           →
-                        </motion.span>
+                        </m.span>
                       </a>
                     )}
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )
         })}
       </div>

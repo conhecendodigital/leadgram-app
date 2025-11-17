@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       .eq('is_active', true)
 
     // Criar nova conexão
-    const { error: insertError } = await (supabase
+    const { data: connection, error: insertError } = await (supabase
       .from('admin_mercadopago') as any)
       .insert({
         access_token: accessToken,
@@ -41,12 +41,14 @@ export async function POST(request: NextRequest) {
         is_active: true,
         connected_at: new Date().toISOString(),
       })
+      .select()
+      .single()
 
     if (insertError) {
       throw insertError
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, connection })
   } catch (error: any) {
     console.error('Error connecting Mercado Pago:', error)
     return NextResponse.json(

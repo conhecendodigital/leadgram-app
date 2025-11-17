@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { m, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, Lightbulb, BarChart3, Instagram, Settings, LogOut, User, Search } from 'lucide-react'
+import { Menu, X, Home, Lightbulb, BarChart3, Instagram, Settings, LogOut, User, Search, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -22,6 +23,25 @@ export default function MobileMenu() {
     { icon: Instagram, label: 'Instagram', href: '/dashboard/instagram' },
     { icon: User, label: 'Perfil', href: '/dashboard/profile' },
   ]
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch('/api/user/role')
+        if (response.ok) {
+          const data = await response.json()
+          setIsAdmin(data.isAdmin || false)
+        } else {
+          // Se não conseguir verificar, assume que não é admin
+          setIsAdmin(false)
+        }
+      } catch (error) {
+        // Em caso de erro, assume que não é admin (fail-safe)
+        setIsAdmin(false)
+      }
+    }
+    checkAdminStatus()
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -104,6 +124,24 @@ export default function MobileMenu() {
                     </m.div>
                   )
                 })}
+
+                {/* Admin Panel Button - Only for admins */}
+                {isAdmin && (
+                  <m.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: menuItems.length * 0.05 }}
+                  >
+                    <Link
+                      href="/admin/dashboard"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all text-orange-600 hover:bg-orange-50 border border-orange-200"
+                    >
+                      <Shield className="w-5 h-5" />
+                      Painel Admin
+                    </Link>
+                  </m.div>
+                )}
               </nav>
 
               {/* Divider */}

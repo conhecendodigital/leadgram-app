@@ -4,22 +4,32 @@ import { m } from 'framer-motion'
 import { Users, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
+// Email do admin (movido de lib/roles.ts para evitar import server-side em client component)
+const ADMIN_EMAIL = 'matheussss.afiliado@gmail.com'
 
 export default function RecentCustomers() {
   const [customers, setCustomers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
     async function fetchCustomers() {
-      const { data } = await (supabase
-        .from('profiles') as any)
-        .select('*, user_subscriptions(*)')
-        .neq('email', 'matheussss.afiliado@gmail.com')
-        .order('created_at', { ascending: false })
-        .limit(5)
+      try {
+        setLoading(true)
+        const { data } = await (supabase
+          .from('profiles') as any)
+          .select('*, user_subscriptions(*)')
+          .neq('email', ADMIN_EMAIL)
+          .order('created_at', { ascending: false })
+          .limit(5)
 
-      if (data) {
-        setCustomers(data)
+        if (data) {
+          setCustomers(data)
+        }
+      } catch (error) {
+        console.error('Erro ao buscar clientes:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -57,50 +67,73 @@ export default function RecentCustomers() {
       </div>
 
       <div className="space-y-3">
-        {customers.map((customer, index) => (
-          <m.div
-            key={customer.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <span className="text-white font-semibold">
-                  {customer.email?.[0]?.toUpperCase() || 'U'}
-                </span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">
-                  {customer.full_name || customer.email}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {customer.email}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span
-                className={`px-3 py-1 rounded-lg text-xs font-medium ${getPlanBadge(
-                  customer.user_subscriptions?.[0]?.plan_type || 'free'
-                )}`}
+        {loading ? (
+          // Loading skeleton
+          <>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
               >
-                {customer.user_subscriptions?.[0]?.plan_type?.toUpperCase() || 'FREE'}
-              </span>
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <Clock className="w-3 h-3" />
-                {new Date(customer.created_at).toLocaleDateString('pt-BR')}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                    <div className="h-3 bg-gray-200 rounded w-40 animate-pulse" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-6 bg-gray-200 rounded w-16 animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                </div>
               </div>
-            </div>
-          </m.div>
-        ))}
-
-        {customers.length === 0 && (
+            ))}
+          </>
+        ) : customers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            Nenhum cliente cadastrado ainda
+            <Users className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+            <p className="text-sm">Nenhum cliente cadastrado ainda</p>
           </div>
+        ) : (
+          customers.map((customer, index) => (
+            <m.div
+              key={customer.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <span className="text-white font-semibold">
+                    {customer.email?.[0]?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {customer.full_name || customer.email}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {customer.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span
+                  className={`px-3 py-1 rounded-lg text-xs font-medium ${getPlanBadge(
+                    customer.user_subscriptions?.[0]?.plan_type || 'free'
+                  )}`}
+                >
+                  {customer.user_subscriptions?.[0]?.plan_type?.toUpperCase() || 'FREE'}
+                </span>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <Clock className="w-3 h-3" />
+                  {new Date(customer.created_at).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+            </m.div>
+          ))
         )}
       </div>
     </m.div>
