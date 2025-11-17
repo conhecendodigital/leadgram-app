@@ -49,13 +49,15 @@ export async function POST(request: NextRequest) {
     console.log('📊 Account info:', {
       id: account.id,
       username: account.username,
+      instagram_user_id: account.instagram_user_id,
       token_expires_at: account.token_expires_at,
       is_active: account.is_active,
       token_length: account.access_token?.length || 0
     })
 
+    // Instagram Graph API requer o Instagram User ID específico, não aceita /me
     const instagramResponse = await fetch(
-      `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&access_token=${account.access_token}&limit=50`
+      `https://graph.instagram.com/${account.instagram_user_id}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&access_token=${account.access_token}&limit=50`
     )
 
     console.log('📡 Instagram API response status:', instagramResponse.status)
