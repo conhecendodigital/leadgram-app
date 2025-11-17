@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import {
   Target,
   TrendingUp,
@@ -173,7 +173,7 @@ export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
           const isCompleted = goal.current >= goal.target
 
           return (
-            <motion.div
+            <m.div
               key={goal.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -225,7 +225,7 @@ export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
 
                 {/* Progress Bar */}
                 <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div
+                  <m.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
                     transition={{ duration: 0.8, delay: index * 0.1 }}
@@ -256,14 +256,14 @@ export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )
         })}
       </div>
 
       {/* Achievement Badge */}
       {overallProgress === 100 && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="mt-6 p-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl text-center"
@@ -271,7 +271,7 @@ export default function GoalsCards({ ideas, stats }: GoalsCardsProps) {
           <Award className="w-8 h-8 text-white mx-auto mb-2" />
           <p className="text-white font-bold text-sm">Parabéns! Todas as metas foram atingidas! 🏆</p>
           <p className="text-amber-100 text-xs mt-1">Continue assim para manter o excelente desempenho</p>
-        </motion.div>
+        </m.div>
       )}
     </div>
   )

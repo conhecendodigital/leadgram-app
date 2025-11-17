@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bell, Database, Shield, Mail, Webhook, HardDrive, Users, Lightbulb } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Bell, Database, Shield, Mail, Webhook, HardDrive, Users, Lightbulb, AlertCircle } from 'lucide-react'
 import { notificationService } from '@/lib/services/notification-service'
 import { databaseService } from '@/lib/services/database-service'
 import type { NotificationSettings as NotificationSettingsType } from '@/lib/types/notifications'
@@ -9,6 +9,7 @@ import type { DatabaseStats, CleanupStats } from '@/lib/types/database'
 import { securityService } from '@/lib/services/security-service'
 import { TwoFASetup } from '@/components/admin/2fa-setup'
 import type { SecuritySettings as SecuritySettingsType } from '@/lib/types/security'
+import { m, AnimatePresence } from 'framer-motion'
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('notifications')
@@ -24,27 +25,39 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
+      <m.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Configurações
         </h1>
         <p className="text-gray-600">
           Gerencie as configurações do sistema
         </p>
-      </div>
+      </m.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
-        <div className="lg:col-span-1">
+        <m.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="lg:col-span-1"
+        >
           <div className="bg-white rounded-2xl border border-gray-200 p-2">
             <nav className="space-y-1">
-              {tabs.map((tab) => {
+              {tabs.map((tab, index) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
 
                 return (
-                  <button
+                  <m.button
                     key={tab.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 + index * 0.05 }}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all text-left
@@ -57,23 +70,80 @@ export default function AdminSettingsPage() {
                   >
                     <Icon className="w-5 h-5" />
                     {tab.label}
-                  </button>
+                  </m.button>
                 )
               })}
             </nav>
           </div>
-        </div>
+        </m.div>
 
         {/* Content */}
-        <div className="lg:col-span-3">
+        <m.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="lg:col-span-3"
+        >
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            {activeTab === 'notifications' && <NotificationSettings />}
-            {activeTab === 'database' && <DatabaseSettings />}
-            {activeTab === 'security' && <SecuritySettings />}
-            {activeTab === 'email' && <EmailSettings />}
-            {activeTab === 'webhooks' && <WebhookSettings />}
+            <AnimatePresence mode="wait">
+              {activeTab === 'notifications' && (
+                <m.div
+                  key="notifications"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <NotificationSettings />
+                </m.div>
+              )}
+              {activeTab === 'database' && (
+                <m.div
+                  key="database"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <DatabaseSettings />
+                </m.div>
+              )}
+              {activeTab === 'security' && (
+                <m.div
+                  key="security"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <SecuritySettings />
+                </m.div>
+              )}
+              {activeTab === 'email' && (
+                <m.div
+                  key="email"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <EmailSettings />
+                </m.div>
+              )}
+              {activeTab === 'webhooks' && (
+                <m.div
+                  key="webhooks"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <WebhookSettings />
+                </m.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
+        </m.div>
       </div>
     </div>
   )
@@ -90,7 +160,8 @@ function NotificationSettings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -98,6 +169,7 @@ function NotificationSettings() {
 
   const loadSettings = async () => {
     try {
+      setError(null);
       const data = await notificationService.instance.getSettings();
       if (data) {
         setSettings({
@@ -111,7 +183,7 @@ function NotificationSettings() {
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
-      setMessage({ type: 'error', text: 'Erro ao carregar configurações' });
+      setError('Falha ao carregar configurações. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -119,14 +191,15 @@ function NotificationSettings() {
 
   const handleSave = async () => {
     setSaving(true);
-    setMessage(null);
+    setSuccessMessage(null);
+    setError(null);
     try {
       await notificationService.instance.updateSettings(settings);
-      setMessage({ type: 'success', text: 'Preferências salvas com sucesso!' });
-      setTimeout(() => setMessage(null), 3000);
+      setSuccessMessage('Preferências salvas com sucesso!');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
-      setMessage({ type: 'error', text: 'Erro ao salvar preferências' });
+      setError('Erro ao salvar preferências. Por favor, tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -139,10 +212,20 @@ function NotificationSettings() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Notificações</h2>
           <p className="text-gray-600">Configure quando e como receber notificações</p>
         </div>
-        <div className="p-8 text-center text-gray-500">Carregando...</div>
+        <div className="p-8 text-center text-gray-500">
+          <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-red-600 rounded-full mx-auto"></div>
+        </div>
       </div>
     );
   }
+
+  const settingsItems = [
+    { key: 'notify_new_users', label: 'Novos Usuários', description: 'Notificar quando um novo usuário se registrar' },
+    { key: 'notify_payments', label: 'Novos Pagamentos', description: 'Notificar sobre novos pagamentos recebidos' },
+    { key: 'notify_cancellations', label: 'Cancelamentos', description: 'Notificar quando um usuário cancelar assinatura' },
+    { key: 'notify_system_errors', label: 'Erros do Sistema', description: 'Notificar sobre erros críticos do sistema' },
+    { key: 'email_on_errors', label: 'Email em Erros', description: 'Enviar email quando houver erros críticos' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -155,84 +238,77 @@ function NotificationSettings() {
         </p>
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <m.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-2xl p-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-900">{error}</p>
+            </div>
+            <button
+              onClick={loadSettings}
+              className="text-sm text-red-700 hover:text-red-900 font-medium"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </m.div>
+      )}
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {successMessage && (
+          <m.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-green-50 border border-green-200 rounded-2xl p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-green-900">{successMessage}</p>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
+
       <div className="space-y-4">
-        <div className="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <p className="font-medium text-gray-900">Novos Usuários</p>
-            <p className="text-sm text-gray-500">
-              Notificar quando um novo usuário se registrar
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            checked={settings.notify_new_users}
-            onChange={(e) => setSettings({ ...settings, notify_new_users: e.target.checked })}
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <p className="font-medium text-gray-900">Novos Pagamentos</p>
-            <p className="text-sm text-gray-500">
-              Notificar sobre novos pagamentos recebidos
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            checked={settings.notify_payments}
-            onChange={(e) => setSettings({ ...settings, notify_payments: e.target.checked })}
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <p className="font-medium text-gray-900">Cancelamentos</p>
-            <p className="text-sm text-gray-500">
-              Notificar quando um usuário cancelar assinatura
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            checked={settings.notify_cancellations}
-            onChange={(e) => setSettings({ ...settings, notify_cancellations: e.target.checked })}
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <p className="font-medium text-gray-900">Erros do Sistema</p>
-            <p className="text-sm text-gray-500">
-              Notificar sobre erros críticos do sistema
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            checked={settings.notify_system_errors}
-            onChange={(e) => setSettings({ ...settings, notify_system_errors: e.target.checked })}
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <p className="font-medium text-gray-900">Email em Erros</p>
-            <p className="text-sm text-gray-500">
-              Enviar email quando houver erros críticos
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            checked={settings.email_on_errors}
-            onChange={(e) => setSettings({ ...settings, email_on_errors: e.target.checked })}
-            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-          />
-        </div>
+        {settingsItems.map((item, index) => (
+          <m.div
+            key={item.key}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="flex items-center justify-between py-3 border-b border-gray-200"
+          >
+            <div>
+              <p className="font-medium text-gray-900">{item.label}</p>
+              <p className="text-sm text-gray-500">{item.description}</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings[item.key as keyof NotificationSettingsType] as boolean}
+              onChange={(e) => setSettings({ ...settings, [item.key]: e.target.checked })}
+              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+            />
+          </m.div>
+        ))}
 
         {settings.email_on_errors && (
-          <div>
+          <m.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email do Admin
             </label>
@@ -243,27 +319,18 @@ function NotificationSettings() {
               placeholder="admin@leadgram.app"
               className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
-          </div>
-        )}
-
-        {message && (
-          <div
-            className={`p-3 rounded-lg text-sm ${
-              message.type === 'success'
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
-            }`}
-          >
-            {message.text}
-          </div>
+          </m.div>
         )}
 
         <div className="pt-4">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
+            {saving && (
+              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+            )}
             {saving ? 'Salvando...' : 'Salvar Preferências'}
           </button>
         </div>
@@ -277,7 +344,8 @@ function DatabaseSettings() {
   const [cleanupStats, setCleanupStats] = useState<CleanupStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [cleaning, setCleaning] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -285,6 +353,7 @@ function DatabaseSettings() {
 
   const loadData = async () => {
     try {
+      setError(null);
       const [statsData, cleanupData] = await Promise.all([
         databaseService.instance.getStats(),
         databaseService.instance.getCleanupStats()
@@ -293,27 +362,28 @@ function DatabaseSettings() {
       setCleanupStats(cleanupData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      showMessage('error', 'Erro ao carregar dados do banco');
+      setError('Erro ao carregar dados do banco. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
+  const showSuccess = (text: string) => {
+    setSuccessMessage(text);
+    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
   const handleCleanupNotifications = async () => {
     if (!confirm('Tem certeza que deseja limpar notificações antigas (90+ dias)?')) return;
     setCleaning(true);
+    setError(null);
     try {
       const count = await databaseService.instance.cleanupOldData('notifications');
       await loadData();
-      showMessage('success', `${count} notificações antigas removidas!`);
+      showSuccess(`${count} notificações antigas removidas!`);
     } catch (error) {
       console.error('Erro ao limpar dados:', error);
-      showMessage('error', 'Erro ao limpar dados');
+      setError('Erro ao limpar dados. Por favor, tente novamente.');
     } finally {
       setCleaning(false);
     }
@@ -326,10 +396,55 @@ function DatabaseSettings() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Banco de Dados</h2>
           <p className="text-gray-600">Informações e manutenção do banco de dados</p>
         </div>
-        <div className="p-8 text-center text-gray-500">Carregando...</div>
+        <div className="p-8 text-center text-gray-500">
+          <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-red-600 rounded-full mx-auto"></div>
+        </div>
       </div>
     );
   }
+
+  const statsCards = [
+    {
+      icon: Users,
+      label: 'Usuários',
+      value: stats?.totalUsers,
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      iconColor: 'text-blue-600',
+      valueColor: 'text-blue-900',
+      labelColor: 'text-blue-700'
+    },
+    {
+      icon: Lightbulb,
+      label: 'Ideias',
+      value: stats?.totalIdeas,
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200',
+      iconColor: 'text-purple-600',
+      valueColor: 'text-purple-900',
+      labelColor: 'text-purple-700'
+    },
+    {
+      icon: Bell,
+      label: 'Notificações',
+      value: stats?.totalNotifications,
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200',
+      iconColor: 'text-green-600',
+      valueColor: 'text-green-900',
+      labelColor: 'text-green-700'
+    },
+    {
+      icon: HardDrive,
+      label: 'Tamanho',
+      value: stats?.databaseSize,
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-200',
+      iconColor: 'text-orange-600',
+      valueColor: 'text-orange-900',
+      labelColor: 'text-orange-700'
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -342,57 +457,86 @@ function DatabaseSettings() {
         </p>
       </div>
 
-      {/* ========== ESTATÍSTICAS DO BANCO (MANTER) ========== */}
+      {/* Error Banner */}
+      {error && (
+        <m.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-2xl p-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-900">{error}</p>
+            </div>
+            <button
+              onClick={loadData}
+              className="text-sm text-red-700 hover:text-red-900 font-medium"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </m.div>
+      )}
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {successMessage && (
+          <m.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-green-50 border border-green-200 rounded-2xl p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-green-900">{successMessage}</p>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
+
+      {/* Estatísticas do Banco */}
       {stats && (
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-3">Estatísticas do Banco</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="flex items-center gap-3">
-                <Users className="w-8 h-8 text-blue-600" />
-                <div>
-                  <p className="text-2xl font-bold text-blue-900">{stats.totalUsers}</p>
-                  <p className="text-sm text-blue-700">Usuários</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="flex items-center gap-3">
-                <Lightbulb className="w-8 h-8 text-purple-600" />
-                <div>
-                  <p className="text-2xl font-bold text-purple-900">{stats.totalIdeas}</p>
-                  <p className="text-sm text-purple-700">Ideias</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <div className="flex items-center gap-3">
-                <Bell className="w-8 h-8 text-green-600" />
-                <div>
-                  <p className="text-2xl font-bold text-green-900">{stats.totalNotifications}</p>
-                  <p className="text-sm text-green-700">Notificações</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-              <div className="flex items-center gap-3">
-                <HardDrive className="w-8 h-8 text-orange-600" />
-                <div>
-                  <p className="text-2xl font-bold text-orange-900">{stats.databaseSize}</p>
-                  <p className="text-sm text-orange-700">Tamanho</p>
-                </div>
-              </div>
-            </div>
+            {statsCards.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <m.div
+                  key={card.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`${card.bgColor} rounded-lg p-4 border ${card.borderColor}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-8 h-8 ${card.iconColor}`} />
+                    <div>
+                      <p className={`text-2xl font-bold ${card.valueColor}`}>{card.value}</p>
+                      <p className={`text-sm ${card.labelColor}`}>{card.label}</p>
+                    </div>
+                  </div>
+                </m.div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* ========== LIMPEZA DE DADOS (MANTER) ========== */}
+      {/* Limpeza de Dados */}
       {cleanupStats && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <m.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-xl border border-gray-200 p-6"
+        >
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Limpeza de Dados</h3>
           <p className="text-sm text-gray-600 mb-4">Remove dados antigos para liberar espaço</p>
 
@@ -410,17 +554,25 @@ function DatabaseSettings() {
               <button
                 onClick={handleCleanupNotifications}
                 disabled={!cleanupStats.oldNotifications || cleaning}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
+                {cleaning && (
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                )}
                 {cleaning ? 'Limpando...' : 'Limpar'}
               </button>
             </div>
           </div>
-        </div>
+        </m.div>
       )}
 
-      {/* ========== GERENCIAMENTO AVANÇADO (NOVO) ========== */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+      {/* Gerenciamento Avançado */}
+      <m.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6"
+      >
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-blue-600 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -537,20 +689,7 @@ function DatabaseSettings() {
             Acesse a seção de Backups para configurar retenção e restauração.
           </p>
         </div>
-      </div>
-
-      {/* Messages */}
-      {message && (
-        <div
-          className={`p-3 rounded-lg text-sm ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-700 border border-green-200'
-              : 'bg-red-50 text-red-700 border border-red-200'
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
+      </m.div>
     </div>
   )
 }
@@ -565,7 +704,18 @@ function SecuritySettings() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [show2FASetup, setShow2FASetup] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Pagination
+  const [attemptsLimit, setAttemptsLimit] = useState(15);
+  const [logsLimit, setLogsLimit] = useState(15);
+
+  // Filters
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [attemptFilter, setAttemptFilter] = useState<'all' | 'success' | 'failed'>('all');
+  const [ipSearch, setIpSearch] = useState('');
+  const [logSearch, setLogSearch] = useState('');
 
   useEffect(() => {
     loadSecurityData();
@@ -573,6 +723,7 @@ function SecuritySettings() {
 
   const loadSecurityData = async () => {
     setLoading(true);
+    setError(null);
     try {
       // Importar dinamicamente o securityService
       const { securityService } = await import('@/lib/services/security-service');
@@ -584,9 +735,9 @@ function SecuritySettings() {
         securityService.instance.getSettings(),
         user ? securityService.instance.get2FAStatus(user.id) : null,
         securityService.instance.getActiveSessions(),
-        securityService.instance.getLoginAttempts(20),
+        securityService.instance.getLoginAttempts(50),
         securityService.instance.getBlockedIPs(),
-        securityService.instance.getAuditLogs(30)
+        securityService.instance.getAuditLogs(50)
       ]);
 
       setSettings(settingsData);
@@ -597,45 +748,89 @@ function SecuritySettings() {
       setAuditLogs(logsData);
     } catch (error) {
       console.error('Erro ao carregar dados de segurança:', error);
+      setError('Erro ao carregar dados de segurança. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
+  const showSuccess = (text: string) => {
+    setSuccessMessage(text);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  // Filtered data with useMemo
+  const filteredSessions = useMemo(() => {
+    return sessions.filter(session =>
+      sessionSearch === '' ||
+      session.ip_address?.toLowerCase().includes(sessionSearch.toLowerCase()) ||
+      session.device_type?.toLowerCase().includes(sessionSearch.toLowerCase())
+    );
+  }, [sessions, sessionSearch]);
+
+  const filteredAttempts = useMemo(() => {
+    let filtered = loginAttempts;
+
+    if (attemptFilter !== 'all') {
+      filtered = filtered.filter(attempt =>
+        attemptFilter === 'success' ? attempt.success : !attempt.success
+      );
+    }
+
+    return filtered.slice(0, attemptsLimit);
+  }, [loginAttempts, attemptFilter, attemptsLimit]);
+
+  const filteredIPs = useMemo(() => {
+    return blockedIPs.filter(ip =>
+      ipSearch === '' ||
+      ip.ip_address?.toLowerCase().includes(ipSearch.toLowerCase()) ||
+      ip.reason?.toLowerCase().includes(ipSearch.toLowerCase())
+    );
+  }, [blockedIPs, ipSearch]);
+
+  const filteredLogs = useMemo(() => {
+    const filtered = auditLogs.filter(log =>
+      logSearch === '' ||
+      log.action?.toLowerCase().includes(logSearch.toLowerCase()) ||
+      log.description?.toLowerCase().includes(logSearch.toLowerCase())
+    );
+    return filtered.slice(0, logsLimit);
+  }, [auditLogs, logSearch, logsLimit]);
+
   const handleSaveSettings = async () => {
+    setError(null);
     try {
       const { securityService } = await import('@/lib/services/security-service');
       await securityService.instance.updateSettings(settings);
-      setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' });
-      setTimeout(() => setMessage(null), 3000);
+      showSuccess('Configurações salvas com sucesso!');
     } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao salvar configurações' });
+      setError('Erro ao salvar configurações. Por favor, tente novamente.');
     }
   };
 
   const handleTerminateSession = async (sessionId: string) => {
     if (!confirm('Tem certeza que deseja encerrar esta sessão?')) return;
+    setError(null);
     try {
       const { securityService } = await import('@/lib/services/security-service');
       await securityService.instance.terminateSession(sessionId);
       await loadSecurityData();
-      setMessage({ type: 'success', text: 'Sessão encerrada com sucesso!' });
-      setTimeout(() => setMessage(null), 3000);
+      showSuccess('Sessão encerrada com sucesso!');
     } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao encerrar sessão' });
+      setError('Erro ao encerrar sessão. Por favor, tente novamente.');
     }
   };
 
   const handleUnblockIP = async (id: string) => {
     if (!confirm('Tem certeza que deseja desbloquear este IP?')) return;
+    setError(null);
     try {
       const { securityService } = await import('@/lib/services/security-service');
       await securityService.instance.unblockIP(id);
       await loadSecurityData();
-      setMessage({ type: 'success', text: 'IP desbloqueado com sucesso!' });
-      setTimeout(() => setMessage(null), 3000);
+      showSuccess('IP desbloqueado com sucesso!');
     } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao desbloquear IP' });
+      setError('Erro ao desbloquear IP. Por favor, tente novamente.');
     }
   };
 
@@ -654,6 +849,9 @@ function SecuritySettings() {
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900">Segurança</h2>
         <p className="text-gray-600">Carregando...</p>
+        <div className="p-8 text-center text-gray-500">
+          <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-red-600 rounded-full mx-auto"></div>
+        </div>
       </div>
     );
   }
@@ -672,6 +870,49 @@ function SecuritySettings() {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Segurança</h2>
         <p className="text-gray-600">Configure as opções de segurança da aplicação</p>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <m.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-2xl p-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-900">{error}</p>
+            </div>
+            <button
+              onClick={loadSecurityData}
+              className="text-sm text-red-700 hover:text-red-900 font-medium"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </m.div>
+      )}
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {successMessage && (
+          <m.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-green-50 border border-green-200 rounded-2xl p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-green-900">{successMessage}</p>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Sub Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
@@ -777,28 +1018,50 @@ function SecuritySettings() {
       {/* Active Sessions */}
       {activeSubTab === 'sessions' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{sessions.length} sessões ativas</p>
-          {sessions.length === 0 ? (
-            <p className="text-center py-8 text-gray-500">Nenhuma sessão ativa</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600">{filteredSessions.length} de {sessions.length} sessões</p>
+            <input
+              type="text"
+              placeholder="Buscar por IP ou dispositivo..."
+              value={sessionSearch}
+              onChange={(e) => setSessionSearch(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent w-64"
+            />
+          </div>
+
+          {filteredSessions.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <Shield className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-600">Nenhuma sessão encontrada</p>
+            </div>
           ) : (
             <div className="space-y-2">
-              {sessions.map((session) => (
-                <div key={session.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{session.device_type || 'Desktop'} - {session.browser || 'Navegador'}</p>
-                      <p className="text-sm text-gray-600 mt-1">{session.ip_address}</p>
-                      <p className="text-xs text-gray-500 mt-1">Última atividade: {formatDate(session.last_activity)}</p>
+              <AnimatePresence mode="popLayout">
+                {filteredSessions.map((session, index) => (
+                  <m.div
+                    key={session.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ delay: index * 0.03 }}
+                    className="bg-white border border-gray-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{session.device_type || 'Desktop'} - {session.browser || 'Navegador'}</p>
+                        <p className="text-sm text-gray-600 mt-1">{session.ip_address}</p>
+                        <p className="text-xs text-gray-500 mt-1">Última atividade: {formatDate(session.last_activity)}</p>
+                      </div>
+                      <button
+                        onClick={() => handleTerminateSession(session.id)}
+                        className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+                      >
+                        Encerrar
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleTerminateSession(session.id)}
-                      className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
-                    >
-                      Encerrar
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  </m.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -807,40 +1070,80 @@ function SecuritySettings() {
       {/* Login Attempts */}
       {activeSubTab === 'access' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Últimas {loginAttempts.length} tentativas de login</p>
-          {loginAttempts.length === 0 ? (
-            <p className="text-center py-8 text-gray-500">Nenhuma tentativa registrada</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Email</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">IP</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {loginAttempts.map((attempt) => (
-                    <tr key={attempt.id}>
-                      <td className="px-4 py-3 text-sm">{attempt.email || '-'}</td>
-                      <td className="px-4 py-3 text-sm font-mono">{attempt.ip_address}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          attempt.success
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          {attempt.success ? 'Sucesso' : 'Falha'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{formatDate(attempt.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Mostrando {filteredAttempts.length} de {loginAttempts.length} tentativas
+            </p>
+            <div className="flex gap-2">
+              <select
+                value={attemptFilter}
+                onChange={(e) => setAttemptFilter(e.target.value as 'all' | 'success' | 'failed')}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              >
+                <option value="all">Todas</option>
+                <option value="success">Sucesso</option>
+                <option value="failed">Falhas</option>
+              </select>
             </div>
+          </div>
+
+          {filteredAttempts.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <Shield className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-600">Nenhuma tentativa de login registrada</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Email</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">IP</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    <AnimatePresence mode="popLayout">
+                      {filteredAttempts.map((attempt, index) => (
+                        <m.tr
+                          key={attempt.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ delay: index * 0.02 }}
+                        >
+                          <td className="px-4 py-3 text-sm">{attempt.email || '-'}</td>
+                          <td className="px-4 py-3 text-sm font-mono">{attempt.ip_address}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              attempt.success
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {attempt.success ? 'Sucesso' : 'Falha'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{formatDate(attempt.created_at)}</td>
+                        </m.tr>
+                      ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredAttempts.length < loginAttempts.length && attemptsLimit < loginAttempts.length && (
+                <div className="text-center pt-4">
+                  <button
+                    onClick={() => setAttemptsLimit(prev => prev + 15)}
+                    className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                  >
+                    Carregar Mais
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -848,31 +1151,53 @@ function SecuritySettings() {
       {/* Blocked IPs */}
       {activeSubTab === 'ips' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{blockedIPs.length} IPs bloqueados</p>
-          {blockedIPs.length === 0 ? (
-            <p className="text-center py-8 text-gray-500">Nenhum IP bloqueado</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600">{filteredIPs.length} de {blockedIPs.length} IPs bloqueados</p>
+            <input
+              type="text"
+              placeholder="Buscar por IP ou motivo..."
+              value={ipSearch}
+              onChange={(e) => setIpSearch(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent w-64"
+            />
+          </div>
+
+          {filteredIPs.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <Shield className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-600">Nenhum IP bloqueado</p>
+            </div>
           ) : (
             <div className="space-y-2">
-              {blockedIPs.map((ip) => (
-                <div key={ip.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium font-mono text-gray-900">{ip.ip_address}</p>
-                      <p className="text-sm text-gray-600 mt-1">{ip.reason || 'Sem motivo'}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Bloqueado em: {formatDate(ip.blocked_at)}
-                        {ip.is_permanent ? ' (Permanente)' : ip.blocked_until ? ` até ${formatDate(ip.blocked_until)}` : ''}
-                      </p>
+              <AnimatePresence mode="popLayout">
+                {filteredIPs.map((ip, index) => (
+                  <m.div
+                    key={ip.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ delay: index * 0.03 }}
+                    className="bg-white border border-gray-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium font-mono text-gray-900">{ip.ip_address}</p>
+                        <p className="text-sm text-gray-600 mt-1">{ip.reason || 'Sem motivo'}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Bloqueado em: {formatDate(ip.blocked_at)}
+                          {ip.is_permanent ? ' (Permanente)' : ip.blocked_until ? ` até ${formatDate(ip.blocked_until)}` : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleUnblockIP(ip.id)}
+                        className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      >
+                        Desbloquear
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleUnblockIP(ip.id)}
-                      className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                    >
-                      Desbloquear
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  </m.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -881,42 +1206,66 @@ function SecuritySettings() {
       {/* Audit Logs */}
       {activeSubTab === 'audit' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Últimas {auditLogs.length} ações registradas</p>
-          {auditLogs.length === 0 ? (
-            <p className="text-center py-8 text-gray-500">Nenhuma ação registrada</p>
-          ) : (
-            <div className="space-y-2">
-              {auditLogs.map((log) => (
-                <div key={log.id} className="bg-white border border-gray-200 rounded-lg p-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{log.action}</p>
-                      <p className="text-sm text-gray-600 mt-1">{log.description || '-'}</p>
-                      {log.resource_type && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Recurso: {log.resource_type}
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500">{formatDate(log.created_at)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Mostrando {filteredLogs.length} de {auditLogs.length} ações
+            </p>
+            <input
+              type="text"
+              placeholder="Buscar por ação ou descrição..."
+              value={logSearch}
+              onChange={(e) => setLogSearch(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent w-64"
+            />
+          </div>
 
-      {/* Messages */}
-      {message && (
-        <div
-          className={`p-3 rounded-lg text-sm ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-700 border border-green-200'
-              : 'bg-red-50 text-red-700 border border-red-200'
-          }`}
-        >
-          {message.text}
+          {filteredLogs.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <Shield className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-600">Nenhuma ação registrada</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <AnimatePresence mode="popLayout">
+                  {filteredLogs.map((log, index) => (
+                    <m.div
+                      key={log.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ delay: index * 0.02 }}
+                      className="bg-white border border-gray-200 rounded-lg p-3"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{log.action}</p>
+                          <p className="text-sm text-gray-600 mt-1">{log.description || '-'}</p>
+                          {log.resource_type && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Recurso: {log.resource_type}
+                            </p>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">{formatDate(log.created_at)}</p>
+                      </div>
+                    </m.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {filteredLogs.length < auditLogs.length && logsLimit < auditLogs.length && (
+                <div className="text-center pt-4">
+                  <button
+                    onClick={() => setLogsLimit(prev => prev + 15)}
+                    className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                  >
+                    Carregar Mais
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -926,9 +1275,9 @@ function SecuritySettings() {
           isOpen={show2FASetup}
           onClose={() => setShow2FASetup(false)}
           onSuccess={() => {
+            setShow2FASetup(false);
             loadSecurityData();
-            setMessage({ type: 'success', text: '2FA ativado com sucesso!' });
-            setTimeout(() => setMessage(null), 3000);
+            showSuccess('2FA ativado com sucesso!');
           }}
         />
       )}
@@ -942,7 +1291,8 @@ function EmailSettings() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -950,14 +1300,20 @@ function EmailSettings() {
     loadStats();
   }, []);
 
+  const showSuccess = (text: string) => {
+    setSuccessMessage(text);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
   const loadSettings = async () => {
     try {
+      setError(null);
       const { emailService } = await import('@/lib/services/email-service');
       const data = await emailService.instance.getSettings();
       setSettings(data);
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
-      showMessage('error', 'Erro ao carregar configurações de email');
+      setError('Erro ao carregar configurações de email. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -975,15 +1331,15 @@ function EmailSettings() {
 
   const handleSave = async () => {
     setSaving(true);
-    setMessage(null);
+    setError(null);
     try {
       const { emailService } = await import('@/lib/services/email-service');
       await emailService.instance.updateSettings(settings);
-      showMessage('success', 'Configurações salvas com sucesso!');
+      showSuccess('Configurações salvas com sucesso!');
       await loadStats();
     } catch (error) {
       console.error('Erro ao salvar:', error);
-      showMessage('error', 'Erro ao salvar configurações');
+      setError('Erro ao salvar configurações. Por favor, tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -991,7 +1347,7 @@ function EmailSettings() {
 
   const handleTestEmail = async () => {
     if (!settings.enabled || !settings.api_key) {
-      showMessage('error', 'Configure a API Key e habilite o envio de emails primeiro');
+      setError('Configure a API Key e habilite o envio de emails primeiro');
       return;
     }
 
@@ -999,7 +1355,7 @@ function EmailSettings() {
     if (!testEmail) return;
 
     setTesting(true);
-    setMessage(null);
+    setError(null);
 
     try {
       const response = await fetch('/api/admin/test-email', {
@@ -1011,22 +1367,17 @@ function EmailSettings() {
       const data = await response.json();
 
       if (data.success) {
-        showMessage('success', `Email de teste enviado para ${testEmail}!`);
+        showSuccess(`Email de teste enviado para ${testEmail}!`);
         await loadStats();
       } else {
-        showMessage('error', data.error || 'Erro ao enviar email de teste');
+        setError(data.error || 'Erro ao enviar email de teste');
       }
     } catch (error) {
       console.error('Erro:', error);
-      showMessage('error', 'Erro ao enviar email de teste');
+      setError('Erro ao enviar email de teste. Por favor, tente novamente.');
     } finally {
       setTesting(false);
     }
-  };
-
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 5000);
   };
 
   if (loading || !settings) {
@@ -1036,7 +1387,9 @@ function EmailSettings() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Configurações de Email</h2>
           <p className="text-gray-600">Configure o serviço de envio de emails</p>
         </div>
-        <div className="p-8 text-center text-gray-500">Carregando...</div>
+        <div className="p-8 text-center text-gray-500">
+          <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-red-600 rounded-full mx-auto"></div>
+        </div>
       </div>
     );
   }
@@ -1051,6 +1404,49 @@ function EmailSettings() {
           Configure o serviço de envio de emails para seus usuários
         </p>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <m.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-2xl p-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-900">{error}</p>
+            </div>
+            <button
+              onClick={loadSettings}
+              className="text-sm text-red-700 hover:text-red-900 font-medium"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </m.div>
+      )}
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {successMessage && (
+          <m.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-green-50 border border-green-200 rounded-2xl p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-green-900">{successMessage}</p>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Estatísticas */}
       {stats && (
@@ -1299,33 +1695,26 @@ function EmailSettings() {
           </div>
         </div>
 
-        {/* Messages */}
-        {message && (
-          <div
-            className={`p-3 rounded-lg text-sm ${
-              message.type === 'success'
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
-
         {/* Actions */}
         <div className="pt-4 flex gap-3">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
+            {saving && (
+              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+            )}
             {saving ? 'Salvando...' : 'Salvar Configurações'}
           </button>
           <button
             onClick={handleTestEmail}
             disabled={testing || !settings.enabled}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
+            {testing && (
+              <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+            )}
             {testing ? 'Enviando...' : 'Enviar Email de Teste'}
           </button>
         </div>
@@ -1341,13 +1730,20 @@ function WebhookSettings() {
   const [showModal, setShowModal] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<any>(null);
   const [testing, setTesting] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
+  const showSuccess = (text: string) => {
+    setSuccessMessage(text);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
   const loadData = async () => {
+    setError(null);
     try {
       const { webhookService } = await import('@/lib/services/webhook-service');
       const [webhooksData, statsData] = await Promise.all([
@@ -1358,7 +1754,7 @@ function WebhookSettings() {
       setStats(statsData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      showMessage('error', 'Erro ao carregar webhooks');
+      setError('Erro ao carregar webhooks. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -1366,52 +1762,50 @@ function WebhookSettings() {
 
   const handleTest = async (id: string) => {
     setTesting(id);
+    setError(null);
     try {
       const { webhookService } = await import('@/lib/services/webhook-service');
       const result = await webhookService.instance.testWebhook(id);
 
       if (result.success) {
-        showMessage('success', `Webhook testado com sucesso! (${result.response_time_ms}ms)`);
+        showSuccess(`Webhook testado com sucesso! (${result.response_time_ms}ms)`);
       } else {
-        showMessage('error', `Erro no teste: ${result.error}`);
+        setError(`Erro no teste: ${result.error}`);
       }
     } catch (error) {
       console.error('Erro ao testar:', error);
-      showMessage('error', 'Erro ao testar webhook');
+      setError('Erro ao testar webhook. Por favor, tente novamente.');
     } finally {
       setTesting(null);
     }
   };
 
   const handleToggle = async (id: string, enabled: boolean) => {
+    setError(null);
     try {
       const { webhookService } = await import('@/lib/services/webhook-service');
       await webhookService.instance.toggleWebhook(id, enabled);
       await loadData();
-      showMessage('success', `Webhook ${enabled ? 'ativado' : 'desativado'} com sucesso!`);
+      showSuccess(`Webhook ${enabled ? 'ativado' : 'desativado'} com sucesso!`);
     } catch (error) {
       console.error('Erro ao alternar:', error);
-      showMessage('error', 'Erro ao alternar webhook');
+      setError('Erro ao alternar webhook. Por favor, tente novamente.');
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja deletar este webhook?')) return;
+    setError(null);
 
     try {
       const { webhookService } = await import('@/lib/services/webhook-service');
       await webhookService.instance.deleteWebhook(id);
       await loadData();
-      showMessage('success', 'Webhook deletado com sucesso!');
+      showSuccess('Webhook deletado com sucesso!');
     } catch (error) {
       console.error('Erro ao deletar:', error);
-      showMessage('error', 'Erro ao deletar webhook');
+      setError('Erro ao deletar webhook. Por favor, tente novamente.');
     }
-  };
-
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 5000);
   };
 
   if (loading) {
@@ -1421,7 +1815,9 @@ function WebhookSettings() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Webhooks</h2>
           <p className="text-gray-600">Configure webhooks para integração com outros sistemas</p>
         </div>
-        <div className="p-8 text-center text-gray-500">Carregando...</div>
+        <div className="p-8 text-center text-gray-500">
+          <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-red-600 rounded-full mx-auto"></div>
+        </div>
       </div>
     );
   }
@@ -1436,6 +1832,49 @@ function WebhookSettings() {
           Configure webhooks para integração com outros sistemas externos
         </p>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <m.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-2xl p-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-900">{error}</p>
+            </div>
+            <button
+              onClick={loadData}
+              className="text-sm text-red-700 hover:text-red-900 font-medium"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </m.div>
+      )}
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {successMessage && (
+          <m.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-green-50 border border-green-200 rounded-2xl p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-green-900">{successMessage}</p>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Estatísticas */}
       {stats && (
@@ -1571,31 +2010,20 @@ function WebhookSettings() {
         </div>
       )}
 
-      {/* Messages */}
-      {message && (
-        <div
-          className={`p-3 rounded-lg text-sm ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-700 border border-green-200'
-              : 'bg-red-50 text-red-700 border border-red-200'
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
-
       {/* Modal de Criação/Edição */}
-      {showModal && (
-        <WebhookModal
-          webhook={editingWebhook}
-          onClose={() => setShowModal(false)}
-          onSave={() => {
-            setShowModal(false);
-            loadData();
-            showMessage('success', 'Webhook salvo com sucesso!');
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {showModal && (
+          <WebhookModal
+            webhook={editingWebhook}
+            onClose={() => setShowModal(false)}
+            onSave={() => {
+              setShowModal(false);
+              loadData();
+              showSuccess('Webhook salvo com sucesso!');
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -1658,8 +2086,19 @@ function WebhookModal({ webhook, onClose, onSave }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+    <m.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <m.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
+        className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
+      >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900">
             {webhook ? 'Editar Webhook' : 'Novo Webhook'}
@@ -1826,7 +2265,7 @@ function WebhookModal({ webhook, onClose, onSave }: {
             Cancelar
           </button>
         </div>
-      </div>
-    </div>
+      </m.div>
+    </m.div>
   );
 }

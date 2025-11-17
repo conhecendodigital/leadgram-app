@@ -4,14 +4,19 @@ import { m } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { DollarSign } from 'lucide-react'
 
-export default function RevenueChart() {
-  const data = [
-    { month: 'Jan', revenue: 2400 },
-    { month: 'Fev', revenue: 3200 },
-    { month: 'Mar', revenue: 4100 },
-    { month: 'Abr', revenue: 3800 },
-    { month: 'Mai', revenue: 5200 },
-    { month: 'Jun', revenue: 6100 },
+interface RevenueChartProps {
+  data: Array<{ month: string; revenue: number }>
+}
+
+export default function RevenueChart({ data }: RevenueChartProps) {
+  // Se não houver dados, mostrar gráfico vazio
+  const chartData = data.length > 0 ? data : [
+    { month: 'Jan', revenue: 0 },
+    { month: 'Fev', revenue: 0 },
+    { month: 'Mar', revenue: 0 },
+    { month: 'Abr', revenue: 0 },
+    { month: 'Mai', revenue: 0 },
+    { month: 'Jun', revenue: 0 },
   ]
 
   return (
@@ -37,7 +42,7 @@ export default function RevenueChart() {
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
             <XAxis
               dataKey="month"
@@ -52,6 +57,7 @@ export default function RevenueChart() {
                 borderRadius: '12px',
                 color: '#fff',
               }}
+              formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Receita']}
             />
             <Line
               type="monotone"

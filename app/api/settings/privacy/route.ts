@@ -36,8 +36,8 @@ export async function PUT(request: Request) {
     }
 
     // Atualizar perfil
-    const { data, error } = await supabase
-      .from('profiles')
+    const { data, error } = await (supabase
+      .from('profiles') as any)
       .update(updateData)
       .eq('id', user.id)
       .select()

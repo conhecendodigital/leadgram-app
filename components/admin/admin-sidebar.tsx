@@ -9,7 +9,8 @@ import {
   Settings,
   DollarSign,
   BarChart3,
-  Package
+  Package,
+  ArrowLeft
 } from 'lucide-react'
 
 const menuItems = [
@@ -38,8 +39,19 @@ export default function AdminSidebar({ user }: { user: any }) {
         </div>
       </div>
 
+      {/* Back to Dashboard Button */}
+      <div className="px-3 pt-4 pb-2">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-700"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Voltar ao Dashboard
+        </Link>
+      </div>
+
       {/* Menu */}
-      <nav className="flex-1 px-3 py-6 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1">
         {menuItems.map((item) => {
           const isActive = pathname === item.href
 
