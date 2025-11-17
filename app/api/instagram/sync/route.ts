@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     if (!instagramResponse.ok) {
       let errorData
       let errorMessage = 'Erro ao buscar posts do Instagram.'
+      let isTokenError = false
 
       try {
         errorData = await instagramResponse.json()
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
           // Token expirado ou inválido
           if (instagramError.code === 190 || instagramError.type === 'OAuthException') {
             errorMessage = 'Token de acesso expirado ou inválido. Por favor, reconecte sua conta.'
+            isTokenError = true
           }
           // Permissões insuficientes
           else if (instagramError.code === 10 || instagramError.code === 200) {
@@ -83,13 +85,21 @@ export async function POST(request: NextRequest) {
         errorMessage = `Erro HTTP ${instagramResponse.status} ao acessar Instagram API.`
       }
 
+      // Se for erro de token, marcar conta como inativa
+      if (isTokenError) {
+        await (supabase
+          .from('instagram_accounts') as any)
+          .update({ is_active: false })
+          .eq('id', account.id)
+      }
+
       return NextResponse.json(
         {
           error: errorMessage,
           details: errorData,
           status: instagramResponse.status
         },
-        { status: 500 }
+        { status: isTokenError ? 401 : 500 }
       )
     }
 
