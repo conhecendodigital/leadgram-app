@@ -332,7 +332,7 @@ export default async function IdeaDetailPage({ params }: PageProps) {
           <GoogleDriveSection
             ideaId={idea.id}
             ideaTitle={idea.title}
-            driveFolderId={idea.drive_folder_id}
+            driveFolderId={idea.drive_folder_id ?? null}
             driveVideoIds={idea.drive_video_ids || []}
           />
         </div>
