@@ -50,11 +50,45 @@ export async function POST(request: NextRequest) {
     )
 
     if (!instagramResponse.ok) {
-      const errorData = await instagramResponse.json()
-      console.error('Instagram API error:', errorData)
+      let errorData
+      let errorMessage = 'Erro ao buscar posts do Instagram.'
+
+      try {
+        errorData = await instagramResponse.json()
+        console.error('Instagram API error:', errorData)
+
+        // Verificar tipos específicos de erro
+        if (errorData.error) {
+          const instagramError = errorData.error
+
+          // Token expirado ou inválido
+          if (instagramError.code === 190 || instagramError.type === 'OAuthException') {
+            errorMessage = 'Token de acesso expirado ou inválido. Por favor, reconecte sua conta.'
+          }
+          // Permissões insuficientes
+          else if (instagramError.code === 10 || instagramError.code === 200) {
+            errorMessage = 'Permissões insuficientes. Certifique-se de que sua conta é Business ou Creator.'
+          }
+          // Rate limit
+          else if (instagramError.code === 4 || instagramError.code === 17) {
+            errorMessage = 'Limite de requisições excedido. Aguarde alguns minutos e tente novamente.'
+          }
+          // Erro genérico com mensagem da API
+          else if (instagramError.message) {
+            errorMessage = `Instagram API: ${instagramError.message}`
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao parsear resposta da API do Instagram:', e)
+        errorMessage = `Erro HTTP ${instagramResponse.status} ao acessar Instagram API.`
+      }
 
       return NextResponse.json(
-        { error: 'Erro ao buscar posts do Instagram. Verifique a conexão.' },
+        {
+          error: errorMessage,
+          details: errorData,
+          status: instagramResponse.status
+        },
         { status: 500 }
       )
     }

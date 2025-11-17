@@ -24,9 +24,13 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   const [syncing, setSyncing] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [needsReconnect, setNeedsReconnect] = useState(false)
 
   const handleSync = async () => {
     setSyncing(true)
+    setSyncError(null)
+    setNeedsReconnect(false)
     const loadingToast = showToast.loading('Sincronizando Instagram...')
 
     try {
@@ -40,6 +44,11 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
       const data = await response.json()
 
       if (!response.ok) {
+        // Verificar se precisa reconectar
+        if (data.error?.includes('expirado') || data.error?.includes('inválido') || data.error?.includes('reconecte')) {
+          setNeedsReconnect(true)
+        }
+        setSyncError(data.error || 'Erro ao sincronizar')
         throw new Error(data.error || 'Erro ao sincronizar')
       }
 
@@ -48,6 +57,9 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
         `✅ Sincronizado! ${data.newPosts || 0} novos posts importados`,
         { id: loadingToast }
       )
+
+      setSyncError(null)
+      setNeedsReconnect(false)
 
       // Refresh da página para mostrar dados atualizados
       router.refresh()
@@ -167,6 +179,34 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
           </button>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {syncError && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-900 mb-1">Erro ao Sincronizar</p>
+              <p className="text-sm text-red-700">{syncError}</p>
+              {needsReconnect && (
+                <button
+                  onClick={handleDisconnect}
+                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Reconectar Instagram
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setSyncError(null)}
+              className="p-1 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4 text-red-600" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
