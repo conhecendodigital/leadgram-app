@@ -56,8 +56,9 @@ export async function POST(request: NextRequest) {
     })
 
     // Instagram Graph API requer o Instagram User ID específico, não aceita /me
+    // Deve usar graph.facebook.com (não graph.instagram.com) com versão da API
     const instagramResponse = await fetch(
-      `https://graph.instagram.com/${account.instagram_user_id}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&access_token=${account.access_token}&limit=50`
+      `https://graph.facebook.com/v18.0/${account.instagram_user_id}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&access_token=${account.access_token}&limit=50`
     )
 
     console.log('📡 Instagram API response status:', instagramResponse.status)
