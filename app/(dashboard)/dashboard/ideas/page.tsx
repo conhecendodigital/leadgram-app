@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Filter, Search, X } from 'lucide-react'
 import IdeaCard from '@/components/ideas/idea-card'
+import GoogleDriveConnect from '@/components/google-drive/google-drive-connect'
 import type { Idea, IdeaStatus, FunnelStage } from '@/types/idea.types'
 
 type SortOption = 'newest' | 'oldest' | 'most-views' | 'title-asc'
@@ -181,6 +182,11 @@ export default function IdeasPage() {
             <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
             Nova Ideia
           </Link>
+        </div>
+
+        {/* Google Drive Connection */}
+        <div className="mb-6">
+          <GoogleDriveConnect />
         </div>
 
         {/* Busca e Filtros */}

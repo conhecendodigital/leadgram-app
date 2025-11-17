@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getIdeaLimit } from '@/lib/settings'
+import { GoogleDriveService } from '@/lib/services/google-drive-service'
 
 export async function GET() {
   try {
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { title, theme, script, editor_instructions, status, funnel_stage, platforms, thumbnail_url, video_url } = body
+    const { title, theme, script, editor_instructions, status, funnel_stage, platforms } = body
 
     // Validação
     if (!title || !funnel_stage) {
@@ -104,8 +105,6 @@ export async function POST(request: Request) {
         editor_instructions: editor_instructions || null,
         status: status || 'idea',
         funnel_stage,
-        thumbnail_url: thumbnail_url || null,
-        video_url: video_url || null,
       })
       .select()
       .single()
@@ -125,6 +124,28 @@ export async function POST(request: Request) {
         .insert(platformsData)
 
       if (platformsError) throw platformsError
+    }
+
+    // Criar subpasta no Google Drive automaticamente (se conectado)
+    try {
+      const driveService = new GoogleDriveService(supabase)
+      const driveConnection = await driveService.getConnection(user.id)
+
+      if (driveConnection && driveConnection.is_active) {
+        console.log('📁 Criando subpasta no Google Drive para:', idea.title)
+
+        // Criar pasta "Ideias" se não existir
+        if (!driveConnection.folder_id) {
+          await driveService.createIdeasFolder(user.id)
+        }
+
+        // Criar subpasta da ideia
+        const folderId = await driveService.createIdeaFolder(user.id, idea.id, idea.title)
+        console.log('✅ Subpasta criada com ID:', folderId)
+      }
+    } catch (driveError) {
+      // Não falha a criação da ideia se houver erro no Drive
+      console.error('⚠️ Erro ao criar subpasta no Drive:', driveError)
     }
 
     return NextResponse.json(idea, { status: 201 })

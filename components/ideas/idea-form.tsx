@@ -66,25 +66,21 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
         if (!limitsResponse.ok) {
           throw new Error('Erro ao verificar limites do plano')
         }
-        const limits = await limitsResponse.json()
+        const data = await limitsResponse.json()
 
-        if (limits.ideas.used >= limits.ideas.limit) {
-          throw new Error(`Você atingiu o limite de ${limits.ideas.limit} ideias do seu plano. Faça upgrade para continuar!`)
+        // Verificar se já atingiu o limite
+        if (!data.limits.ideas.canCreate) {
+          throw new Error(`Você atingiu o limite de ${data.limits.ideas.limit} ideias do seu plano. Faça upgrade para continuar!`)
         }
       }
 
       const url = mode === 'create' ? '/api/ideas' : `/api/ideas/${idea?.id}`
       const method = mode === 'create' ? 'POST' : 'PATCH'
 
-      // FIX #3: Forçar status='idea' no modo create
-      const dataToSend = mode === 'create'
-        ? { ...formData, status: 'idea' }
-        : formData
-
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend),
+        body: JSON.stringify(formData),
       })
 
       if (!response.ok) {
@@ -236,15 +232,11 @@ export default function IdeaForm({ idea, mode }: IdeaFormProps) {
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
             className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-            disabled={mode === 'create'}
           >
             <option value="idea">Ideia</option>
-            {mode === 'edit' && <option value="recorded">Gravado</option>}
-            {mode === 'edit' && <option value="posted">Postado</option>}
+            <option value="recorded">Gravado</option>
+            <option value="posted">Postado</option>
           </select>
-          {mode === 'create' && (
-            <p className="text-xs text-gray-500 mt-1">Status fixo ao criar nova ideia</p>
-          )}
         </div>
 
         {/* Funil */}

@@ -10,11 +10,14 @@ import FunnelBadge from '@/components/ideas/funnel-badge'
 import DeleteButton from './delete-button'
 import SyncMetricsButton from './sync-metrics-button'
 import LinkPostButton from './link-post-button'
+import GoogleDriveSection from './google-drive-section'
 
 import type { Database } from '@/types/database.types'
 
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
   video_url?: string | null
+  drive_folder_id?: string | null
+  drive_video_ids?: any[]
   platforms?: Array<Database['public']['Tables']['idea_platforms']['Row'] & {
     metrics?: Array<any>
   }>
@@ -324,6 +327,14 @@ export default async function IdeaDetailPage({ params }: PageProps) {
               <p className="text-gray-700 whitespace-pre-wrap">{idea.editor_instructions}</p>
             </div>
           )}
+
+          {/* Google Drive Videos Section */}
+          <GoogleDriveSection
+            ideaId={idea.id}
+            ideaTitle={idea.title}
+            driveFolderId={idea.drive_folder_id}
+            driveVideoIds={idea.drive_video_ids || []}
+          />
         </div>
       </div>
     </div>
