@@ -94,8 +94,8 @@ export async function DELETE(request: NextRequest) {
     const currentVideoIds = (idea as any).drive_video_ids || [];
     const updatedVideoIds = currentVideoIds.filter((entry: any) => entry.id !== videoId);
 
-    const { error: updateError } = await supabase
-      .from('ideas')
+    const { error: updateError } = await (supabase
+      .from('ideas') as any)
       .update({ drive_video_ids: updatedVideoIds })
       .eq('id', ideaId);
 
