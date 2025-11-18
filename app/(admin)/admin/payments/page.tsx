@@ -6,8 +6,8 @@ export default async function AdminPaymentsPage() {
   const supabase = await createServerClient()
 
   // Buscar todos os pagamentos
-  const { data: paymentsData, error: paymentsError } = await supabase
-    .from('payments')
+  const { data: paymentsData, error: paymentsError } = await (supabase
+    .from('payments') as any)
     .select('*')
     .order('created_at', { ascending: false })
 
@@ -16,17 +16,17 @@ export default async function AdminPaymentsPage() {
   let error = paymentsError
 
   if (paymentsData && paymentsData.length > 0) {
-    const userIds = [...new Set(paymentsData.map(p => p.user_id).filter(Boolean))]
+    const userIds = [...new Set(paymentsData.map((p: any) => p.user_id).filter(Boolean))]
 
-    const { data: profiles } = await supabase
-      .from('profiles')
+    const { data: profiles } = await (supabase
+      .from('profiles') as any)
       .select('id, email, full_name')
       .in('id', userIds)
 
     // Mapear profiles para os pagamentos
-    payments = paymentsData.map(payment => ({
+    payments = paymentsData.map((payment: any) => ({
       ...payment,
-      user: profiles?.find(p => p.id === payment.user_id) || null
+      user: profiles?.find((p: any) => p.id === payment.user_id) || null
     }))
   }
 

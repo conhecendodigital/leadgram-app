@@ -8,8 +8,8 @@ export default async function AdminCustomersPage() {
   const supabase = await createServerClient()
 
   // Buscar todos os usuários (exceto admin)
-  const { data: profilesData, error: profilesError } = await supabase
-    .from('profiles')
+  const { data: profilesData, error: profilesError } = await (supabase
+    .from('profiles') as any)
     .select('*')
     .neq('email', ADMIN_EMAIL)
     .order('created_at', { ascending: false })
@@ -19,17 +19,17 @@ export default async function AdminCustomersPage() {
   let error = profilesError
 
   if (profilesData && profilesData.length > 0) {
-    const userIds = profilesData.map(p => p.id)
+    const userIds = profilesData.map((p: any) => p.id)
 
-    const { data: subscriptions } = await supabase
-      .from('user_subscriptions')
+    const { data: subscriptions } = await (supabase
+      .from('user_subscriptions') as any)
       .select('*')
       .in('user_id', userIds)
 
     // Mapear subscriptions para os usuários
-    users = profilesData.map(profile => ({
+    users = profilesData.map((profile: any) => ({
       ...profile,
-      subscriptions: subscriptions?.filter(s => s.user_id === profile.id) || []
+      subscriptions: subscriptions?.filter((s: any) => s.user_id === profile.id) || []
     }))
   }
 

@@ -18,26 +18,26 @@ export default function RecentCustomers() {
         setLoading(true)
 
         // Buscar profiles
-        const { data: profilesData } = await supabase
-          .from('profiles')
+        const { data: profilesData } = await (supabase
+          .from('profiles') as any)
           .select('*')
           .neq('email', ADMIN_EMAIL)
           .order('created_at', { ascending: false })
           .limit(5)
 
         if (profilesData && profilesData.length > 0) {
-          const userIds = profilesData.map(p => p.id)
+          const userIds = profilesData.map((p: any) => p.id)
 
           // Buscar subscriptions
-          const { data: subscriptions } = await supabase
-            .from('user_subscriptions')
+          const { data: subscriptions } = await (supabase
+            .from('user_subscriptions') as any)
             .select('*')
             .in('user_id', userIds)
 
           // Mapear subscriptions para os profiles
-          const customersWithSubscriptions = profilesData.map(profile => ({
+          const customersWithSubscriptions = profilesData.map((profile: any) => ({
             ...profile,
-            subscriptions: subscriptions?.filter(s => s.user_id === profile.id) || []
+            subscriptions: subscriptions?.filter((s: any) => s.user_id === profile.id) || []
           }))
 
           setCustomers(customersWithSubscriptions)
