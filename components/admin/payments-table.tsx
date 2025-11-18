@@ -24,10 +24,9 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter((payment) => {
-        const name = (payment.profiles?.full_name || '').toLowerCase()
-        const email = (payment.profiles?.email || '').toLowerCase()
+        const email = (payment.user?.email || '').toLowerCase()
         const paymentId = (payment.mercadopago_payment_id || '').toLowerCase()
-        return name.includes(query) || email.includes(query) || paymentId.includes(query)
+        return email.includes(query) || paymentId.includes(query)
       })
     }
 
@@ -225,10 +224,10 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {payment.profiles?.full_name || 'N/A'}
+                          {payment.user?.email?.split('@')[0] || 'N/A'}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {payment.profiles?.email || 'N/A'}
+                          {payment.user?.email || 'N/A'}
                         </p>
                       </div>
                     </td>
@@ -315,7 +314,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
 
                                     <button
                                       onClick={() => {
-                                        if (confirm(`Tem certeza que deseja solicitar reembolso para ${payment.profiles?.email}?`)) {
+                                        if (confirm(`Tem certeza que deseja solicitar reembolso para ${payment.user?.email}?`)) {
                                           alert(`Reembolso solicitado para: ${payment.mercadopago_payment_id}`)
                                         }
                                         setOpenDropdown(null)

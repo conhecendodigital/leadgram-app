@@ -117,7 +117,7 @@ export default function CustomersTable({ users }: CustomersTableProps) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {displayedUsers.map((user, index) => {
-              const subscription = user.user_subscriptions?.[0]
+              const subscription = user.subscriptions?.[0]
               const plan = subscription?.plan_type || 'free'
               const status = subscription?.status || 'active'
               const planBadge = getPlanBadge(plan)

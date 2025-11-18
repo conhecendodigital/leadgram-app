@@ -5,17 +5,30 @@ import PaymentsStats from '@/components/admin/payments-stats'
 export default async function AdminPaymentsPage() {
   const supabase = await createServerClient()
 
-  // Buscar todos os pagamentos com informações do usuário
-  const { data: payments, error } = await (supabase
-    .from('payments') as any)
-    .select(`
-      *,
-      profiles:user_id (
-        full_name,
-        email
-      )
-    `)
+  // Buscar todos os pagamentos
+  const { data: paymentsData, error: paymentsError } = await supabase
+    .from('payments')
+    .select('*')
     .order('created_at', { ascending: false })
+
+  // Buscar profiles para os pagamentos
+  let payments = paymentsData
+  let error = paymentsError
+
+  if (paymentsData && paymentsData.length > 0) {
+    const userIds = [...new Set(paymentsData.map(p => p.user_id).filter(Boolean))]
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', userIds)
+
+    // Mapear profiles para os pagamentos
+    payments = paymentsData.map(payment => ({
+      ...payment,
+      user: profiles?.find(p => p.id === payment.user_id) || null
+    }))
+  }
 
   // Calcular estatísticas
   const totalRevenue = payments?.reduce((sum: number, p: any) => {

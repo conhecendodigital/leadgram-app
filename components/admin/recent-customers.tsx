@@ -16,15 +16,31 @@ export default function RecentCustomers() {
     async function fetchCustomers() {
       try {
         setLoading(true)
-        const { data } = await (supabase
-          .from('profiles') as any)
-          .select('*, user_subscriptions(*)')
+
+        // Buscar profiles
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('*')
           .neq('email', ADMIN_EMAIL)
           .order('created_at', { ascending: false })
           .limit(5)
 
-        if (data) {
-          setCustomers(data)
+        if (profilesData && profilesData.length > 0) {
+          const userIds = profilesData.map(p => p.id)
+
+          // Buscar subscriptions
+          const { data: subscriptions } = await supabase
+            .from('user_subscriptions')
+            .select('*')
+            .in('user_id', userIds)
+
+          // Mapear subscriptions para os profiles
+          const customersWithSubscriptions = profilesData.map(profile => ({
+            ...profile,
+            subscriptions: subscriptions?.filter(s => s.user_id === profile.id) || []
+          }))
+
+          setCustomers(customersWithSubscriptions)
         }
       } catch (error) {
         console.error('Erro ao buscar clientes:', error)
@@ -122,10 +138,10 @@ export default function RecentCustomers() {
               <div className="flex items-center gap-3">
                 <span
                   className={`px-3 py-1 rounded-lg text-xs font-medium ${getPlanBadge(
-                    customer.user_subscriptions?.[0]?.plan_type || 'free'
+                    customer.subscriptions?.[0]?.plan_type || 'free'
                   )}`}
                 >
-                  {customer.user_subscriptions?.[0]?.plan_type?.toUpperCase() || 'FREE'}
+                  {customer.subscriptions?.[0]?.plan_type?.toUpperCase() || 'FREE'}
                 </span>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <Clock className="w-3 h-3" />

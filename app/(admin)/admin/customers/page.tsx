@@ -8,11 +8,30 @@ export default async function AdminCustomersPage() {
   const supabase = await createServerClient()
 
   // Buscar todos os usuários (exceto admin)
-  const { data: users, error } = await (supabase
-    .from('profiles') as any)
-    .select('*, user_subscriptions(*)')
+  const { data: profilesData, error: profilesError } = await supabase
+    .from('profiles')
+    .select('*')
     .neq('email', ADMIN_EMAIL)
     .order('created_at', { ascending: false })
+
+  // Buscar subscriptions para os usuários
+  let users = profilesData
+  let error = profilesError
+
+  if (profilesData && profilesData.length > 0) {
+    const userIds = profilesData.map(p => p.id)
+
+    const { data: subscriptions } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .in('user_id', userIds)
+
+    // Mapear subscriptions para os usuários
+    users = profilesData.map(profile => ({
+      ...profile,
+      subscriptions: subscriptions?.filter(s => s.user_id === profile.id) || []
+    }))
+  }
 
   return (
     <div className="space-y-8">

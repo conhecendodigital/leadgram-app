@@ -9,7 +9,7 @@ interface CustomersStatsProps {
 
 export default function CustomersStats({ users }: CustomersStatsProps) {
   const totalUsers = users.length
-  const activeUsers = users.filter(u => u.user_subscriptions?.[0]?.status === 'active').length
+  const activeUsers = users.filter(u => u.subscriptions?.[0]?.status === 'active').length
   const newThisMonth = users.filter(u => {
     const createdDate = new Date(u.created_at)
     const now = new Date()
