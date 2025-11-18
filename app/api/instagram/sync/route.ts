@@ -126,54 +126,92 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Processar e salvar posts
+    console.log(`📥 Processando ${instagramData.data.length} posts do Instagram...`)
+
+    // OTIMIZAÇÃO: Buscar TODOS os posts existentes de uma vez (bulk query)
+    const instagramMediaIds = instagramData.data.map((p: any) => p.id)
+
+    const { data: existingPosts } = await (supabase
+      .from('instagram_posts') as any)
+      .select('id, instagram_media_id')
+      .eq('instagram_account_id', account.id)
+      .in('instagram_media_id', instagramMediaIds)
+
+    console.log(`🔍 Encontrados ${existingPosts?.length || 0} posts já existentes`)
+
+    // Criar Map para lookup rápido O(1)
+    const existingPostsMap = new Map(
+      (existingPosts || []).map((p: any) => [p.instagram_media_id, p.id])
+    )
+
+    // Separar posts para inserir vs atualizar
+    const postsToInsert: any[] = []
+    const postsToUpdate: any[] = []
+    const now = new Date().toISOString()
+
+    for (const post of instagramData.data) {
+      const postData = {
+        like_count: post.like_count || 0,
+        comments_count: post.comments_count || 0,
+        synced_at: now,
+      }
+
+      if (existingPostsMap.has(post.id)) {
+        // Post já existe - atualizar
+        postsToUpdate.push({
+          id: existingPostsMap.get(post.id),
+          ...postData,
+        })
+      } else {
+        // Post novo - inserir
+        postsToInsert.push({
+          instagram_account_id: account.id,
+          instagram_media_id: post.id,
+          caption: post.caption || '',
+          media_type: post.media_type || 'IMAGE',
+          media_url: post.media_url || post.thumbnail_url || '',
+          thumbnail_url: post.thumbnail_url || post.media_url || '',
+          permalink: post.permalink || '',
+          timestamp: post.timestamp || now,
+          ...postData,
+        })
+      }
+    }
+
     let newPostsCount = 0
     let updatedPostsCount = 0
 
-    for (const post of instagramData.data) {
-      // Verificar se já existe
-      const { data: existingPost } = await (supabase
+    // Bulk insert de novos posts
+    if (postsToInsert.length > 0) {
+      console.log(`➕ Inserindo ${postsToInsert.length} novos posts...`)
+      const { error: insertError } = await (supabase
         .from('instagram_posts') as any)
-        .select('id')
-        .eq('instagram_media_id', post.id)
-        .eq('instagram_account_id', account.id)
-        .single()
+        .insert(postsToInsert)
 
-      if (existingPost) {
-        // Atualizar post existente
-        await (supabase
-          .from('instagram_posts') as any)
-          .update({
-            like_count: post.like_count || 0,
-            comments_count: post.comments_count || 0,
-            synced_at: new Date().toISOString(),
-          })
-          .eq('id', existingPost.id)
-
-        updatedPostsCount++
+      if (!insertError) {
+        newPostsCount = postsToInsert.length
       } else {
-        // Inserir novo post
-        const { error: insertError } = await (supabase
-          .from('instagram_posts') as any)
-          .insert({
-            instagram_account_id: account.id,
-            instagram_media_id: post.id,
-            caption: post.caption || '',
-            media_type: post.media_type || 'IMAGE',
-            media_url: post.media_url || post.thumbnail_url || '',
-            thumbnail_url: post.thumbnail_url || post.media_url || '',
-            permalink: post.permalink || '',
-            timestamp: post.timestamp || new Date().toISOString(),
-            like_count: post.like_count || 0,
-            comments_count: post.comments_count || 0,
-            synced_at: new Date().toISOString(),
-          })
+        console.error('❌ Erro ao inserir posts:', insertError)
+      }
+    }
 
-        if (!insertError) {
-          newPostsCount++
+    // Atualizar posts existentes (um por um, pois Supabase não suporta bulk update com IDs diferentes)
+    if (postsToUpdate.length > 0) {
+      console.log(`🔄 Atualizando ${postsToUpdate.length} posts existentes...`)
+      for (const postUpdate of postsToUpdate) {
+        const { id, ...updateData } = postUpdate
+        const { error: updateError } = await (supabase
+          .from('instagram_posts') as any)
+          .update(updateData)
+          .eq('id', id)
+
+        if (!updateError) {
+          updatedPostsCount++
         }
       }
     }
+
+    console.log(`✅ Sincronização concluída: ${newPostsCount} novos, ${updatedPostsCount} atualizados`)
 
     // Atualizar data da última sincronização e contadores
     await (supabase
