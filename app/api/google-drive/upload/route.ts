@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { GoogleDriveService } from '@/lib/services/google-drive-service';
+import { withRateLimit, getRequestIdentifier } from '@/lib/api-middleware';
 
 export async function POST(request: NextRequest) {
-  try {
-    // Verificar autenticação
-    const supabase = await createServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+  // Verificar autenticação primeiro
+  const supabase = await createServerClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
+  if (authError || !user) {
+    return NextResponse.json(
+      { error: 'Not authenticated' },
+      { status: 401 }
+    );
+  }
+
+  // Rate limiting: 10 req/min por usuário
+  const identifier = getRequestIdentifier(request, user.id);
+
+  return withRateLimit(request, identifier, 10, 60, async () => {
+    try {
 
     // Parse form data
     const formData = await request.formData();
@@ -84,19 +90,20 @@ export async function POST(request: NextRequest) {
       file: uploadedFile,
       message: 'Video uploaded successfully to Google Drive',
     });
-  } catch (error: any) {
-    console.error('❌ Upload Error:', error);
+    } catch (error: any) {
+      console.error('❌ Upload Error:', error);
 
-    if (error.message === 'Google Drive not connected') {
+      if (error.message === 'Google Drive not connected') {
+        return NextResponse.json(
+          { error: 'Google Drive not connected. Please connect your account first.' },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Google Drive not connected. Please connect your account first.' },
-        { status: 400 }
+        { error: error.message || 'Failed to upload video' },
+        { status: 500 }
       );
     }
-
-    return NextResponse.json(
-      { error: error.message || 'Failed to upload video' },
-      { status: 500 }
-    );
-  }
+  })
 }

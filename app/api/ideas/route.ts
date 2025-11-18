@@ -1,7 +1,8 @@
 import { createServerClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getIdeaLimit } from '@/lib/settings'
 import { GoogleDriveService } from '@/lib/services/google-drive-service'
+import { withRateLimit, getRequestIdentifier } from '@/lib/api-middleware'
 
 export async function GET() {
   try {
@@ -42,15 +43,20 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createServerClient()
+export async function POST(request: NextRequest) {
+  const supabase = await createServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Rate limiting: 20 req/min por usuário
+  const identifier = getRequestIdentifier(request, user.id)
+
+  return withRateLimit(request, identifier, 20, 60, async () => {
+    try {
 
     const body = await request.json()
     const { title, theme, script, editor_instructions, status, funnel_stage, platforms } = body
@@ -148,12 +154,13 @@ export async function POST(request: Request) {
       console.error('⚠️ Erro ao criar subpasta no Drive:', driveError)
     }
 
-    return NextResponse.json(idea, { status: 201 })
-  } catch (error) {
-    console.error('Error creating idea:', error)
-    return NextResponse.json(
-      { error: 'Failed to create idea' },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json(idea, { status: 201 })
+    } catch (error) {
+      console.error('Error creating idea:', error)
+      return NextResponse.json(
+        { error: 'Failed to create idea' },
+        { status: 500 }
+      )
+    }
+  })
 }

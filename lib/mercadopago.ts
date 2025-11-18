@@ -76,9 +76,85 @@ export async function createPaymentPreference(
   }
 }
 
-export function validateWebhookSignature(requestBody: string, signature: string): boolean {
-  // In production, implement proper signature validation
-  // For now, we'll return true for development
-  // See: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
-  return true
+/**
+ * Valida a assinatura do webhook do Mercado Pago usando HMAC SHA-256
+ * Previne webhooks falsos e garante que a requisição veio do Mercado Pago
+ *
+ * @param xSignature - Header x-signature (formato: "ts=1234567890,v1=hash")
+ * @param xRequestId - Header x-request-id
+ * @param dataId - ID do pagamento/notificação
+ * @param secretKey - Access token do Mercado Pago (usado como secret)
+ * @returns true se a assinatura é válida, false caso contrário
+ *
+ * Referência: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
+ */
+export function validateWebhookSignature(
+  xSignature: string | null,
+  xRequestId: string | null,
+  dataId: string,
+  secretKey: string
+): boolean {
+  try {
+    // Validar se os parâmetros obrigatórios existem
+    if (!xSignature || !xRequestId || !dataId || !secretKey) {
+      console.error('Missing required parameters for webhook validation')
+      return false
+    }
+
+    // Extrair timestamp e hash do header x-signature
+    // Formato esperado: "ts=1234567890,v1=abc123..."
+    const signatureParts = xSignature.split(',')
+
+    if (signatureParts.length !== 2) {
+      console.error('Invalid x-signature format')
+      return false
+    }
+
+    const tsPart = signatureParts[0]
+    const hashPart = signatureParts[1]
+
+    // Validar formato ts=...
+    if (!tsPart.startsWith('ts=')) {
+      console.error('Missing ts in x-signature')
+      return false
+    }
+
+    // Validar formato v1=...
+    if (!hashPart.startsWith('v1=')) {
+      console.error('Missing v1 in x-signature')
+      return false
+    }
+
+    const ts = tsPart.split('=')[1]
+    const receivedHash = hashPart.split('=')[1]
+
+    // Criar manifest (string que será assinada)
+    // Formato: id:{data.id};request-id:{x-request-id};ts:{timestamp};
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`
+
+    // Calcular HMAC SHA-256
+    const crypto = require('crypto')
+    const calculatedHash = crypto
+      .createHmac('sha256', secretKey)
+      .update(manifest)
+      .digest('hex')
+
+    // Comparar hashes (timing-safe)
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(calculatedHash),
+      Buffer.from(receivedHash)
+    )
+
+    if (!isValid) {
+      console.error('Webhook signature mismatch', {
+        received: receivedHash.substring(0, 10) + '...',
+        calculated: calculatedHash.substring(0, 10) + '...',
+      })
+    }
+
+    return isValid
+  } catch (error) {
+    console.error('Error validating webhook signature:', error)
+    return false
+  }
 }

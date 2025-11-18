@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { instagramAPI } from '@/lib/instagram-api'
+import { withRateLimit, getRequestIdentifier } from '@/lib/api-middleware'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -151,9 +152,13 @@ async function getProfileWithPhoto(username: string) {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const query = searchParams.get('q')
+  // Rate limiting: 10 req/min por IP
+  const identifier = getRequestIdentifier(request)
+
+  return withRateLimit(request, identifier, 10, 60, async () => {
+    try {
+      const searchParams = request.nextUrl.searchParams
+      const query = searchParams.get('q')
 
     if (!query || query.length < 1) {
       // Retornar perfis populares SEM FOTOS (economizar API)
@@ -253,11 +258,12 @@ export async function GET(request: NextRequest) {
       suggestions: []
     })
 
-  } catch (error: any) {
-    console.error('❌ Search API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to search profiles' },
-      { status: 500 }
-    )
-  }
+    } catch (error: any) {
+      console.error('❌ Search API error:', error)
+      return NextResponse.json(
+        { error: 'Failed to search profiles' },
+        { status: 500 }
+      )
+    }
+  })
 }

@@ -1,24 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import { withRateLimit, getRequestIdentifier } from '@/lib/api-middleware'
 
 export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createServerClient()
+  const supabase = await createServerClient()
 
-    // Verificar autenticação
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+  // Verificar autenticação primeiro (para pegar user_id para rate limit)
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Não autenticado' },
-        { status: 401 }
-      )
-    }
+  if (authError || !user) {
+    return NextResponse.json(
+      { error: 'Não autenticado' },
+      { status: 401 }
+    )
+  }
 
-    // Buscar conta do Instagram conectada
+  // Rate limiting: 5 req/min por usuário (operação pesada)
+  const identifier = getRequestIdentifier(request, user.id)
+
+  return withRateLimit(request, identifier, 5, 60, async () => {
+    try {
+      // Buscar conta do Instagram conectada
     const { data: account, error: accountError } = await (supabase
       .from('instagram_accounts') as any)
       .select('*')
@@ -229,11 +234,12 @@ export async function POST(request: NextRequest) {
       totalPosts: instagramData.data.length,
       message: `${newPostsCount} novos posts importados, ${updatedPostsCount} posts atualizados`,
     })
-  } catch (error: any) {
-    console.error('Sync error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Erro ao sincronizar' },
-      { status: 500 }
-    )
-  }
+    } catch (error: any) {
+      console.error('Sync error:', error)
+      return NextResponse.json(
+        { error: error.message || 'Erro ao sincronizar' },
+        { status: 500 }
+      )
+    }
+  })
 }

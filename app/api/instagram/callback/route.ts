@@ -4,9 +4,10 @@ import { createServerClient } from '@/lib/supabase/server'
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
+  const state = searchParams.get('state')
   const error = searchParams.get('error')
 
-  console.log('📱 Instagram Callback:', { code: !!code, error })
+  console.log('📱 Instagram Callback:', { code: !!code, state: !!state, error })
 
   if (error) {
     console.error('❌ Instagram error:', error)
@@ -22,8 +23,47 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  if (!state) {
+    console.error('❌ No state provided - possible CSRF attack')
+    return NextResponse.redirect(
+      new URL('/dashboard/instagram?error=csrf_missing', request.url)
+    )
+  }
+
   try {
     const supabase = await createServerClient()
+
+    // Validar state (CSRF protection)
+    const { data: savedState, error: stateError } = await (supabase
+      .from('oauth_states') as any)
+      .select('*')
+      .eq('state', state)
+      .eq('provider', 'instagram')
+      .eq('used', false)
+      .single()
+
+    if (stateError || !savedState) {
+      console.error('❌ Invalid or expired state - possible CSRF attack:', stateError)
+      return NextResponse.redirect(
+        new URL('/dashboard/instagram?error=csrf_invalid', request.url)
+      )
+    }
+
+    // Verificar se expirou
+    if (new Date(savedState.expires_at) < new Date()) {
+      console.error('❌ Expired state')
+      await (supabase.from('oauth_states') as any).delete().eq('id', savedState.id)
+      return NextResponse.redirect(
+        new URL('/dashboard/instagram?error=csrf_expired', request.url)
+      )
+    }
+
+    // Marcar state como usado (previne replay attacks)
+    await (supabase.from('oauth_states') as any)
+      .update({ used: true })
+      .eq('id', savedState.id)
+
+    console.log('✅ OAuth state validated successfully')
 
     const {
       data: { user },

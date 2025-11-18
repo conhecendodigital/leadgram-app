@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { validateWebhookSignature } from '@/lib/mercadopago'
 
 export async function POST(request: NextRequest) {
   try {
+    // Extrair headers de assinatura do Mercado Pago
+    const xSignature = request.headers.get('x-signature')
+    const xRequestId = request.headers.get('x-request-id')
+
     const body = await request.json()
     console.log('Mercado Pago Webhook:', body)
 
@@ -24,6 +29,24 @@ export async function POST(request: NextRequest) {
         console.error('No active Mercado Pago credentials found')
         return NextResponse.json({ error: 'No credentials' }, { status: 500 })
       }
+
+      // Validar assinatura do webhook ANTES de processar pagamento
+      const isValidSignature = validateWebhookSignature(
+        xSignature,
+        xRequestId,
+        body.data.id,
+        adminCreds.access_token
+      )
+
+      if (!isValidSignature) {
+        console.error('⚠️ INVALID WEBHOOK SIGNATURE - Possible fraud attempt')
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        )
+      }
+
+      console.log('✅ Webhook signature validated successfully')
 
       const paymentResponse = await fetch(
         `https://api.mercadopago.com/v1/payments/${paymentId}`,

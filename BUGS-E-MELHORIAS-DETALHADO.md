@@ -9,23 +9,29 @@
 ## 📊 RESUMO EXECUTIVO
 
 Após análise minuciosa linha por linha do código, foram encontrados **27 bugs e problemas** divididos em:
-- **6 bugs CRÍTICOS** 🔴 (bloqueadores ou de segurança) - ~~8~~ **2 resolvidos ✅**
+- **6 bugs CRÍTICOS** 🔴 (bloqueadores ou de segurança) - **5 resolvidos ✅** (restam 1)
 - **9 bugs de ALTA severidade** 🟠 (performance e funcionalidade)
 - **7 bugs de MÉDIA severidade** 🟡 (inconsistências e UX)
 - **3 melhorias BAIXA prioridade** 🟢 (nice to have)
 
 ### ✅ Bugs Resolvidos (18/11/2025):
-- **Bug #4** - N+1 Queries no Sync Instagram (Performance 10x melhor)
-- **Bug #5** - N+1 no Cron Job (Timeout resolvido)
+#### DIA 1 - Bugs de Segurança Críticos:
+- **Bug #1** ✅ - Webhook Mercado Pago sem validação (HMAC SHA-256 implementado)
+- **Bug #2** ✅ - Rate Limiting não funciona em serverless (Upstash Redis implementado)
+- **Bug #3** ✅ - CSRF OAuth Instagram (State aleatório + validação implementados)
+#### DIA 2 - Bugs de Performance:
+- **Bug #4** ✅ - N+1 Queries no Sync Instagram (Performance 10x melhor)
+- **Bug #5** ✅ - N+1 no Cron Job (Timeout resolvido)
 
 ---
 
 ## 🔴 BUGS CRÍTICOS (URGENTES)
 
-### BUG #1: Webhook Mercado Pago Sem Validação 🔴🔒
-**Arquivo:** `lib/mercadopago.ts:79-84`
+### BUG #1: Webhook Mercado Pago Sem Validação ✅ RESOLVIDO
+**Arquivo:** `lib/mercadopago.ts:79-160`
 **Severidade:** 🔴 CRÍTICA (Segurança)
 **Impacto:** Fraude financeira
+**Status:** ✅ **CORRIGIDO em 18/11/2025**
 
 **Problema:**
 ```typescript
@@ -50,15 +56,24 @@ curl -X POST https://leadgram.com/api/mercadopago/webhook \
 
 **Correção:** Implementar validação HMAC real (código fornecido em `ANALISE-PAGAMENTOS.md`)
 
+**✅ Implementação Realizada:**
+- ✅ Função `validateWebhookSignature` completamente reescrita com validação HMAC SHA-256
+- ✅ Validação de headers `x-signature` e `x-request-id`
+- ✅ Comparação timing-safe para prevenir timing attacks
+- ✅ Validação aplicada no webhook (`app/api/mercadopago/webhook/route.ts:33-49`)
+- ✅ Retorna 401 Unauthorized se assinatura inválida
+- ✅ Logs de segurança para detectar tentativas de fraude
+
 **Prioridade:** 🔴 URGENTÍSSIMO
-**Tempo:** 1 dia
+**Tempo:** 1 dia ✅ **CONCLUÍDO**
 
 ---
 
-### BUG #2: Rate Limiting Não Funciona em Serverless 🔴⚡
-**Arquivo:** `lib/middleware/rate-limit.ts:9`
+### BUG #2: Rate Limiting Não Funciona em Serverless ✅ RESOLVIDO
+**Arquivo:** `lib/rate-limit.ts` (novo)
 **Severidade:** 🔴 CRÍTICA (Segurança + Performance)
 **Impacto:** DoS attack, abuso de API
+**Status:** ✅ **CORRIGIDO em 18/11/2025**
 
 **Problema:**
 ```typescript
@@ -82,15 +97,32 @@ if (typeof setInterval !== 'undefined') {
 ```
 
 **Correção:** Usar Redis (Upstash) ou Vercel KV
+
+**✅ Implementação Realizada:**
+- ✅ Implementado Upstash Redis com REST API (serverless-friendly)
+- ✅ Algoritmo sliding window com sorted sets para rate limiting preciso
+- ✅ Middleware `withRateLimit` criado (`lib/api-middleware.ts`)
+- ✅ Aplicado em 5 rotas críticas:
+  - `/api/instagram/search` - 10 req/min
+  - `/api/instagram/sync` - 5 req/min
+  - `/api/google-drive/upload` - 10 req/min
+  - `/api/ideas` (POST) - 20 req/min
+  - `/api/checkout/create-preference` - 5 req/min
+- ✅ Headers de rate limit adicionados (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
+- ✅ Retorna 429 Too Many Requests quando limite excedido
+- ✅ Documentação completa criada (`SETUP-UPSTASH.md`)
+- ✅ Fail-safe: Desabilita rate limiting se Upstash não configurado (dev mode)
+
 **Prioridade:** 🔴 URGENTE
-**Tempo:** 1 dia
+**Tempo:** 1 dia ✅ **CONCLUÍDO**
 
 ---
 
-### BUG #3: CSRF no OAuth Instagram 🔴🔒
-**Arquivo:** `app/api/instagram/auth/route.ts:42`
+### BUG #3: CSRF no OAuth Instagram ✅ RESOLVIDO
+**Arquivo:** `app/api/instagram/auth/route.ts` + `app/api/instagram/callback/route.ts`
 **Severidade:** 🔴 CRÍTICA (Segurança)
 **Impacto:** CSRF attack
+**Status:** ✅ **CORRIGIDO em 18/11/2025**
 
 **Problema:**
 ```typescript
@@ -116,8 +148,21 @@ const receivedState = searchParams.get('state');
 // Validar que state existe no banco para esse user
 ```
 
+**✅ Implementação Realizada:**
+- ✅ Migration criada: `oauth_states` table com RLS (`supabase/migrations/20251118000000_oauth_csrf_protection.sql`)
+- ✅ Geração de state aleatório com `crypto.randomBytes(32)` (`auth/route.ts:36`)
+- ✅ State salvo no banco com expiração de 5 minutos
+- ✅ Validação completa no callback:
+  - Verifica se state existe no banco
+  - Verifica se não expirou
+  - Verifica se não foi usado (previne replay attacks)
+  - Marca como usado após validação
+- ✅ Retorna erros específicos: `csrf_missing`, `csrf_invalid`, `csrf_expired`
+- ✅ Função de limpeza automática de states expirados
+- ✅ RLS habilitado (usuários só veem seus próprios states)
+
 **Prioridade:** 🔴 URGENTE
-**Tempo:** 4 horas
+**Tempo:** 4 horas ✅ **CONCLUÍDO**
 
 ---
 

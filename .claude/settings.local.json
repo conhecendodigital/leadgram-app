@@ -20,7 +20,8 @@
       "Bash(npx supabase:*)",
       "Bash(npm install:*)",
       "Bash(\"app/(dashboard)/dashboard/ideas/[id]/page.tsx\")",
-      "Bash(\"app/(dashboard)/dashboard/ideas/[id]/page.tsx.backup\")"
+      "Bash(\"app/(dashboard)/dashboard/ideas/[id]/page.tsx.backup\")",
+      "Bash(vercel ls:*)"
     ],
     "deny": [],
     "ask": []
