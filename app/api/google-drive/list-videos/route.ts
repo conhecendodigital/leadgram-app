@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Verifica se a ideia pertence ao usuário
-    const { data: idea, error: ideaError } = await supabase
-      .from('ideas')
+    const { data: idea, error: ideaError } = await (supabase
+      .from('ideas') as any)
       .select('id, user_id, drive_video_ids')
       .eq('id', ideaId)
       .single();
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (idea.user_id !== user.id) {
+    if ((idea as any).user_id !== user.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
       // Sincroniza o array drive_video_ids com os vídeos reais
       // Remove IDs de vídeos que foram deletados no Drive
-      const currentVideoIds = idea.drive_video_ids || [];
+      const currentVideoIds = (idea as any).drive_video_ids || [];
       const driveVideoIds = videos.map(v => v.id);
 
       // Filtra apenas os vídeos que ainda existem no Drive
@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
 
       // Atualiza o banco se houve mudanças
       if (JSON.stringify(currentVideoIds) !== JSON.stringify(syncedVideoIds)) {
-        await supabase
-          .from('ideas')
+        await (supabase
+          .from('ideas') as any)
           .update({ drive_video_ids: syncedVideoIds })
           .eq('id', ideaId);
 
