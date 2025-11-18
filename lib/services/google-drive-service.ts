@@ -175,8 +175,8 @@ export class GoogleDriveService {
   }
 
   /**
-   * Verifica se a pasta "Ideias" existe no Drive
-   * Se não existir (deletada), recria automaticamente
+   * Verifica se a pasta "Ideias" existe no Drive e não está na lixeira
+   * Se não existir ou estiver na lixeira, recria automaticamente
    */
   async verifyAndRecreateIdeasFolder(userId: string, currentFolderId: string | null): Promise<string> {
     const drive = await this.getDriveClient(userId);
@@ -187,18 +187,24 @@ export class GoogleDriveService {
       return await this.createIdeasFolder(userId);
     }
 
-    // Verifica se a pasta ainda existe no Drive
+    // Verifica se a pasta ainda existe no Drive e não está na lixeira
     try {
-      await drive.files.get({
+      const { data } = await drive.files.get({
         fileId: currentFolderId,
         fields: 'id, name, trashed',
       });
+
+      // Se pasta está na lixeira, recria
+      if (data.trashed === true) {
+        console.log('⚠️ Ideas folder is in trash, recreating...');
+        return await this.createIdeasFolder(userId);
+      }
 
       // Pasta existe e não está na lixeira
       console.log('✅ Ideas folder exists:', currentFolderId);
       return currentFolderId;
     } catch (error: any) {
-      // Pasta foi deletada (erro 404 ou 403)
+      // Pasta foi deletada permanentemente (erro 404 ou 403)
       if (error.code === 404 || error.message?.includes('File not found')) {
         console.log('⚠️ Ideas folder was deleted, recreating...');
         return await this.createIdeasFolder(userId);
@@ -308,17 +314,24 @@ export class GoogleDriveService {
     if (!folderId) {
       folderId = await this.createIdeaFolder(userId, ideaId, idea.title);
     } else {
-      // Verifica se a pasta da ideia ainda existe no Drive
+      // Verifica se a pasta da ideia ainda existe no Drive e não está na lixeira
       try {
-        await drive.files.get({
+        const { data } = await drive.files.get({
           fileId: folderId,
           fields: 'id, name, trashed',
         });
-        console.log('✅ Idea folder exists:', folderId);
+
+        // Se pasta está na lixeira, recria
+        if (data.trashed === true) {
+          console.log('⚠️ Idea folder is in trash, recreating...');
+          folderId = await this.createIdeaFolder(userId, ideaId, idea.title);
+        } else {
+          console.log('✅ Idea folder exists:', folderId);
+        }
       } catch (error: any) {
-        // Pasta foi deletada, recria
+        // Pasta foi deletada permanentemente, recria
         if (error.code === 404 || error.message?.includes('File not found')) {
-          console.log('⚠️ Idea folder was deleted, recreating...');
+          console.log('⚠️ Idea folder was deleted permanently, recreating...');
           folderId = await this.createIdeaFolder(userId, ideaId, idea.title);
         } else {
           throw error;
