@@ -29,8 +29,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verifica se a ideia pertence ao usuário
-    const { data: idea, error: ideaError } = await supabase
-      .from('ideas')
+    const { data: idea, error: ideaError } = await (supabase
+      .from('ideas') as any)
       .select('id, user_id, drive_video_ids')
       .eq('id', ideaId)
       .single();
@@ -42,7 +42,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if (idea.user_id !== user.id) {
+    if ((idea as any).user_id !== user.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -91,7 +91,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remove do array drive_video_ids no banco
-    const currentVideoIds = idea.drive_video_ids || [];
+    const currentVideoIds = (idea as any).drive_video_ids || [];
     const updatedVideoIds = currentVideoIds.filter((entry: any) => entry.id !== videoId);
 
     const { error: updateError } = await supabase
