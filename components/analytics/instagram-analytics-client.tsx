@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { RefreshCw, TrendingUp, Users, Eye, Heart, MessageCircle, Award, Calendar, Clock } from 'lucide-react'
+import { RefreshCw, TrendingUp, Users, Eye, Heart, MessageCircle, Award, Calendar } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 import {
   calculateEngagementRate,
@@ -30,9 +30,6 @@ export default function InstagramAnalyticsClient({
 }: InstagramAnalyticsClientProps) {
   const [loading, setLoading] = useState(false)
   const [insights, setInsights] = useState<any>(null)
-  const [autoRefresh, setAutoRefresh] = useState(true)
-  const [countdown, setCountdown] = useState(60)
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   // Buscar insights ao carregar
   useEffect(() => {
@@ -40,36 +37,14 @@ export default function InstagramAnalyticsClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Auto-refresh a cada 60 segundos
+  // Auto-refresh silencioso a cada 60 segundos em background
   useEffect(() => {
-    if (!autoRefresh) return
-
     const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          fetchInsights()
-          return 60
-        }
-        return prev - 1
-      })
-    }, 1000)
+      fetchInsights()
+    }, 60000) // 60 segundos
 
     return () => clearInterval(interval)
-  }, [autoRefresh])
-
-  // Reset countdown quando faz refresh manual
-  const handleManualRefresh = () => {
-    fetchInsights()
-    setCountdown(60)
-  }
-
-  // Toggle auto-refresh
-  const toggleAutoRefresh = () => {
-    setAutoRefresh(!autoRefresh)
-    if (!autoRefresh) {
-      setCountdown(60)
-    }
-  }
+  }, [])
 
   const fetchInsights = async () => {
     setLoading(true)
@@ -91,7 +66,6 @@ export default function InstagramAnalyticsClient({
       }
 
       setInsights(data)
-      setLastUpdate(new Date())
       showToast.success('✅ Métricas atualizadas!', { id: loadingToast })
     } catch (error: any) {
       console.error('Error fetching insights:', error)
@@ -161,77 +135,17 @@ export default function InstagramAnalyticsClient({
 
   return (
     <div className="space-y-6">
-      {/* Controles de Atualização em Tempo Real */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Status AO VIVO */}
-          <div className="flex items-center gap-3">
-            {autoRefresh && (
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse" />
-                  <div className="absolute inset-0 w-3 h-3 bg-red-600 rounded-full animate-ping opacity-75" />
-                </div>
-                <span className="text-sm font-semibold text-red-600">AO VIVO</span>
-              </div>
-            )}
-            <div className="h-6 w-px bg-gray-300" />
-            <div className="text-sm text-gray-600">
-              {lastUpdate ? (
-                <span>
-                  Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')}
-                </span>
-              ) : (
-                <span>Carregando dados...</span>
-              )}
-            </div>
-            {autoRefresh && (
-              <>
-                <div className="h-6 w-px bg-gray-300" />
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">
-                    Próxima em {countdown}s
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Botões de Controle */}
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={toggleAutoRefresh}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
-                autoRefresh
-                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  : 'bg-green-100 text-green-700 hover:bg-green-200'
-              }`}
-            >
-              {autoRefresh ? (
-                <>
-                  <span className="w-2 h-2 bg-gray-700 rounded-full" />
-                  <span className="hidden sm:inline">Pausar</span>
-                </>
-              ) : (
-                <>
-                  <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse" />
-                  <span className="hidden sm:inline">Retomar</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={handleManualRefresh}
-              disabled={loading}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-colors disabled:opacity-50 text-sm"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{loading ? 'Atualizando...' : 'Atualizar Agora'}</span>
-              <span className="sm:hidden">{loading ? '...' : 'Atualizar'}</span>
-            </button>
-          </div>
-        </div>
+      {/* Botão Atualizar */}
+      <div className="flex justify-end">
+        <button
+          onClick={fetchInsights}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 px-4 sm:px-4 py-2 sm:py-2 bg-primary hover:bg-primary/90 text-white rounded-lg sm:rounded-xl font-medium transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">{loading ? 'Atualizando...' : 'Atualizar'}</span>
+          <span className="sm:hidden">{loading ? 'Carregando...' : 'Atualizar'}</span>
+        </button>
       </div>
 
       {/* Cards de Métricas Principais */}
