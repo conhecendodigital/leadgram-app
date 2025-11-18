@@ -175,6 +175,41 @@ export class GoogleDriveService {
   }
 
   /**
+   * Verifica se a pasta "Ideias" existe no Drive
+   * Se não existir (deletada), recria automaticamente
+   */
+  async verifyAndRecreateIdeasFolder(userId: string, currentFolderId: string | null): Promise<string> {
+    const drive = await this.getDriveClient(userId);
+
+    // Se não tem folder_id, cria nova pasta
+    if (!currentFolderId) {
+      console.log('⚠️ No folder_id found, creating new Ideas folder');
+      return await this.createIdeasFolder(userId);
+    }
+
+    // Verifica se a pasta ainda existe no Drive
+    try {
+      await drive.files.get({
+        fileId: currentFolderId,
+        fields: 'id, name, trashed',
+      });
+
+      // Pasta existe e não está na lixeira
+      console.log('✅ Ideas folder exists:', currentFolderId);
+      return currentFolderId;
+    } catch (error: any) {
+      // Pasta foi deletada (erro 404 ou 403)
+      if (error.code === 404 || error.message?.includes('File not found')) {
+        console.log('⚠️ Ideas folder was deleted, recreating...');
+        return await this.createIdeasFolder(userId);
+      }
+
+      // Outro erro (permissão, etc)
+      throw error;
+    }
+  }
+
+  /**
    * Cria pasta "Ideias" na raiz do Drive
    */
   async createIdeasFolder(userId: string): Promise<string> {
@@ -198,11 +233,13 @@ export class GoogleDriveService {
       .update({ folder_id: folderId })
       .eq('user_id', userId);
 
+    console.log('✅ Created new Ideas folder:', folderId);
     return folderId;
   }
 
   /**
    * Cria subpasta para uma ideia específica
+   * Verifica se a pasta "Ideias" existe, recria se necessário
    */
   async createIdeaFolder(
     userId: string,
@@ -212,14 +249,16 @@ export class GoogleDriveService {
     const drive = await this.getDriveClient(userId);
     const connection = await this.getConnection(userId);
 
-    if (!connection?.folder_id) {
-      throw new Error('Ideas folder not created yet');
-    }
+    // Verifica se a pasta "Ideias" existe (e recria se deletada)
+    const ideasFolderId = await this.verifyAndRecreateIdeasFolder(
+      userId,
+      connection?.folder_id || null
+    );
 
     const fileMetadata = {
       name: ideaTitle,
       mimeType: 'application/vnd.google-apps.folder',
-      parents: [connection.folder_id],
+      parents: [ideasFolderId],
     };
 
     const { data } = await drive.files.create({
@@ -235,12 +274,14 @@ export class GoogleDriveService {
       .update({ drive_folder_id: folderId })
       .eq('id', ideaId);
 
+    console.log('✅ Created idea folder:', { ideaId, folderId, ideaTitle });
     return folderId;
   }
 
   /**
    * Upload de vídeo para pasta da ideia
    * IMPORTANTE: Mantém a qualidade original do vídeo
+   * Verifica se a pasta existe, recria se necessário
    */
   async uploadVideo(
     userId: string,
@@ -266,6 +307,23 @@ export class GoogleDriveService {
     let folderId = idea.drive_folder_id;
     if (!folderId) {
       folderId = await this.createIdeaFolder(userId, ideaId, idea.title);
+    } else {
+      // Verifica se a pasta da ideia ainda existe no Drive
+      try {
+        await drive.files.get({
+          fileId: folderId,
+          fields: 'id, name, trashed',
+        });
+        console.log('✅ Idea folder exists:', folderId);
+      } catch (error: any) {
+        // Pasta foi deletada, recria
+        if (error.code === 404 || error.message?.includes('File not found')) {
+          console.log('⚠️ Idea folder was deleted, recreating...');
+          folderId = await this.createIdeaFolder(userId, ideaId, idea.title);
+        } else {
+          throw error;
+        }
+      }
     }
 
     const fileMetadata = {
