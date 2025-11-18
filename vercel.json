@@ -14,11 +14,7 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/sync-instagram",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/refresh-tokens",
+      "path": "/api/cron/daily-tasks",
       "schedule": "0 3 * * *"
     }
   ]
