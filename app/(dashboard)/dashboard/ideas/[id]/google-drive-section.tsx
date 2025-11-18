@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Video, Folder, ExternalLink } from 'lucide-react'
+import { Video, Folder, ExternalLink, RefreshCw } from 'lucide-react'
 import VideoUpload from '@/components/google-drive/video-upload'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -15,21 +15,55 @@ interface GoogleDriveSectionProps {
 
 export default function GoogleDriveSection({ ideaId, ideaTitle, driveFolderId, driveVideoIds: initialVideos }: GoogleDriveSectionProps) {
   const [driveVideos, setDriveVideos] = useState(initialVideos || [])
+  const [isLoading, setIsLoading] = useState(false)
 
+  // Busca vídeos diretamente do Google Drive
+  const fetchVideos = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/google-drive/list-videos?ideaId=${ideaId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setDriveVideos(data.videos || [])
+      } else {
+        console.error('Failed to fetch videos from Drive')
+        // Mantém os vídeos locais se falhar
+        setDriveVideos(initialVideos || [])
+      }
+    } catch (error) {
+      console.error('Error fetching videos:', error)
+      // Mantém os vídeos locais se falhar
+      setDriveVideos(initialVideos || [])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Busca vídeos ao montar o componente
   useEffect(() => {
-    setDriveVideos(initialVideos || [])
-  }, [initialVideos])
+    fetchVideos()
+  }, [ideaId])
 
   const handleUploadComplete = () => {
-    // Recarregar a página para pegar os dados atualizados
-    window.location.reload()
+    // Recarrega os vídeos ao invés de recarregar a página inteira
+    fetchVideos()
   }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Video className="w-5 h-5 text-blue-600" />
-        <h2 className="text-lg font-semibold text-gray-900">Vídeos no Google Drive</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Video className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Vídeos no Google Drive</h2>
+        </div>
+        <button
+          onClick={fetchVideos}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          {isLoading ? 'Sincronizando...' : 'Sincronizar'}
+        </button>
       </div>
 
       <p className="text-sm text-gray-600 mb-6">
@@ -45,7 +79,12 @@ export default function GoogleDriveSection({ ideaId, ideaTitle, driveFolderId, d
       />
 
       {/* Uploaded Videos List */}
-      {driveVideos.length > 0 && (
+      {isLoading ? (
+        <div className="mt-6 text-center py-8">
+          <RefreshCw className="w-8 h-8 text-blue-600 mx-auto mb-2 animate-spin" />
+          <p className="text-sm text-gray-600">Sincronizando com Google Drive...</p>
+        </div>
+      ) : driveVideos.length > 0 ? (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             Vídeos enviados ({driveVideos.length})
@@ -78,9 +117,7 @@ export default function GoogleDriveSection({ ideaId, ideaTitle, driveFolderId, d
             ))}
           </div>
         </div>
-      )}
-
-      {driveVideos.length === 0 && (
+      ) : (
         <div className="mt-6 text-center py-8 text-gray-500">
           <Video className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p className="text-sm">Nenhum vídeo enviado ainda</p>
