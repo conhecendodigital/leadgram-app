@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Video, Folder, ExternalLink, RefreshCw } from 'lucide-react'
+import { Video, Folder, ExternalLink, RefreshCw, Trash2 } from 'lucide-react'
 import VideoUpload from '@/components/google-drive/video-upload'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -16,6 +16,7 @@ interface GoogleDriveSectionProps {
 export default function GoogleDriveSection({ ideaId, ideaTitle, driveFolderId, driveVideoIds: initialVideos }: GoogleDriveSectionProps) {
   const [driveVideos, setDriveVideos] = useState(initialVideos || [])
   const [isLoading, setIsLoading] = useState(false)
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null)
 
   // Busca vídeos diretamente do Google Drive
   const fetchVideos = async () => {
@@ -36,6 +37,42 @@ export default function GoogleDriveSection({ ideaId, ideaTitle, driveFolderId, d
       setDriveVideos(initialVideos || [])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Deleta vídeo do Drive e do banco
+  const handleDeleteVideo = async (videoId: string, videoName: string) => {
+    if (!confirm(`Tem certeza que deseja excluir "${videoName}"?\n\nO vídeo será removido do Google Drive e do Leadgram.`)) {
+      return
+    }
+
+    setDeletingVideoId(videoId)
+    try {
+      const response = await fetch('/api/google-drive/delete-video', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          videoId,
+          ideaId,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Video deleted:', data)
+        // Remove da lista local
+        setDriveVideos(prev => prev.filter((v: any) => v.id !== videoId))
+      } else {
+        const error = await response.json()
+        alert(`Erro ao deletar vídeo: ${error.error || 'Erro desconhecido'}`)
+      }
+    } catch (error) {
+      console.error('Error deleting video:', error)
+      alert('Erro ao deletar vídeo. Tente novamente.')
+    } finally {
+      setDeletingVideoId(null)
     }
   }
 
@@ -102,17 +139,31 @@ export default function GoogleDriveSection({ ideaId, ideaTitle, driveFolderId, d
                     {format(new Date(video.uploadedAt), "d 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
-                {driveFolderId && (
-                  <a
-                    href={`https://drive.google.com/drive/folders/${driveFolderId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                <div className="flex items-center gap-2">
+                  {driveFolderId && (
+                    <a
+                      href={`https://drive.google.com/drive/folders/${driveFolderId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      Abrir pasta
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => handleDeleteVideo(video.id, video.name)}
+                    disabled={deletingVideoId === video.id}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Excluir vídeo"
                   >
-                    Abrir pasta
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
+                    {deletingVideoId === video.id ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
