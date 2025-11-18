@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { RefreshCw, TrendingUp, Users, Eye, Heart, MessageCircle, Award, Calendar } from 'lucide-react'
+import { RefreshCw, TrendingUp, Users, Eye, Heart, MessageCircle, Award, Calendar, Clock } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 import {
   calculateEngagementRate,
