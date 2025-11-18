@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { createServerClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { Readable } from 'stream';
 
 export interface GoogleDriveAccount {
   id: string;
@@ -272,9 +273,10 @@ export class GoogleDriveService {
       parents: [folderId],
     };
 
+    // Converte Buffer em Stream para a API do Google Drive
     const media = {
       mimeType,
-      body: Buffer.from(fileBuffer),
+      body: Readable.from(fileBuffer),
     };
 
     const { data } = await drive.files.create({
