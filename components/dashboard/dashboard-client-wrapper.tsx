@@ -80,16 +80,16 @@ export default function DashboardClientWrapper({
       <StoriesCarousel ideas={filteredIdeas.slice(0, 10)} />
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6">
-        {/* Left Column - 2/3 */}
-        <div className="lg:col-span-2 space-y-4 md:space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 mt-6">
+        {/* Left Column - 2/3 on lg, 3/4 on 2xl */}
+        <div className="lg:col-span-2 2xl:col-span-3 space-y-4 md:space-y-6">
           <PerformanceChart ideas={filteredIdeas} />
           <PlatformComparison ideas={filteredIdeas} />
           <InsightsWidget ideas={filteredIdeas} stats={stats} />
           <ContentGrid ideas={postedIdeas.slice(0, 9)} />
         </div>
 
-        {/* Right Column - 1/3 */}
+        {/* Right Column - 1/3 on lg, 1/4 on 2xl */}
         <div className="space-y-4 md:space-y-6">
           <TopContent ideas={postedIdeas.slice(0, 5)} />
           <GoalsCards ideas={filteredIdeas} stats={stats} />

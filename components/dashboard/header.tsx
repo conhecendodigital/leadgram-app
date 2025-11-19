@@ -27,24 +27,14 @@ export default function Header() {
     router.refresh()
   }
 
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Bom dia'
-    if (hour < 18) return 'Boa tarde'
-    return 'Boa noite'
-  }
-
   return (
     <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-3 sm:px-6 py-3 sm:py-4">
       <div className="flex items-center justify-between gap-4">
-        {/* Left - Greeting */}
+        {/* Left - Logo/Title */}
         <div className="min-w-0 flex-shrink">
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
-            {getGreeting()}! 👋
+            Leadgram
           </h1>
-          <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
-            Veja como estão suas métricas hoje
-          </p>
         </div>
 
         {/* Right - Actions */}

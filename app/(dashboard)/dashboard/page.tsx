@@ -177,28 +177,31 @@ export default async function DashboardPage() {
     <>
       <SkipLink />
       <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-        {/* Header Premium */}
-        <header className="mb-6 md:mb-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
-                Olá, {profile?.full_name || 'Criador'}! 👋
-              </h1>
-              <p className="text-gray-600 mt-2 text-sm md:text-base">
-                Acompanhe seu desempenho e gerencie seu conteúdo
-              </p>
+        {/* Container com max-width para ultrawide */}
+        <div className="max-w-[1800px] mx-auto">
+          {/* Header Premium */}
+          <header className="mb-6 md:mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+                  Dashboard
+                </h1>
+                <p className="text-gray-600 mt-2 text-sm md:text-base">
+                  Acompanhe seu desempenho e gerencie seu conteúdo
+                </p>
+              </div>
+              <QuickActions />
             </div>
-            <QuickActions />
-          </div>
-        </header>
+          </header>
 
-        {/* Dashboard Client Wrapper (gerencia filtros) */}
-        <main id="main-content">
-          <DashboardClientWrapper
-            ideas={ideas || []}
-            stats={stats}
-          />
-        </main>
+          {/* Dashboard Client Wrapper (gerencia filtros) */}
+          <main id="main-content">
+            <DashboardClientWrapper
+              ideas={ideas || []}
+              stats={stats}
+            />
+          </main>
+        </div>
       </div>
     </>
   )
