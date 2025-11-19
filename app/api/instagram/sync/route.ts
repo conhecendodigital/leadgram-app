@@ -218,12 +218,35 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Sincronização concluída: ${newPostsCount} novos, ${updatedPostsCount} atualizados`)
 
+    // Buscar número real de posts e métricas atualizadas do perfil
+    const profileResponse = await fetch(
+      `https://graph.facebook.com/v18.0/${account.instagram_user_id}?fields=media_count,followers_count,follows_count&access_token=${account.access_token}`
+    )
+
+    let profileMetrics = {
+      media_count: instagramData.data.length,
+      followers_count: account.followers_count,
+      follows_count: account.follows_count,
+    }
+
+    if (profileResponse.ok) {
+      const profileData = await profileResponse.json()
+      profileMetrics = {
+        media_count: profileData.media_count || instagramData.data.length,
+        followers_count: profileData.followers_count || account.followers_count,
+        follows_count: profileData.follows_count || account.follows_count,
+      }
+      console.log('📊 Métricas atualizadas do perfil:', profileMetrics)
+    }
+
     // Atualizar data da última sincronização e contadores
     await (supabase
       .from('instagram_accounts') as any)
       .update({
         last_sync_at: new Date().toISOString(),
-        media_count: instagramData.data.length,
+        media_count: profileMetrics.media_count,
+        followers_count: profileMetrics.followers_count,
+        follows_count: profileMetrics.follows_count,
       })
       .eq('id', account.id)
 
