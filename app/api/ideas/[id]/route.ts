@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { Database } from '@/types/database.types'
+import { google } from 'googleapis'
 
 export async function GET(
   request: Request,
@@ -130,7 +131,53 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Deletar ideia (cascade vai deletar platforms e metrics)
+    // Buscar a ideia primeiro para pegar drive_folder_id
+    const { data: idea } = await (supabase
+      .from('ideas') as any)
+      .select('drive_folder_id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single()
+
+    // Se tiver pasta no Google Drive, deletar
+    if (idea?.drive_folder_id) {
+      try {
+        // Buscar conexão do Google Drive
+        const { data: connection } = await (supabase
+          .from('google_drive_accounts') as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single()
+
+        if (connection) {
+          const oauth2Client = new google.auth.OAuth2(
+            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            `${process.env.NEXT_PUBLIC_APP_URL}/api/google-drive/callback`
+          )
+
+          oauth2Client.setCredentials({
+            access_token: connection.access_token,
+            refresh_token: connection.refresh_token,
+          })
+
+          const drive = google.drive({ version: 'v3', auth: oauth2Client })
+
+          // Deletar pasta do Drive (move para lixeira)
+          await drive.files.delete({
+            fileId: idea.drive_folder_id,
+          })
+
+          console.log('✅ Pasta do Drive deletada:', idea.drive_folder_id)
+        }
+      } catch (driveError) {
+        // Log mas não falha - ideia ainda será deletada do banco
+        console.error('⚠️ Erro ao deletar pasta do Drive:', driveError)
+      }
+    }
+
+    // Deletar ideia do banco (cascade vai deletar platforms e metrics)
     const { error } = await supabase
       .from('ideas')
       .delete()
