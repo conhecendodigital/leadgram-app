@@ -43,94 +43,48 @@ export default function VideoUpload({ ideaId, ideaTitle, onUploadComplete }: Vid
   const handleUpload = async () => {
     if (!selectedFile) return
 
+    // Verificar tamanho do arquivo (limite de 4.5MB na Vercel)
+    const maxSize = 4.5 * 1024 * 1024 // 4.5MB
+    if (selectedFile.size > maxSize) {
+      setError(`O vídeo é muito grande (${formatFileSize(selectedFile.size)}). O limite atual é de 4.5MB. Para vídeos maiores, comprima o arquivo antes de enviar.`)
+      return
+    }
+
     try {
       setUploading(true)
       setError(null)
       setUploadProgress(0)
 
-      // Passo 1: Iniciar sessão de upload resumable
-      const initResponse = await fetch('/api/google-drive/init-upload', {
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      formData.append('ideaId', ideaId)
+
+      // Simular progresso (Google Drive API não retorna progresso real)
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 500)
+
+      const response = await fetch('/api/google-drive/upload', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileName: selectedFile.name,
-          fileSize: selectedFile.size,
-          mimeType: selectedFile.type,
-          ideaId,
-        }),
+        body: formData,
       })
 
-      const initData = await initResponse.json()
+      clearInterval(progressInterval)
+      setUploadProgress(100)
 
-      if (!initResponse.ok) {
-        throw new Error(initData.error || 'Erro ao iniciar upload')
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao fazer upload')
       }
 
-      const { uploadUrl } = initData
-
-      // Passo 2: Upload direto para o Google Drive com progresso real
-      const fileId = await new Promise<string>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable) {
-            const progress = Math.round((event.loaded / event.total) * 100)
-            setUploadProgress(progress)
-          }
-        })
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText)
-              resolve(response.id)
-            } catch {
-              reject(new Error('Resposta inválida do Google Drive'))
-            }
-          } else {
-            reject(new Error(`Erro no upload: ${xhr.status}`))
-          }
-        })
-
-        xhr.addEventListener('error', () => {
-          reject(new Error('Erro de rede durante upload'))
-        })
-
-        xhr.addEventListener('abort', () => {
-          reject(new Error('Upload cancelado'))
-        })
-
-        xhr.open('PUT', uploadUrl)
-        xhr.setRequestHeader('Content-Type', selectedFile.type)
-        xhr.send(selectedFile)
-      })
-
-      // Passo 3: Confirmar upload no banco
-      const confirmResponse = await fetch('/api/google-drive/confirm-upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ideaId,
-          fileId,
-          fileName: selectedFile.name,
-        }),
-      })
-
-      const confirmData = await confirmResponse.json()
-
-      if (!confirmResponse.ok) {
-        throw new Error(confirmData.error || 'Erro ao confirmar upload')
-      }
-
-      setUploadedVideo({
-        id: fileId,
-        name: selectedFile.name,
-        webViewLink: `https://drive.google.com/file/d/${fileId}/view`,
-      })
+      setUploadedVideo(data.file)
       setSelectedFile(null)
 
       // Reset file input
@@ -213,7 +167,7 @@ export default function VideoUpload({ ideaId, ideaTitle, onUploadComplete }: Vid
               Selecionar Vídeo
             </button>
             <p className="mt-2 text-xs text-gray-400">
-              MP4, MOV, AVI, WebM - Qualidade original preservada
+              MP4, MOV, AVI, WebM - Máx 4.5MB
             </p>
           </div>
         )}
