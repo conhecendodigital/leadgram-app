@@ -23,13 +23,7 @@ export default function QuickActions() {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen])
 
-  // Focus trap: focar primeiro item quando abrir
-  useEffect(() => {
-    if (isOpen && menuRef.current) {
-      const firstLink = menuRef.current.querySelector('a')
-      firstLink?.focus()
-    }
-  }, [isOpen])
+  // Removido auto-focus no primeiro item para evitar outline visual
 
   const actions = [
     {
