@@ -86,17 +86,40 @@ export async function PATCH(
 
     if (ideaError) throw ideaError
 
-    // Atualizar plataformas (deletar antigas e criar novas)
+    // Atualizar plataformas (smart update - preserva dados existentes)
     if (platforms) {
-      // Deletar plataformas antigas
-      await supabase
+      // Buscar plataformas existentes
+      const { data: existingPlatforms } = await supabase
         .from('idea_platforms')
-        .delete()
+        .select('id, platform')
         .eq('idea_id', id)
 
-      // Criar novas plataformas
-      if (platforms.length > 0) {
-        const platformsData = platforms.map((platform: string) => ({
+      const existingPlatformNames = new Set(
+        (existingPlatforms || []).map((p: any) => p.platform)
+      )
+      const newPlatformNames = new Set(platforms)
+
+      // Encontrar plataformas para deletar (existem mas não estão na nova lista)
+      const platformsToDelete = (existingPlatforms || [])
+        .filter((p: any) => !newPlatformNames.has(p.platform))
+        .map((p: any) => p.id)
+
+      // Encontrar plataformas para inserir (novas, não existem ainda)
+      const platformsToInsert = platforms.filter(
+        (platform: string) => !existingPlatformNames.has(platform)
+      )
+
+      // Deletar apenas plataformas removidas
+      if (platformsToDelete.length > 0) {
+        await supabase
+          .from('idea_platforms')
+          .delete()
+          .in('id', platformsToDelete)
+      }
+
+      // Inserir apenas novas plataformas
+      if (platformsToInsert.length > 0) {
+        const platformsData = platformsToInsert.map((platform: string) => ({
           idea_id: idea.id,
           platform,
           is_posted: false,
@@ -104,6 +127,8 @@ export async function PATCH(
 
         await supabase.from('idea_platforms').insert(platformsData)
       }
+
+      // Plataformas que já existem permanecem intactas (com métricas, posts, etc.)
     }
 
     return NextResponse.json(idea)

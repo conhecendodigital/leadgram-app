@@ -122,6 +122,21 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200">
+        <div className="flex flex-col gap-2 mb-3">
+          <div className="flex flex-wrap gap-2 justify-center text-xs">
+            <Link href="/legal/privacy" className="text-gray-500 hover:text-primary transition-colors">
+              Privacidade
+            </Link>
+            <span className="text-gray-300">·</span>
+            <Link href="/legal/terms" className="text-gray-500 hover:text-primary transition-colors">
+              Termos
+            </Link>
+            <span className="text-gray-300">·</span>
+            <Link href="/legal/cookies" className="text-gray-500 hover:text-primary transition-colors">
+              Cookies
+            </Link>
+          </div>
+        </div>
         <p className="text-xs text-gray-500 text-center">
           © 2025 Leadgram
         </p>

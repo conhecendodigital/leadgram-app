@@ -1,309 +1,324 @@
 'use client'
 
-import { useState } from 'react'
-import { m } from 'framer-motion'
-import {
-  Clock,
-  Calendar,
-  RefreshCw,
-  Bell,
-  Database,
-  Sparkles,
-  Settings,
-  ChevronRight,
-  Check,
-  X,
-  Zap,
-} from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { RefreshCw, Clock, CheckCircle2, XCircle, Loader2, Activity, TrendingUp } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
-interface Automation {
+interface AutomationSettings {
+  auto_sync_enabled: boolean
+  sync_frequency: string
+  updated_at: string
+}
+
+interface SyncHistoryItem {
   id: string
-  name: string
-  description: string
-  icon: any
-  gradient: string
-  isActive: boolean
-  isPremium: boolean
-  category: 'scheduling' | 'posting' | 'analytics' | 'backup'
+  sync_type: 'manual' | 'auto'
+  sync_source: string
+  status: 'success' | 'error' | 'in_progress'
+  new_posts: number
+  updated_posts: number
+  error_message?: string
+  created_at: string
+  duration_ms?: number
 }
 
 export default function AutomationsClient() {
-  const [automations, setAutomations] = useState<Automation[]>([
-    {
-      id: 'best-time-post',
-      name: 'Publicar no Melhor Horário',
-      description: 'Analisa seus dados e publica automaticamente no horário de maior engajamento',
-      icon: Clock,
-      gradient: 'from-blue-500 to-cyan-500',
-      isActive: false,
-      isPremium: true,
-      category: 'posting',
-    },
-    {
-      id: 'schedule-posts',
-      name: 'Agendamento de Posts',
-      description: 'Agende seus posts para publicação automática em datas e horários específicos',
-      icon: Calendar,
-      gradient: 'from-purple-500 to-pink-500',
-      isActive: false,
-      isPremium: false,
-      category: 'scheduling',
-    },
-    {
-      id: 'repost-content',
-      name: 'Republicação Automática',
-      description: 'Republica automaticamente seus conteúdos de melhor performance',
-      icon: RefreshCw,
-      gradient: 'from-green-500 to-emerald-500',
-      isActive: false,
-      isPremium: true,
-      category: 'posting',
-    },
-    {
-      id: 'performance-alerts',
-      name: 'Alertas de Performance',
-      description: 'Receba notificações quando seus posts atingirem metas de engajamento',
-      icon: Bell,
-      gradient: 'from-orange-500 to-red-500',
-      isActive: true,
-      isPremium: false,
-      category: 'analytics',
-    },
-    {
-      id: 'auto-backup',
-      name: 'Backup Automático',
-      description: 'Backup diário automático de todas as suas ideias e conteúdos',
-      icon: Database,
-      gradient: 'from-indigo-500 to-purple-500',
-      isActive: true,
-      isPremium: false,
-      category: 'backup',
-    },
-    {
-      id: 'ai-suggestions',
-      name: 'Sugestões com IA',
-      description: 'Receba sugestões de conteúdo baseadas em tendências e seu histórico',
-      icon: Sparkles,
-      gradient: 'from-pink-500 to-rose-500',
-      isActive: false,
-      isPremium: true,
-      category: 'analytics',
-    },
-  ])
+  const [settings, setSettings] = useState<AutomationSettings | null>(null)
+  const [history, setHistory] = useState<SyncHistoryItem[]>([])
+  const [lastSuccess, setLastSuccess] = useState<SyncHistoryItem | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [togglingAutoSync, setTogglingAutoSync] = useState(false)
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  // Buscar configurações e histórico
+  useEffect(() => {
+    fetchData()
+  }, [])
 
-  const toggleAutomation = (id: string) => {
-    setAutomations(prev =>
-      prev.map(auto =>
-        auto.id === id ? { ...auto, isActive: !auto.isActive } : auto
-      )
+  const fetchData = async () => {
+    try {
+      const [settingsRes, historyRes] = await Promise.all([
+        fetch('/api/automations/settings'),
+        fetch('/api/automations/history?limit=10')
+      ])
+
+      if (settingsRes.ok) {
+        const settingsData = await settingsRes.json()
+        setSettings(settingsData)
+      }
+
+      if (historyRes.ok) {
+        const historyData = await historyRes.json()
+        setHistory(historyData.history || [])
+        setLastSuccess(historyData.lastSuccess)
+      }
+    } catch (error) {
+      console.error('Error fetching automation data:', error)
+      toast.error('Erro ao carregar dados de automação')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Toggle auto-sync
+  const handleToggleAutoSync = async () => {
+    if (!settings) return
+
+    setTogglingAutoSync(true)
+    const newValue = !settings.auto_sync_enabled
+
+    try {
+      const response = await fetch('/api/automations/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          auto_sync_enabled: newValue,
+          sync_frequency: settings.sync_frequency
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSettings(data.settings)
+        toast.success(
+          newValue
+            ? 'Sincronização automática ativada'
+            : 'Sincronização automática desativada'
+        )
+      } else {
+        throw new Error('Failed to update settings')
+      }
+    } catch (error) {
+      console.error('Error toggling auto-sync:', error)
+      toast.error('Erro ao atualizar configuração')
+    } finally {
+      setTogglingAutoSync(false)
+    }
+  }
+
+  // Sincronizar agora
+  const handleSyncNow = async () => {
+    setSyncing(true)
+
+    try {
+      const response = await fetch('/api/automations/sync-now', {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success(
+          `Sincronização concluída! ${data.new_posts} novos posts, ${data.updated_posts} atualizados`
+        )
+        // Recarregar dados
+        await fetchData()
+      } else {
+        throw new Error(data.error || 'Sync failed')
+      }
+    } catch (error: any) {
+      console.error('Error syncing:', error)
+      toast.error(error.message || 'Erro ao sincronizar')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
     )
   }
 
-  const filteredAutomations = selectedCategory === 'all'
-    ? automations
-    : automations.filter(auto => auto.category === selectedCategory)
-
-  const categories = [
-    { id: 'all', label: 'Todas', count: automations.length },
-    { id: 'scheduling', label: 'Agendamento', count: automations.filter(a => a.category === 'scheduling').length },
-    { id: 'posting', label: 'Publicação', count: automations.filter(a => a.category === 'posting').length },
-    { id: 'analytics', label: 'Analytics', count: automations.filter(a => a.category === 'analytics').length },
-    { id: 'backup', label: 'Backup', count: automations.filter(a => a.category === 'backup').length },
-  ]
-
-  const activeCount = automations.filter(a => a.isActive).length
-
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-green-100 rounded-xl">
-              <Check className="w-5 h-5 text-green-600" />
-            </div>
-            <span className="text-3xl font-bold text-gray-900">{activeCount}</span>
+      {/* Card: Auto-sync Toggle */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Sincronização Automática
+            </h2>
+            <p className="text-sm text-gray-600">
+              Sincronize posts do Instagram automaticamente todos os dias
+            </p>
           </div>
-          <p className="text-sm font-medium text-gray-600">Automações Ativas</p>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-blue-100 rounded-xl">
-              <Zap className="w-5 h-5 text-blue-600" />
-            </div>
-            <span className="text-3xl font-bold text-gray-900">{automations.length}</span>
-          </div>
-          <p className="text-sm font-medium text-gray-600">Total Disponível</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-purple-100 rounded-xl">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-            </div>
-            <span className="text-3xl font-bold text-gray-900">
-              {automations.filter(a => a.isPremium).length}
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600">Premium</p>
-        </div>
-      </div>
-
-      {/* Category Filter */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-          {categories.map(category => (
-            <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`
-                flex-shrink-0 px-4 py-2 rounded-xl font-medium text-sm transition-all
-                ${selectedCategory === category.id
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }
-              `}
-            >
-              {category.label} ({category.count})
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Automations Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {filteredAutomations.map((automation, index) => {
-          const Icon = automation.icon
-
-          return (
-            <m.div
-              key={automation.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`
-                bg-white rounded-2xl border-2 transition-all duration-300
-                ${automation.isActive
-                  ? 'border-green-200 shadow-lg shadow-green-100'
-                  : 'border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-md'
-                }
-              `}
-            >
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 bg-gradient-to-br ${automation.gradient} rounded-xl shadow-lg`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-gray-900">{automation.name}</h3>
-                        {automation.isPremium && (
-                          <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full">
-                            PRO
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {automation.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  {/* Status */}
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`
-                        w-2 h-2 rounded-full
-                        ${automation.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}
-                      `}
-                    />
-                    <span className={`text-sm font-medium ${automation.isActive ? 'text-green-600' : 'text-gray-500'}`}>
-                      {automation.isActive ? 'Ativa' : 'Inativa'}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    {/* Toggle */}
-                    <button
-                      onClick={() => toggleAutomation(automation.id)}
-                      className={`
-                        relative w-12 h-6 rounded-full transition-colors duration-300
-                        ${automation.isActive ? 'bg-green-500' : 'bg-gray-300'}
-                      `}
-                    >
-                      <div
-                        className={`
-                          absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300
-                          ${automation.isActive ? 'translate-x-6' : 'translate-x-0.5'}
-                        `}
-                      />
-                    </button>
-
-                    {/* Settings */}
-                    <button
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Configurações"
-                    >
-                      <Settings className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </m.div>
-          )
-        })}
-      </div>
-
-      {/* Empty State */}
-      {filteredAutomations.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <X className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Nenhuma automação encontrada
-          </h3>
-          <p className="text-sm text-gray-600 mb-6">
-            Tente selecionar outra categoria
-          </p>
           <button
-            onClick={() => setSelectedCategory('all')}
-            className="px-6 py-3 bg-primary text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
+            onClick={handleToggleAutoSync}
+            disabled={togglingAutoSync}
+            className={`
+              relative inline-flex h-8 w-14 items-center rounded-full transition-colors
+              ${settings?.auto_sync_enabled ? 'bg-green-500' : 'bg-gray-300'}
+              ${togglingAutoSync ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+            `}
           >
-            Ver Todas
+            <span
+              className={`
+                inline-block h-6 w-6 transform rounded-full bg-white transition-transform
+                ${settings?.auto_sync_enabled ? 'translate-x-7' : 'translate-x-1'}
+              `}
+            />
           </button>
+        </div>
+
+        {settings?.auto_sync_enabled && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+            <p className="text-sm text-green-800">
+              ✅ Sincronização automática está <strong>ativa</strong>. Seus posts do Instagram serão atualizados automaticamente.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Card: Última Sincronização */}
+      {lastSuccess && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                Última Sincronização
+              </h2>
+              <p className="text-sm text-gray-600">
+                {formatDistanceToNow(new Date(lastSuccess.created_at), {
+                  addSuffix: true,
+                  locale: ptBR
+                })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-green-700">Sucesso</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-blue-50 rounded-xl">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-blue-700 font-medium">Novos Posts</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-900">{lastSuccess.new_posts}</p>
+            </div>
+
+            <div className="p-4 bg-purple-50 rounded-xl">
+              <div className="flex items-center gap-2 mb-1">
+                <RefreshCw className="w-4 h-4 text-purple-600" />
+                <span className="text-sm text-purple-700 font-medium">Atualizados</span>
+              </div>
+              <p className="text-2xl font-bold text-purple-900">{lastSuccess.updated_posts}</p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Info Banner */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 rounded-2xl p-6">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-white rounded-xl shadow-sm">
-            <Sparkles className="w-6 h-6 text-purple-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-gray-900 mb-2">
-              💎 Desbloqueie Mais Automações com o Plano Pro
-            </h3>
-            <p className="text-sm text-gray-700 mb-4">
-              Automações premium incluem publicação inteligente, republicação automática e sugestões com IA.
-              Upgrade agora e economize horas do seu tempo!
+      {/* Card: Sincronizar Agora */}
+      <div className="bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-2xl border border-primary/20 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Sincronização Manual
+            </h2>
+            <p className="text-sm text-gray-600">
+              Atualize seus posts do Instagram agora mesmo
             </p>
-            <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
-              Ver Planos Pro
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
+
+          <button
+            onClick={handleSyncNow}
+            disabled={syncing}
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          >
+            {syncing ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Sincronizando...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-5 h-5" />
+                Sincronizar Agora
+              </>
+            )}
+          </button>
         </div>
+      </div>
+
+      {/* Card: Histórico */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Activity className="w-5 h-5 text-gray-600" />
+          <h2 className="text-lg font-semibold text-gray-900">
+            Histórico de Sincronizações
+          </h2>
+        </div>
+
+        {history.length === 0 ? (
+          <div className="text-center py-8">
+            <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">Nenhuma sincronização registrada ainda</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  {/* Status Icon */}
+                  <div>
+                    {item.status === 'success' && (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    )}
+                    {item.status === 'error' && (
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    )}
+                    {item.status === 'in_progress' && (
+                      <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-gray-900">
+                        {item.sync_type === 'manual' ? 'Sincronização Manual' : 'Sincronização Automática'}
+                      </span>
+                      {item.sync_type === 'auto' && (
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                          Auto
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {formatDistanceToNow(new Date(item.created_at), {
+                        addSuffix: true,
+                        locale: ptBR
+                      })}
+                      {item.duration_ms && ` • ${(item.duration_ms / 1000).toFixed(1)}s`}
+                    </p>
+                    {item.error_message && (
+                      <p className="text-xs text-red-600 mt-1">{item.error_message}</p>
+                    )}
+                  </div>
+
+                  {/* Stats */}
+                  {item.status === 'success' && (
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span>+{item.new_posts} novos</span>
+                      <span>↻{item.updated_posts} atualizados</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

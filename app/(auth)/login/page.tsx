@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Sparkles, Mail, Lock, Loader2 } from 'lucide-react'
+import AuthFooter from '@/components/auth/footer'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -153,6 +154,8 @@ export default function LoginPage() {
               Criar conta
             </Link>
           </p>
+
+          <AuthFooter />
         </div>
       </div>
     </div>

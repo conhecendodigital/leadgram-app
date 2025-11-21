@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 import ThemeInitializer from "@/components/theme-initializer";
 import { ErrorBoundary } from "@/components/error-boundary";
 import MotionProvider from "@/components/motion-provider";
+import CookieConsent from "@/components/CookieConsent";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -67,6 +68,7 @@ export default function RootLayout({
               },
             }}
           />
+          <CookieConsent />
         </ThemeProvider>
         </MotionProvider>
       </body>

@@ -40,6 +40,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar tamanho do arquivo (máximo 500MB)
+    const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB em bytes
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error: 'File too large',
+          message: `O arquivo é muito grande. Tamanho máximo: 500MB. Seu arquivo: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+          maxSize: MAX_FILE_SIZE,
+          currentSize: file.size
+        },
+        { status: 413 } // 413 Payload Too Large
+      );
+    }
+
+    // Validar tipo de arquivo (apenas vídeos)
+    const ALLOWED_MIME_TYPES = [
+      'video/mp4',
+      'video/quicktime', // .mov
+      'video/x-msvideo', // .avi
+      'video/x-matroska', // .mkv
+      'video/webm',
+    ];
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        {
+          error: 'Invalid file type',
+          message: 'Apenas arquivos de vídeo são permitidos (MP4, MOV, AVI, MKV, WEBM)',
+          allowedTypes: ALLOWED_MIME_TYPES,
+          receivedType: file.type
+        },
+        { status: 400 }
+      );
+    }
+
     // Verificar se a ideia pertence ao usuário
     const { data: idea, error: ideaError } = await (supabase
       .from('ideas') as any)

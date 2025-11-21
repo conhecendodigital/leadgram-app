@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
           const { data: existing } = await supabase
             .from('instagram_posts')
             .select('id')
-            .eq('instagram_post_id', post.id)
+            .eq('instagram_media_id', post.id)
             .eq('instagram_account_id', account.id)
             .single()
 
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
               .from('instagram_posts')
               .insert({
                 instagram_account_id: account.id,
-                instagram_post_id: post.id,
+                instagram_media_id: post.id,
                 caption: post.caption,
                 media_type: post.media_type,
                 media_url: post.media_url,
