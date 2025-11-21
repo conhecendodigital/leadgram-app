@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { m, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, Lightbulb, BarChart3, Instagram, Settings, LogOut, User, Search, Shield } from 'lucide-react'
+import { Menu, X, Home, Lightbulb, BarChart3, Instagram, Settings, LogOut, Search, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -21,7 +21,6 @@ export default function MobileMenu() {
     { icon: Search, label: 'Explorar', href: '/dashboard/explore' },
     { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
     { icon: Instagram, label: 'Instagram', href: '/dashboard/instagram' },
-    { icon: User, label: 'Perfil', href: '/dashboard/profile' },
   ]
 
   useEffect(() => {
