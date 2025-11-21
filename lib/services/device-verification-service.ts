@@ -106,8 +106,8 @@ export class DeviceVerificationService {
       const supabase = await createServerClient()
       const fingerprint = await this.getDeviceFingerprint()
 
-      const { data, error } = await supabase
-        .from('trusted_devices')
+      const { data, error } = await (supabase
+        .from('trusted_devices') as any)
         .select('id')
         .eq('user_id', userId)
         .eq('device_fingerprint', fingerprint)
@@ -120,8 +120,8 @@ export class DeviceVerificationService {
 
       // Se encontrou, atualizar last_used_at
       if (data) {
-        await supabase
-          .from('trusted_devices')
+        await (supabase
+          .from('trusted_devices') as any)
           .update({ last_used_at: new Date().toISOString() })
           .eq('id', data.id)
 
@@ -143,7 +143,7 @@ export class DeviceVerificationService {
       const supabase = await createServerClient()
       const deviceInfo = await this.getDeviceInfo()
 
-      await supabase.from('trusted_devices').upsert(
+      await (supabase.from('trusted_devices') as any).upsert(
         {
           user_id: userId,
           device_fingerprint: deviceInfo.fingerprint,
@@ -174,8 +174,8 @@ export class DeviceVerificationService {
     try {
       const supabase = await createServerClient()
 
-      const { data, error } = await supabase
-        .from('trusted_devices')
+      const { data, error } = await (supabase
+        .from('trusted_devices') as any)
         .select('*')
         .eq('user_id', userId)
         .order('last_used_at', { ascending: false })
@@ -196,8 +196,8 @@ export class DeviceVerificationService {
     try {
       const supabase = await createServerClient()
 
-      await supabase
-        .from('trusted_devices')
+      await (supabase
+        .from('trusted_devices') as any)
         .delete()
         .eq('id', deviceId)
         .eq('user_id', userId)
@@ -217,8 +217,8 @@ export class DeviceVerificationService {
       const supabase = await createServerClient()
       const fingerprint = await this.getDeviceFingerprint()
 
-      const { data } = await supabase
-        .from('trusted_devices')
+      const { data } = await (supabase
+        .from('trusted_devices') as any)
         .select('device_fingerprint')
         .eq('id', deviceId)
         .maybeSingle()
