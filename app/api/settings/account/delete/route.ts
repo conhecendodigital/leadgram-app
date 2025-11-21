@@ -17,22 +17,27 @@ export async function DELETE(request: NextRequest) {
 
     const userId = user.id
 
-    // Delete related data (cascade delete based on database schema)
-    // Note: Make sure your database has proper CASCADE DELETE set up
+    // Delete related data in correct order
+    // The database schema uses CASCADE DELETE for most tables:
+    // - auth.users CASCADE to profiles, user_subscriptions, payments, etc.
+    // - profiles CASCADE to ideas, instagram_accounts
+    // - ideas CASCADE to idea_platforms
+    // - idea_platforms CASCADE to metrics
+    // - instagram_accounts CASCADE to instagram_posts
 
-    // Delete ideas
-    await supabase.from('ideas').delete().eq('user_id', userId)
+    // Delete profile first (this will CASCADE to ideas, instagram_accounts, and their children)
+    const { error: profileDeleteError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId)
 
-    // Delete Instagram accounts
-    await supabase.from('instagram_accounts').delete().eq('user_id', userId)
+    if (profileDeleteError) {
+      console.error('Error deleting profile:', profileDeleteError)
+      // Continue with user deletion even if profile delete fails
+    }
 
-    // Delete metrics
-    await supabase.from('metrics').delete().eq('user_id', userId)
-
-    // Delete profile
-    await supabase.from('profiles').delete().eq('id', userId)
-
-    // Delete auth user (this should be done last)
+    // Delete auth user (this will CASCADE to remaining tables like
+    // notifications, google_drive_accounts, oauth_states, etc.)
     const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId)
 
     if (deleteUserError) {
