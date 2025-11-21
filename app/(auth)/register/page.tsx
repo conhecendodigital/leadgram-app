@@ -33,7 +33,7 @@ export default function RegisterPage() {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
         },
       })
 
@@ -96,17 +96,17 @@ export default function RegisterPage() {
             </p>
             <p className="text-primary font-semibold mb-6">{email}</p>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-              <p className="text-sm text-blue-900">
-                Clique no link enviado para confirmar sua conta e fazer login.
+              <p className="text-sm text-blue-900 mb-3">
+                Clique no link enviado para confirmar sua conta e acessar o dashboard.
+              </p>
+              <p className="text-xs text-blue-800">
                 Não esqueça de verificar sua caixa de spam!
               </p>
             </div>
-            <Link
-              href="/login"
-              className="inline-block py-3 px-6 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
-            >
-              Ir para Login
-            </Link>
+            <div className="flex items-center justify-center gap-2 text-gray-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <p className="text-sm">Aguardando confirmação do email...</p>
+            </div>
           </div>
         </div>
       </div>
