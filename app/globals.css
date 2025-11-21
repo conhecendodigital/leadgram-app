@@ -93,6 +93,26 @@ a,
   cursor: pointer;
 }
 
+/* Remove bullets from menu items */
+[role="menu"],
+[role="menu"] *,
+[role="menuitem"],
+[role="menuitem"] * {
+  list-style: none !important;
+  list-style-type: none !important;
+  list-style-position: outside !important;
+}
+
+[role="menu"]::before,
+[role="menu"] *::before,
+[role="menuitem"]::before,
+[role="menuitem"] *::before,
+[role="menu"]::marker,
+[role="menuitem"]::marker {
+  display: none !important;
+  content: none !important;
+}
+
 /* Glassmorphism effect */
 .glass {
   background: rgba(255, 255, 255, 0.7);

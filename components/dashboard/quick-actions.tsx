@@ -94,32 +94,31 @@ export default function QuickActions() {
               style={{ listStyle: 'none' }}
             >
               {actions.map((action, index) => (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  role="menuitem"
-                  className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-xl list-none"
-                  style={{ listStyle: 'none' }}
-                >
-                  <m.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group list-none"
-                    style={{ listStyle: 'none' }}
+                <div key={action.label} className="block">
+                  <Link
+                    href={action.href}
+                    role="menuitem"
+                    className="block focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-xl no-underline"
                   >
-                    <div
-                      className={`p-2 rounded-lg bg-gradient-to-br ${action.gradient} group-hover:scale-110 transition-transform shadow-md`}
-                      aria-hidden="true"
+                    <m.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
                     >
-                      <action.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="font-medium text-gray-900 group-hover:text-primary transition-colors">
-                      {action.label}
-                    </span>
-                  </m.div>
-                </Link>
+                      <div
+                        className={`p-2 rounded-lg bg-gradient-to-br ${action.gradient} group-hover:scale-110 transition-transform shadow-md`}
+                        aria-hidden="true"
+                      >
+                        <action.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-medium text-gray-900 group-hover:text-primary transition-colors">
+                        {action.label}
+                      </span>
+                    </m.div>
+                  </Link>
+                </div>
               ))}
             </m.div>
           </>
