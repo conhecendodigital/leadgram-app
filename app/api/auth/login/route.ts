@@ -7,6 +7,7 @@ import {
 } from '@/lib/middleware/security-middleware';
 import { getRequestInfo } from '@/lib/utils/request-info';
 import { rateLimit } from '@/lib/middleware/rate-limit';
+import { DeviceVerificationService } from '@/lib/services/device-verification-service';
 
 /**
  * API de Login com Sistema de Segurança Integrado
@@ -84,6 +85,42 @@ export async function POST(request: Request) {
     // ===== LOGIN BEM-SUCEDIDO =====
     if (data.user) {
       const requestInfo = await getRequestInfo();
+
+      // ===== VERIFICAÇÃO DE DISPOSITIVO =====
+      const isDeviceTrusted = await DeviceVerificationService.isDeviceTrusted(data.user.id);
+
+      if (!isDeviceTrusted) {
+        // Dispositivo não confiável - enviar magic link para verificação
+        console.log('🔒 Novo dispositivo detectado para:', email);
+
+        // Fazer logout da sessão criada automaticamente
+        await supabase.auth.signOut();
+
+        // Enviar magic link para verificação do dispositivo
+        const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/verify-device`,
+          }
+        });
+
+        if (magicLinkError) {
+          console.error('Erro ao enviar magic link:', magicLinkError);
+          return NextResponse.json(
+            { error: 'Erro ao enviar email de verificação' },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({
+          success: false,
+          requiresDeviceVerification: true,
+          email: email,
+          message: 'Novo dispositivo detectado. Enviamos um link de verificação para seu email.'
+        });
+      }
+
+      // Dispositivo confiável - permitir login
       await recordSuccessfulLogin(email, data.user.id, requestInfo);
 
       return NextResponse.json({

@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deviceVerificationRequired, setDeviceVerificationRequired] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,6 +45,12 @@ export default function LoginPage() {
         throw new Error(result.error || 'Erro ao fazer login')
       }
 
+      // Verificação de dispositivo necessária
+      if (result.requiresDeviceVerification) {
+        setDeviceVerificationRequired(true)
+        return
+      }
+
       // Login bem-sucedido
       if (result.success && result.user) {
         // Redirecionar direto para dashboard
@@ -60,6 +67,39 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Tela de verificação de dispositivo
+  if (deviceVerificationRequired) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8 text-amber-600" />
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Novo dispositivo detectado</h2>
+            <p className="text-gray-600 mb-4">
+              Por segurança, enviamos um link de verificação para
+            </p>
+            <p className="text-primary font-semibold mb-6">{email}</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+              <p className="text-sm text-amber-900">
+                Clique no link enviado para confirmar este dispositivo e fazer login.
+                Não esqueça de verificar sua caixa de spam!
+              </p>
+            </div>
+            <Link
+              href="/login"
+              onClick={() => setDeviceVerificationRequired(false)}
+              className="inline-block py-3 px-6 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+            >
+              Voltar para Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

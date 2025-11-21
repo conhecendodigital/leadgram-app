@@ -53,7 +53,17 @@ export default function RegisterPage() {
 
       // Verificar se há sessão (auto-login)
       if (data.session) {
-        // Login automático funcionou
+        // Login automático funcionou - marcar dispositivo como confiável
+        try {
+          await fetch('/api/auth/trust-device', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          })
+        } catch (trustError) {
+          console.error('Erro ao marcar dispositivo como confiável:', trustError)
+          // Não bloquear o fluxo se falhar
+        }
+
         setSuccess(true)
         setTimeout(() => {
           router.push('/dashboard')
