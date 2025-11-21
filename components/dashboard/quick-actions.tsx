@@ -1,7 +1,7 @@
 'use client'
 
 import { m, AnimatePresence } from 'framer-motion'
-import { Plus, Upload, Zap, Instagram, Sparkles, ChevronDown } from 'lucide-react'
+import { Plus, Upload, Instagram, Sparkles, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 
@@ -43,12 +43,6 @@ export default function QuickActions() {
       label: 'Upload',
       href: '/dashboard/upload',
       gradient: 'from-blue-500 to-cyan-500',
-    },
-    {
-      icon: Zap,
-      label: 'Automações',
-      href: '/dashboard/automations',
-      gradient: 'from-orange-500 to-red-500',
     },
     {
       icon: Instagram,
