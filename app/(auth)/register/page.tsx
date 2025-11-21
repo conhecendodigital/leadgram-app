@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,10 +61,7 @@ export default function RegisterPage() {
         }, 1500)
       } else {
         // Email confirmation está ativado - mostrar mensagem
-        setError('Conta criada! Por favor, verifique seu email para confirmar.')
-        setTimeout(() => {
-          router.push('/login')
-        }, 3000)
+        setEmailSent(true)
       }
     } catch (err) {
       console.error('Erro ao criar conta:', err)
@@ -73,6 +71,39 @@ export default function RegisterPage() {
     }
   }
 
+  // Tela de email enviado (confirmação necessária)
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Verifique seu email!</h2>
+            <p className="text-gray-600 mb-4">
+              Enviamos um link de confirmação para
+            </p>
+            <p className="text-primary font-semibold mb-6">{email}</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+              <p className="text-sm text-blue-900">
+                Clique no link enviado para confirmar sua conta e fazer login.
+                Não esqueça de verificar sua caixa de spam!
+              </p>
+            </div>
+            <Link
+              href="/login"
+              className="inline-block py-3 px-6 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+            >
+              Ir para Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Tela de sucesso (login automático)
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">

@@ -173,7 +173,7 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+enable_confirmations = true  # ← HABILITADO: Requer confirmação de email no cadastro
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -183,15 +183,22 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
+# ============================================
+# SMTP PARA PRODUÇÃO (Descomente e configure)
+# ============================================
+# IMPORTANTE: No Vercel, adicione a variável de ambiente:
+# SENDGRID_API_KEY=SG.xxxxxxxx (ou RESEND_API_KEY=re_xxxxxxxx)
+#
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
+# host = "smtp.sendgrid.net"  # SendGrid
+# # host = "smtp.resend.com"  # Ou Resend (mais moderno)
 # port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# user = "apikey"  # Para SendGrid
+# # user = "resend"  # Para Resend
+# pass = "env(SENDGRID_API_KEY)"  # Variável de ambiente
+# admin_email = "suporte@formulareal.online"
+# sender_name = "Leadgram"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
