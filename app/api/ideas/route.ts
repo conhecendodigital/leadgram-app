@@ -117,8 +117,19 @@ export async function POST(request: NextRequest) {
 
     if (ideaError) throw ideaError
 
-    // Criar plataformas associadas
+    // BUG #17 FIX: Validar plataformas antes de inserir
+    const VALID_PLATFORMS = ['instagram', 'tiktok', 'youtube', 'facebook']
+
     if (platforms && platforms.length > 0) {
+      // Validar plataformas
+      const invalidPlatforms = platforms.filter((p: string) => !VALID_PLATFORMS.includes(p))
+      if (invalidPlatforms.length > 0) {
+        return NextResponse.json(
+          { error: `Invalid platforms: ${invalidPlatforms.join(', ')}. Valid platforms are: ${VALID_PLATFORMS.join(', ')}` },
+          { status: 400 }
+        )
+      }
+
       const platformsData = platforms.map((platform: string) => ({
         idea_id: idea.id,
         platform,

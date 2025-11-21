@@ -200,19 +200,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Atualizar posts existentes (um por um, pois Supabase não suporta bulk update com IDs diferentes)
+    // BUG #4 FIX: Atualizar posts em batches para evitar N+1 query
     if (postsToUpdate.length > 0) {
       console.log(`🔄 Atualizando ${postsToUpdate.length} posts existentes...`)
-      for (const postUpdate of postsToUpdate) {
-        const { id, ...updateData } = postUpdate
-        const { error: updateError } = await (supabase
-          .from('instagram_posts') as any)
-          .update(updateData)
-          .eq('id', id)
 
-        if (!updateError) {
-          updatedPostsCount++
-        }
+      // Processar em batches de 10 para melhor performance
+      const BATCH_SIZE = 10
+      for (let i = 0; i < postsToUpdate.length; i += BATCH_SIZE) {
+        const batch = postsToUpdate.slice(i, i + BATCH_SIZE)
+
+        // Fazer updates em paralelo dentro do batch
+        const results = await Promise.allSettled(
+          batch.map(postUpdate => {
+            const { id, ...updateData } = postUpdate
+            return (supabase
+              .from('instagram_posts') as any)
+              .update(updateData)
+              .eq('id', id)
+          })
+        )
+
+        // Contar sucessos
+        updatedPostsCount += results.filter(r => r.status === 'fulfilled' && !r.value.error).length
       }
     }
 

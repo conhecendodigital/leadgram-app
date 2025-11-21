@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/contexts/theme-context";
 import { Toaster } from "react-hot-toast";
 import ThemeInitializer from "@/components/theme-initializer";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -41,11 +40,10 @@ export default function RootLayout({
         className={`${montserrat.variable} font-sans antialiased bg-white`}
       >
         <MotionProvider>
-          <ThemeProvider>
-            <ThemeInitializer />
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
+          <ThemeInitializer />
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
           <Toaster
             position="top-right"
             toastOptions={{
@@ -69,7 +67,6 @@ export default function RootLayout({
             }}
           />
           <CookieConsent />
-        </ThemeProvider>
         </MotionProvider>
       </body>
     </html>

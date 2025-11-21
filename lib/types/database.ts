@@ -1,3 +1,5 @@
+// Types for database management and statistics
+
 export interface DatabaseStats {
   totalUsers: number;
   totalIdeas: number;

@@ -38,6 +38,14 @@ export async function GET(
 
     if (error) throw error
 
+    // BUG #6 FIX: Validação extra de ownership mesmo com RLS
+    if (!idea || (idea as any).user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Idea not found' },
+        { status: 404 }
+      )
+    }
+
     return NextResponse.json(idea)
   } catch (error) {
     console.error('Error fetching idea:', error)

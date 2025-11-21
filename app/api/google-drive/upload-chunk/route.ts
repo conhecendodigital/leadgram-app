@@ -27,8 +27,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // BUG #3 FIX: Validar range de chunks
+    if (start < 0 || end < 0 || total <= 0) {
+      return NextResponse.json(
+        { error: 'Invalid chunk parameters: values must be non-negative' },
+        { status: 400 }
+      );
+    }
+
+    if (start >= end || end > total) {
+      return NextResponse.json(
+        { error: 'Invalid chunk range: start must be < end <= total' },
+        { status: 400 }
+      );
+    }
+
     // Converter Blob para ArrayBuffer
     const arrayBuffer = await chunk.arrayBuffer();
+
+    // BUG #10 FIX: Validar tamanho máximo do chunk (10MB)
+    const MAX_CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+    if (arrayBuffer.byteLength > MAX_CHUNK_SIZE) {
+      return NextResponse.json(
+        { error: `Chunk too large. Maximum size is ${MAX_CHUNK_SIZE / 1024 / 1024}MB` },
+        { status: 413 }
+      );
+    }
 
     // Enviar chunk para o Google Drive
     const response = await fetch(uploadUrl, {

@@ -21,7 +21,13 @@
       "Bash(npm install:*)",
       "Bash(\"app/(dashboard)/dashboard/ideas/[id]/page.tsx\")",
       "Bash(\"app/(dashboard)/dashboard/ideas/[id]/page.tsx.backup\")",
-      "Bash(vercel ls:*)"
+      "Bash(vercel ls:*)",
+      "Bash(wc:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

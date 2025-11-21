@@ -129,8 +129,10 @@ export async function GET(request: NextRequest) {
           continue
         }
 
-        // Atualizar token e data de expiração no banco
-        const newExpiryDate = new Date(Date.now() + (newExpiresIn * 1000))
+        // BUG #20 FIX: Calcular data de expiração IMEDIATAMENTE após refresh bem-sucedido
+        // para maior precisão (evitar defasagem de milissegundos)
+        const refreshTimestamp = Date.now()
+        const newExpiryDate = new Date(refreshTimestamp + (newExpiresIn * 1000))
 
         const { error: updateError } = await supabase
           .from('instagram_accounts')

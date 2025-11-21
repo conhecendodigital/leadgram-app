@@ -49,6 +49,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // BUG #16 FIX: Validar se o videoId pertence realmente a esta ideia
+    const currentVideoIds = idea.drive_video_ids || []
+    const videoExists = currentVideoIds.some((entry: any) => entry.id === videoId)
+
+    if (!videoExists) {
+      return NextResponse.json(
+        { error: 'Video not found in this idea' },
+        { status: 404 }
+      );
+    }
+
     // Tenta deletar do Google Drive (se ainda existir)
     const driveService = new GoogleDriveService(supabase);
     let deletedFromDrive = false;
@@ -91,7 +102,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remove do array drive_video_ids no banco
-    const currentVideoIds = (idea as any).drive_video_ids || [];
     const updatedVideoIds = currentVideoIds.filter((entry: any) => entry.id !== videoId);
 
     const { error: updateError } = await (supabase

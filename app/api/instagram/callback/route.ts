@@ -33,23 +33,25 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerClient()
 
-    // Validar state (CSRF protection)
+    // BUG #5 FIX: Marcar state como usado ATOMICAMENTE para prevenir replay attacks
+    // Fazer update e select em uma única operação
     const { data: savedState, error: stateError } = await (supabase
       .from('oauth_states') as any)
-      .select('*')
+      .update({ used: true })
       .eq('state', state)
       .eq('provider', 'instagram')
       .eq('used', false)
+      .select()
       .single()
 
     if (stateError || !savedState) {
-      console.error('❌ Invalid or expired state - possible CSRF attack:', stateError)
+      console.error('❌ Invalid or already used state - possible CSRF/replay attack:', stateError)
       return NextResponse.redirect(
         new URL('/dashboard/instagram?error=csrf_invalid', request.url)
       )
     }
 
-    // Verificar se expirou
+    // Verificar se expirou DEPOIS de marcar como usado
     if (new Date(savedState.expires_at) < new Date()) {
       console.error('❌ Expired state')
       await (supabase.from('oauth_states') as any).delete().eq('id', savedState.id)
@@ -57,11 +59,6 @@ export async function GET(request: NextRequest) {
         new URL('/dashboard/instagram?error=csrf_expired', request.url)
       )
     }
-
-    // Marcar state como usado (previne replay attacks)
-    await (supabase.from('oauth_states') as any)
-      .update({ used: true })
-      .eq('id', savedState.id)
 
     console.log('✅ OAuth state validated successfully')
 

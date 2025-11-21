@@ -62,13 +62,13 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeout: numb
 
 export class InstagramAPI {
   private async fetchFromRapidAPI(endpoint: string, params?: Record<string, string>) {
-    // Validar credenciais
-    if (!RAPIDAPI_KEY || RAPIDAPI_KEY === 'undefined') {
+    // BUG #8 FIX: Validar credenciais corretamente
+    if (!RAPIDAPI_KEY || RAPIDAPI_KEY === 'undefined' || RAPIDAPI_KEY.trim() === '') {
       console.error('❌ RAPIDAPI_KEY não configurada!')
       throw new Error('RAPIDAPI_KEY não configurada. Configure nas variáveis de ambiente.')
     }
 
-    if (!RAPIDAPI_HOST || RAPIDAPI_HOST === 'undefined') {
+    if (!RAPIDAPI_HOST || RAPIDAPI_HOST === 'undefined' || RAPIDAPI_HOST.trim() === '') {
       console.error('❌ RAPIDAPI_HOST não configurada!')
       throw new Error('RAPIDAPI_HOST não configurada. Configure nas variáveis de ambiente.')
     }

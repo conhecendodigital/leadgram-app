@@ -23,6 +23,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // BUG #19 FIX: Validar tamanho máximo do arquivo (2GB)
+    const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
+    if (fileSize > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error: 'File too large',
+          message: `O arquivo é muito grande. Tamanho máximo: 2GB. Seu arquivo: ${(fileSize / 1024 / 1024 / 1024).toFixed(2)}GB`,
+          maxSize: MAX_FILE_SIZE,
+          currentSize: fileSize
+        },
+        { status: 413 }
+      );
+    }
+
     // Verificar se a ideia pertence ao usuário
     const { data: idea, error: ideaError } = await (supabase
       .from('ideas') as any)
