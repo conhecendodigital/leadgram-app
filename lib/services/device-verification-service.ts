@@ -22,7 +22,7 @@ export class DeviceVerificationService {
   static async getDeviceFingerprint(): Promise<string> {
     const headersList = await headers()
     const userAgent = headersList.get('user-agent') || 'unknown'
-    const ipAddress = this.getClientIP()
+    const ipAddress = await this.getClientIP()
 
     // Criar hash único
     const fingerprint = crypto
@@ -60,7 +60,7 @@ export class DeviceVerificationService {
   static async getDeviceInfo(): Promise<DeviceInfo> {
     const headersList = await headers()
     const userAgent = headersList.get('user-agent') || 'unknown'
-    const ipAddress = this.getClientIP()
+    const ipAddress = await this.getClientIP()
     const fingerprint = await this.getDeviceFingerprint()
 
     // Detectar tipo de dispositivo
