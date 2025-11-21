@@ -90,21 +90,24 @@ export default function QuickActions() {
               transition={{ duration: 0.2 }}
               role="menu"
               aria-label="Menu de ações rápidas"
-              className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50"
+              className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 list-none"
+              style={{ listStyle: 'none' }}
             >
               {actions.map((action, index) => (
                 <Link
                   key={action.label}
                   href={action.href}
                   role="menuitem"
-                  className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-xl"
+                  className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-xl list-none"
+                  style={{ listStyle: 'none' }}
                 >
                   <m.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group list-none"
+                    style={{ listStyle: 'none' }}
                   >
                     <div
                       className={`p-2 rounded-lg bg-gradient-to-br ${action.gradient} group-hover:scale-110 transition-transform shadow-md`}
