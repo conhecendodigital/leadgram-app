@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
+import crypto from 'crypto';
 
 /**
  * API para iniciar o setup de 2FA
@@ -25,10 +26,12 @@ export async function POST(request: Request) {
     // Gerar QR Code
     const qrCode = await QRCode.toDataURL(secret.otpauth_url!);
 
-    // Gerar códigos de backup (10 códigos de 8 caracteres)
-    const backupCodes = Array.from({ length: 10 }, () =>
-      Math.random().toString(36).substring(2, 10).toUpperCase()
-    );
+    // Gerar códigos de backup seguros (10 códigos de 8 caracteres)
+    // SEGURANÇA: Usa crypto.randomBytes ao invés de Math.random()
+    const backupCodes = Array.from({ length: 10 }, () => {
+      const bytes = crypto.randomBytes(6)
+      return bytes.toString('base64').replace(/[^A-Z0-9]/g, '').substring(0, 8)
+    });
 
     return NextResponse.json({
       secret: secret.base32,
