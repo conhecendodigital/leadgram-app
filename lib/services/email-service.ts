@@ -967,9 +967,9 @@ Se você não criou uma conta no Leadgram, ignore este email.
 © ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
     `.trim();
 
-    // Enviar usando o Supabase
-    const { createServerClient } = await import('@/lib/supabase/server');
-    const supabase = await createServerClient();
+    // Enviar usando o Supabase (service client para admin)
+    const { createServiceClient } = await import('@/lib/supabase/service');
+    const supabase = createServiceClient();
 
     const { error } = await supabase.auth.admin.sendEmail({
       email,
@@ -1075,9 +1075,9 @@ Se você não solicitou esta recuperação, ignore este email e sua conta perman
 © ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
     `.trim();
 
-    // Enviar usando o Supabase
-    const { createServerClient } = await import('@/lib/supabase/server');
-    const supabase = await createServerClient();
+    // Enviar usando o Supabase (service client para admin)
+    const { createServiceClient } = await import('@/lib/supabase/service');
+    const supabase = createServiceClient();
 
     const { error } = await supabase.auth.admin.sendEmail({
       email,
