@@ -83,25 +83,41 @@ function VerifyEmailContent() {
     setError(null)
 
     try {
-      // Verificar código OTP
-      const response = await fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          code: codeString,
-          purpose: 'email_verification'
-        })
+      const supabase = createClient()
+
+      // Verificar código OTP diretamente no client (cria sessão automaticamente)
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: codeString,
+        type: 'email'
       })
 
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Código inválido')
+      if (verifyError) {
+        console.error('❌ Erro ao verificar OTP:', verifyError)
+        throw new Error(verifyError.message || 'Código inválido ou expirado')
       }
 
-      // Código verificado! O Supabase já criou a sessão automaticamente
-      console.log('✅ Email verificado com sucesso!')
+      if (!data.user) {
+        throw new Error('Erro ao verificar código')
+      }
+
+      console.log('✅ Email verificado e sessão criada com sucesso!')
+
+      // Marcar email como verificado no perfil (via API)
+      try {
+        await fetch('/api/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            code: codeString,
+            purpose: 'email_verification'
+          })
+        })
+      } catch (apiError) {
+        console.error('Erro ao marcar email como verificado:', apiError)
+        // Não bloquear o fluxo se falhar
+      }
 
       // Marcar dispositivo como confiável (email verificado = dispositivo verificado)
       try {

@@ -26,45 +26,44 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verificar OTP
-    const result = await OTPService.verifyOTP(email, code, purpose)
+    // Esta API apenas marca o email como verificado no perfil
+    // A verificação real do OTP é feita no client-side via supabase.auth.verifyOtp()
 
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error || 'Código inválido' },
-        { status: 400 }
-      )
-    }
-
-    // Se for verificação de email, marcar como verificado no perfil
-    if (purpose === 'email_verification' && result.userId) {
+    if (purpose === 'email_verification') {
       try {
         const supabase = await createServerClient()
 
-        // Marcar email como verificado no perfil
-        const { error: profileError } = await (supabase
-          .from('profiles') as any)
-          .update({
-            email_verified_at: new Date().toISOString()
-          })
-          .eq('id', result.userId)
+        // Buscar usuário pelo email
+        const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(
+          await supabase.auth.getUser().then(u => u.data.user?.id || '')
+        )
 
-        if (profileError) {
-          console.error('Erro ao atualizar perfil:', profileError)
-          // Não bloquear o fluxo se falhar
+        if (userError || !user) {
+          // Buscar pelo email
+          const { data: { users } } = await supabase.auth.admin.listUsers()
+          const foundUser = users?.find(u => u.email === email)
+
+          if (!foundUser) {
+            return NextResponse.json(
+              { error: 'Usuário não encontrado' },
+              { status: 404 }
+            )
+          }
+
+          // Marcar email como verificado no perfil
+          await (supabase.from('profiles') as any)
+            .update({ email_verified_at: new Date().toISOString() })
+            .eq('id', foundUser.id)
+
+          console.log('✅ Email marcado como verificado para:', email)
         }
 
-        console.log('✅ Email verificado via OTP para usuário:', result.userId)
-
-        // O Supabase já criou a sessão automaticamente via verifyOtp
-        // Apenas retornar sucesso
         return NextResponse.json({
           success: true,
-          message: 'Email verificado com sucesso!',
-          userId: result.userId
+          message: 'Email verificado com sucesso!'
         })
       } catch (error) {
-        console.error('Erro ao processar verificação de email:', error)
+        console.error('Erro ao processar verificação:', error)
         return NextResponse.json(
           { error: 'Erro ao processar verificação' },
           { status: 500 }
@@ -72,12 +71,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // Para reset de senha, apenas retornar sucesso com o otpId
+    // Para reset de senha
     return NextResponse.json({
       success: true,
-      message: 'Código verificado com sucesso!',
-      otpId: result.otpId,
-      userId: result.userId
+      message: 'Código verificado com sucesso!'
     })
   } catch (error) {
     console.error('Erro ao verificar OTP:', error)
