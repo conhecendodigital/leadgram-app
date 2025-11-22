@@ -85,14 +85,12 @@ export class OTPService {
     try {
       const supabase = createServiceClient()
 
-      // Verificar se o usuário existe
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id, user_id')
-        .eq('email', email)
-        .single()
+      // Verificar se o usuário existe (buscar pelo email no auth)
+      const { data: { users }, error: userError } = await supabase.auth.admin.listUsers()
 
-      if (userError || !userData) {
+      const user = users?.find(u => u.email === email)
+
+      if (!user) {
         // Não revelar se o email existe ou não (segurança)
         console.log('Email não encontrado:', email)
         return { success: true } // Retornar sucesso mesmo se não existir
@@ -111,7 +109,7 @@ export class OTPService {
       // Criar novo código
       const { error: dbError } = await (supabase.from('email_otp_codes') as any)
         .insert({
-          user_id: userData.user_id,
+          user_id: user.id,
           email,
           code,
           purpose: 'password_reset',
@@ -196,14 +194,13 @@ export class OTPService {
         }
       }
 
-      // Código correto - marcar como verificado
+      // Código correto - DELETAR imediatamente para não sobrecarregar o banco
       await (supabase
         .from('email_otp_codes') as any)
-        .update({
-          verified: true,
-          verified_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', otpData.id)
+
+      console.log('✅ Código OTP verificado e deletado:', otpData.code)
 
       return {
         success: true,
@@ -250,17 +247,25 @@ export class OTPService {
 
   /**
    * Limpa códigos expirados (pode ser chamado por um cron job)
+   * Remove códigos que expiraram há mais de 1 hora
    */
   static async cleanupExpiredCodes(): Promise<void> {
     try {
       const supabase = createServiceClient()
 
-      await (supabase
-        .from('email_otp_codes') as any)
-        .delete()
-        .lt('expires_at', new Date().toISOString())
+      // Deletar códigos expirados há mais de 1 hora
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
 
-      console.log('✅ Códigos OTP expirados removidos')
+      const { error, count } = await (supabase
+        .from('email_otp_codes') as any)
+        .delete({ count: 'exact' })
+        .lt('expires_at', oneHourAgo.toISOString())
+
+      if (error) {
+        console.error('Erro ao limpar códigos expirados:', error)
+      } else {
+        console.log(`✅ ${count || 0} códigos OTP expirados removidos`)
+      }
     } catch (error) {
       console.error('Erro ao limpar códigos expirados:', error)
     }
