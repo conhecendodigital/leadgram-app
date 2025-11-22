@@ -43,16 +43,14 @@ export class OTPService {
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutos
 
       // Invalidar códigos anteriores não verificados
-      await supabase
-        .from('email_otp_codes')
+      await (supabase.from('email_otp_codes') as any)
         .delete()
         .eq('email', email)
         .eq('purpose', 'email_verification')
         .eq('verified', false)
 
       // Criar novo código
-      const { error: dbError } = await supabase
-        .from('email_otp_codes')
+      const { error: dbError } = await (supabase.from('email_otp_codes') as any)
         .insert({
           user_id: userId || null,
           email,
@@ -104,16 +102,14 @@ export class OTPService {
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 60 minutos
 
       // Invalidar códigos anteriores não verificados
-      await supabase
-        .from('email_otp_codes')
+      await (supabase.from('email_otp_codes') as any)
         .delete()
         .eq('email', email)
         .eq('purpose', 'password_reset')
         .eq('verified', false)
 
       // Criar novo código
-      const { error: dbError } = await supabase
-        .from('email_otp_codes')
+      const { error: dbError } = await (supabase.from('email_otp_codes') as any)
         .insert({
           user_id: userData.user_id,
           email,
@@ -156,8 +152,8 @@ export class OTPService {
       const supabase = createServiceClient()
 
       // Buscar código válido
-      const { data: otpData, error: fetchError } = await supabase
-        .from('email_otp_codes')
+      const { data: otpData, error: fetchError } = await (supabase
+        .from('email_otp_codes') as any)
         .select('*')
         .eq('email', email)
         .eq('purpose', purpose)
@@ -185,8 +181,8 @@ export class OTPService {
       // Verificar se o código está correto
       if (otpData.code !== code) {
         // Incrementar tentativas
-        await supabase
-          .from('email_otp_codes')
+        await (supabase
+          .from('email_otp_codes') as any)
           .update({
             attempts: otpData.attempts + 1
           })
@@ -201,8 +197,8 @@ export class OTPService {
       }
 
       // Código correto - marcar como verificado
-      await supabase
-        .from('email_otp_codes')
+      await (supabase
+        .from('email_otp_codes') as any)
         .update({
           verified: true,
           verified_at: new Date().toISOString()
@@ -232,8 +228,8 @@ export class OTPService {
     try {
       const supabase = createServiceClient()
 
-      const { data, error } = await supabase
-        .from('email_otp_codes')
+      const { data, error } = await (supabase
+        .from('email_otp_codes') as any)
         .select('verified, user_id')
         .eq('id', otpId)
         .single()
@@ -259,8 +255,8 @@ export class OTPService {
     try {
       const supabase = createServiceClient()
 
-      await supabase
-        .from('email_otp_codes')
+      await (supabase
+        .from('email_otp_codes') as any)
         .delete()
         .lt('expires_at', new Date().toISOString())
 
