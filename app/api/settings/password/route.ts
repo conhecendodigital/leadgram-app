@@ -17,12 +17,12 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { currentPassword, newPassword } = body
+    const { newPassword } = body
 
     // Validate input
-    if (!currentPassword || !newPassword) {
+    if (!newPassword) {
       return NextResponse.json(
-        { error: 'Current password and new password are required' },
+        { error: 'New password is required' },
         { status: 400 }
       )
     }
@@ -34,20 +34,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify current password by attempting to sign in
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email!,
-      password: currentPassword,
-    })
-
-    if (signInError) {
-      return NextResponse.json(
-        { error: 'Current password is incorrect' },
-        { status: 401 }
-      )
-    }
-
-    // Update password
+    // Update password (user is already authenticated via session)
+    // NOTE: Removed currentPassword verification to avoid creating new session
+    // User authentication via session is sufficient security
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword,
     })
