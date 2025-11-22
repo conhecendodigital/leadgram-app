@@ -27,7 +27,8 @@
       "Bash(git restore:*)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "WebFetch(domain:formulareal.online)"
     ],
     "deny": [],
     "ask": []

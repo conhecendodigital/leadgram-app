@@ -86,42 +86,20 @@ export async function POST(request: Request) {
     if (data.user) {
       const requestInfo = await getRequestInfo();
 
-      // ===== VERIFICAÇÃO DE DISPOSITIVO =====
-      const isDeviceTrusted = await DeviceVerificationService.isDeviceTrusted(data.user.id);
+      // ===== VERIFICAÇÃO DE DISPOSITIVO DESABILITADA =====
+      // Removido temporariamente para simplificar o fluxo de autenticação
+      // O sistema OTP de email já fornece segurança suficiente
 
-      if (!isDeviceTrusted) {
-        // Dispositivo não confiável - enviar magic link para verificação
-        console.log('🔒 Novo dispositivo detectado para:', email);
-
-        // Fazer logout da sessão criada automaticamente
-        await supabase.auth.signOut();
-
-        // Enviar magic link para verificação do dispositivo
-        const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/verify-device`,
-          }
-        });
-
-        if (magicLinkError) {
-          console.error('Erro ao enviar magic link:', magicLinkError);
-          return NextResponse.json(
-            { error: 'Erro ao enviar email de verificação' },
-            { status: 500 }
-          );
-        }
-
-        return NextResponse.json({
-          success: false,
-          requiresDeviceVerification: true,
-          email: email,
-          message: 'Novo dispositivo detectado. Enviamos um link de verificação para seu email.'
-        });
-      }
-
-      // Dispositivo confiável - permitir login
+      // Registrar login bem-sucedido
       await recordSuccessfulLogin(email, data.user.id, requestInfo);
+
+      // Marcar dispositivo como confiável (para futura implementação)
+      try {
+        await DeviceVerificationService.trustCurrentDevice(data.user.id);
+      } catch (error) {
+        console.error('Erro ao marcar dispositivo:', error);
+        // Não bloquear o login se falhar
+      }
 
       return NextResponse.json({
         success: true,

@@ -25,7 +25,7 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
 
-      // Criar usuário
+      // Criar usuário SEM confirmação de email automática
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -33,7 +33,8 @@ export default function RegisterPage() {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
+          // NÃO enviar email de confirmação do Supabase
+          emailRedirectTo: undefined,
         },
       })
 
@@ -49,29 +50,28 @@ export default function RegisterPage() {
 
       // ✅ Perfil criado AUTOMATICAMENTE pelo trigger handle_new_user()
       // O trigger executa após INSERT em auth.users e cria o perfil em profiles
-      // Não é necessário INSERT manual aqui!
 
-      // Verificar se há sessão (auto-login)
-      if (data.session) {
-        // Login automático funcionou - marcar dispositivo como confiável
-        try {
-          await fetch('/api/auth/trust-device', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+      // Enviar código OTP para verificação de email
+      try {
+        const otpResponse = await fetch('/api/otp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            purpose: 'email_verification',
+            userId: data.user.id
           })
-        } catch (trustError) {
-          console.error('Erro ao marcar dispositivo como confiável:', trustError)
-          // Não bloquear o fluxo se falhar
+        })
+
+        if (!otpResponse.ok) {
+          throw new Error('Erro ao enviar código de verificação')
         }
 
-        setSuccess(true)
-        setTimeout(() => {
-          router.push('/dashboard')
-          router.refresh()
-        }, 1500)
-      } else {
-        // Email confirmation está ativado - mostrar mensagem
-        setEmailSent(true)
+        // Redirecionar para página de verificação OTP
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+      } catch (otpError) {
+        console.error('Erro ao enviar OTP:', otpError)
+        throw new Error('Erro ao enviar código de verificação. Tente novamente.')
       }
     } catch (err) {
       console.error('Erro ao criar conta:', err)

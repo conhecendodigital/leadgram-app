@@ -876,6 +876,224 @@ Data e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo
     `.trim();
   }
 
+  // ============= OTP (ONE-TIME PASSWORD) EMAILS =============
+
+  /**
+   * Envia email com código OTP de 6 dígitos para verificação de email
+   */
+  static async sendEmailVerificationOTP(email: string, code: string): Promise<void> {
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirme seu email</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+                ✉️ Confirme seu email
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 24px;">
+                Bem-vindo ao Leadgram!
+              </h2>
+
+              <p style="color: #4b5563; line-height: 1.6; margin: 0 0 24px 0;">
+                Use o código abaixo para confirmar seu endereço de email:
+              </p>
+
+              <!-- Código OTP -->
+              <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border: 2px dashed #3b82f6; border-radius: 12px; padding: 24px; margin: 0 0 24px 0; text-align: center;">
+                <div style="font-size: 42px; font-weight: bold; color: #1f2937; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                  ${code}
+                </div>
+              </div>
+
+              <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 4px; padding: 16px; margin: 0 0 24px 0;">
+                <p style="color: #1e40af; margin: 0; font-size: 14px;">
+                  <strong>⏱️ Este código expira em 15 minutos</strong>
+                </p>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                Se você não criou uma conta no Leadgram, ignore este email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+
+    const text = `
+Confirme seu email - Leadgram
+
+Bem-vindo ao Leadgram!
+
+Use o código abaixo para confirmar seu endereço de email:
+
+CÓDIGO: ${code}
+
+⏱️ Este código expira em 15 minutos
+
+Se você não criou uma conta no Leadgram, ignore este email.
+
+---
+© ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
+    `.trim();
+
+    // Enviar usando o Supabase
+    const { createServerClient } = await import('@/lib/supabase/server');
+    const supabase = await createServerClient();
+
+    const { error } = await supabase.auth.admin.sendEmail({
+      email,
+      emailData: {
+        html,
+        text,
+        subject: 'Confirme seu email - Leadgram'
+      }
+    });
+
+    if (error) {
+      console.error('Erro ao enviar email OTP:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Envia email com código OTP de 6 dígitos para reset de senha
+   */
+  static async sendPasswordResetOTP(email: string, code: string): Promise<void> {
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redefinir senha</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%); padding: 40px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+                🔒 Redefinir senha
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 24px;">
+                Recuperação de senha
+              </h2>
+
+              <p style="color: #4b5563; line-height: 1.6; margin: 0 0 24px 0;">
+                Você solicitou a redefinição de senha. Use o código abaixo:
+              </p>
+
+              <!-- Código OTP -->
+              <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px dashed #dc2626; border-radius: 12px; padding: 24px; margin: 0 0 24px 0; text-align: center;">
+                <div style="font-size: 42px; font-weight: bold; color: #1f2937; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                  ${code}
+                </div>
+              </div>
+
+              <div style="background-color: #fee2e2; border-left: 4px solid #dc2626; border-radius: 4px; padding: 16px; margin: 0 0 24px 0;">
+                <p style="color: #991b1b; margin: 0; font-size: 14px;">
+                  <strong>⏱️ Este código expira em 60 minutos</strong>
+                </p>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                Se você não solicitou esta recuperação, ignore este email e sua conta permanecerá segura.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+
+    const text = `
+Redefinir senha - Leadgram
+
+Recuperação de senha
+
+Você solicitou a redefinição de senha. Use o código abaixo:
+
+CÓDIGO: ${code}
+
+⏱️ Este código expira em 60 minutos
+
+Se você não solicitou esta recuperação, ignore este email e sua conta permanecerá segura.
+
+---
+© ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
+    `.trim();
+
+    // Enviar usando o Supabase
+    const { createServerClient } = await import('@/lib/supabase/server');
+    const supabase = await createServerClient();
+
+    const { error } = await supabase.auth.admin.sendEmail({
+      email,
+      emailData: {
+        html,
+        text,
+        subject: 'Redefinir senha - Leadgram'
+      }
+    });
+
+    if (error) {
+      console.error('Erro ao enviar email OTP de reset:', error);
+      throw error;
+    }
+  }
+
   // ============= LOGS =============
 
   async getLogs(limit = 50): Promise<EmailLog[]> {
