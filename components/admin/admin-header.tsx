@@ -10,8 +10,15 @@ export default function AdminHeader({ user }: { user: any }) {
   const supabase = createClient()
 
   const handleLogout = async () => {
+    // Chamar API de logout (limpa sessões no servidor)
+    await fetch('/api/auth/logout', { method: 'POST' })
+
+    // Logout local (limpa cookies)
     await supabase.auth.signOut()
+
+    // Redirecionar para login
     router.push('/login')
+    router.refresh()
   }
 
   return (
