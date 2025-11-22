@@ -28,7 +28,10 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(git rm:*)",
-      "WebFetch(domain:formulareal.online)"
+      "WebFetch(domain:formulareal.online)",
+      "Bash(npx vercel:*)",
+      "Bash(NUL)",
+      "Bash(dir /b \"C:\\Users\\guilh\\OneDrive\\Documentos\\Projetos\\leadgram-app\")"
     ],
     "deny": [],
     "ask": []

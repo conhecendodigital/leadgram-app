@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { getRequestInfo } from '@/lib/utils/request-info';
+import { Redis } from '@upstash/redis';
 
 /**
- * Tabela in-memory para rate limiting (simples e rápido)
- * Em produção, considere usar Redis para persistência entre deploys
+ * Cliente Redis persistente para rate limiting
+ * Funciona corretamente em ambientes serverless (Vercel)
  */
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_URL || '',
+  token: process.env.UPSTASH_REDIS_TOKEN || ''
+});
 
 interface RateLimitConfig {
   /**
@@ -31,8 +35,12 @@ interface RateLimitConfig {
 }
 
 /**
- * Middleware de Rate Limiting
+ * Middleware de Rate Limiting com Redis Persistente
  * Limita número de requisições por IP (ou user) em uma janela de tempo
+ *
+ * ✅ Funciona em serverless (Vercel)
+ * ✅ Persiste entre deploys
+ * ✅ Compartilhado entre todas as instâncias
  *
  * @example
  * // Limitar a 10 requisições por minuto
@@ -50,6 +58,16 @@ export async function rateLimit(config: RateLimitConfig) {
   } = config;
 
   try {
+    // Verificar se Redis está configurado
+    if (!process.env.UPSTASH_REDIS_URL || !process.env.UPSTASH_REDIS_TOKEN) {
+      console.warn('⚠️ UPSTASH_REDIS_URL ou UPSTASH_REDIS_TOKEN não configurado. Rate limiting desabilitado.');
+      return {
+        limited: false,
+        remaining: max,
+        reset: Date.now() + windowSeconds * 1000
+      };
+    }
+
     let identifier: string;
 
     if (useUserId) {
@@ -72,32 +90,29 @@ export async function rateLimit(config: RateLimitConfig) {
       identifier = `ip:${requestInfo.ipAddress}`;
     }
 
+    const key = `rate-limit:${identifier}`;
     const now = Date.now();
-    const record = rateLimitStore.get(identifier);
 
-    // Limpar registro expirado
-    if (record && now > record.resetTime) {
-      rateLimitStore.delete(identifier);
+    // Incrementar contador no Redis
+    const count = await redis.incr(key);
+
+    // Se é a primeira requisição, definir expiração
+    if (count === 1) {
+      await redis.expire(key, windowSeconds);
     }
 
-    // Pegar ou criar registro
-    const current = rateLimitStore.get(identifier) || {
-      count: 0,
-      resetTime: now + windowSeconds * 1000
-    };
-
-    // Incrementar contador
-    current.count++;
-    rateLimitStore.set(identifier, current);
+    // Obter TTL (tempo até expiração)
+    const ttl = await redis.ttl(key);
+    const resetTime = now + (ttl > 0 ? ttl * 1000 : windowSeconds * 1000);
 
     // Verificar se excedeu limite
-    if (current.count > max) {
-      const retryAfter = Math.ceil((current.resetTime - now) / 1000);
+    if (count > max) {
+      const retryAfter = Math.ceil((resetTime - now) / 1000);
 
       return {
         limited: true,
         remaining: 0,
-        reset: current.resetTime,
+        reset: resetTime,
         response: NextResponse.json(
           {
             error: 'Rate limit excedido',
@@ -109,7 +124,7 @@ export async function rateLimit(config: RateLimitConfig) {
             headers: {
               'X-RateLimit-Limit': max.toString(),
               'X-RateLimit-Remaining': '0',
-              'X-RateLimit-Reset': current.resetTime.toString(),
+              'X-RateLimit-Reset': resetTime.toString(),
               'Retry-After': retryAfter.toString()
             }
           }
@@ -119,40 +134,17 @@ export async function rateLimit(config: RateLimitConfig) {
 
     return {
       limited: false,
-      remaining: max - current.count,
-      reset: current.resetTime
+      remaining: max - count,
+      reset: resetTime
     };
 
   } catch (error) {
-    console.error('Erro no rate limiting:', error);
-    // Em caso de erro, permitir a requisição
+    console.error('❌ Erro no rate limiting (Redis):', error);
+    // Em caso de erro, permitir a requisição (fail open)
     return {
       limited: false,
       remaining: max,
       reset: Date.now() + windowSeconds * 1000
     };
   }
-}
-
-/**
- * Limpa registros expirados do rate limit store
- * Deve ser chamado periodicamente (ex: a cada minuto)
- */
-export function cleanupRateLimitStore() {
-  const now = Date.now();
-  let cleaned = 0;
-
-  for (const [key, record] of rateLimitStore.entries()) {
-    if (now > record.resetTime) {
-      rateLimitStore.delete(key);
-      cleaned++;
-    }
-  }
-
-  return cleaned;
-}
-
-// Limpar store a cada minuto
-if (typeof setInterval !== 'undefined') {
-  setInterval(cleanupRateLimitStore, 60000);
 }
