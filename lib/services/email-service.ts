@@ -883,8 +883,12 @@ Data e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo
    */
   private static async sendSimpleEmail(to: string, subject: string, html: string, text: string): Promise<void> {
     // Tentar enviar via Resend se configurado
+    console.log('📧 Tentando enviar email para:', to)
+    console.log('🔑 RESEND_API_KEY configurado:', !!process.env.RESEND_API_KEY)
+
     if (process.env.RESEND_API_KEY) {
       try {
+        console.log('📤 Enviando via Resend API...')
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -902,25 +906,27 @@ Data e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo
 
         if (!response.ok) {
           const error = await response.text()
-          console.error('Erro ao enviar email via Resend:', error)
-          throw new Error('Falha ao enviar email')
+          console.error('❌ Erro ao enviar email via Resend (HTTP', response.status, '):', error)
+          throw new Error(`Falha ao enviar email: ${error}`)
         }
 
-        console.log('✅ Email enviado com sucesso via Resend para:', to)
+        const result = await response.json()
+        console.log('✅ Email enviado com sucesso via Resend:', result)
         return
       } catch (error) {
-        console.error('Erro ao enviar via Resend:', error)
+        console.error('❌ Erro ao enviar via Resend:', error)
         throw error
       }
     }
 
     // Modo desenvolvimento: apenas loga o código no console
+    console.warn('⚠️ RESEND_API_KEY não configurado - email NÃO foi enviado!')
     console.log('📧 [DESENVOLVIMENTO] Email OTP:', {
       to,
       subject,
-      text: text.substring(0, 200),
-      html: html.substring(0, 200)
+      text: text.substring(0, 200)
     })
+    throw new Error('RESEND_API_KEY não configurado. Configure a variável de ambiente para enviar emails.')
   }
 
   /**

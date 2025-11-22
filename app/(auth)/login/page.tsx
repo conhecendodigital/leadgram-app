@@ -37,6 +37,12 @@ export default function LoginPage() {
           throw new Error(result.message || 'Muitas tentativas. Aguarde um momento.')
         }
 
+        // Email não verificado - redirecionar para página de verificação
+        if (result.needsVerification) {
+          router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+          return
+        }
+
         // Mostrar tentativas restantes
         if (result.remainingAttempts !== undefined) {
           throw new Error(`${result.error}. Tentativas restantes: ${result.remainingAttempts}`)

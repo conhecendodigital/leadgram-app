@@ -84,6 +84,19 @@ export async function POST(request: Request) {
 
     // ===== LOGIN BEM-SUCEDIDO =====
     if (data.user) {
+      // ===== VERIFICAR SE O EMAIL FOI CONFIRMADO =====
+      if (!data.user.email_confirmed_at) {
+        console.log('❌ Tentativa de login com email não verificado:', email)
+        return NextResponse.json(
+          {
+            error: 'Email não verificado',
+            message: 'Por favor, verifique seu email antes de fazer login. Enviamos um código de 6 dígitos para você.',
+            needsVerification: true
+          },
+          { status: 403 }
+        )
+      }
+
       const requestInfo = await getRequestInfo();
 
       // ===== VERIFICAÇÃO DE DISPOSITIVO DESABILITADA =====
