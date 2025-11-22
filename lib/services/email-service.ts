@@ -879,6 +879,51 @@ Data e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo
   // ============= OTP (ONE-TIME PASSWORD) EMAILS =============
 
   /**
+   * Envia email simples (servidor ou desenvolvimento)
+   */
+  private static async sendSimpleEmail(to: string, subject: string, html: string, text: string): Promise<void> {
+    // Tentar enviar via Resend se configurado
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Leadgram <noreply@formulareal.online>',
+            to: [to],
+            subject,
+            html,
+            text,
+          }),
+        })
+
+        if (!response.ok) {
+          const error = await response.text()
+          console.error('Erro ao enviar email via Resend:', error)
+          throw new Error('Falha ao enviar email')
+        }
+
+        console.log('✅ Email enviado com sucesso via Resend para:', to)
+        return
+      } catch (error) {
+        console.error('Erro ao enviar via Resend:', error)
+        throw error
+      }
+    }
+
+    // Modo desenvolvimento: apenas loga o código no console
+    console.log('📧 [DESENVOLVIMENTO] Email OTP:', {
+      to,
+      subject,
+      text: text.substring(0, 200),
+      html: html.substring(0, 200)
+    })
+  }
+
+  /**
    * Envia email com código OTP de 6 dígitos para verificação de email
    */
   static async sendEmailVerificationOTP(email: string, code: string): Promise<void> {
@@ -967,23 +1012,13 @@ Se você não criou uma conta no Leadgram, ignore este email.
 © ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
     `.trim();
 
-    // Enviar usando o Supabase (service client para admin)
-    const { createServiceClient } = await import('@/lib/supabase/service');
-    const supabase = createServiceClient();
-
-    const { error } = await supabase.auth.admin.sendEmail({
+    // Enviar email
+    await this.sendSimpleEmail(
       email,
-      emailData: {
-        html,
-        text,
-        subject: 'Confirme seu email - Leadgram'
-      }
-    });
-
-    if (error) {
-      console.error('Erro ao enviar email OTP:', error);
-      throw error;
-    }
+      'Confirme seu email - Leadgram',
+      html,
+      text
+    );
   }
 
   /**
@@ -1075,23 +1110,13 @@ Se você não solicitou esta recuperação, ignore este email e sua conta perman
 © ${new Date().getFullYear()} Leadgram. Todos os direitos reservados.
     `.trim();
 
-    // Enviar usando o Supabase (service client para admin)
-    const { createServiceClient } = await import('@/lib/supabase/service');
-    const supabase = createServiceClient();
-
-    const { error } = await supabase.auth.admin.sendEmail({
+    // Enviar email
+    await this.sendSimpleEmail(
       email,
-      emailData: {
-        html,
-        text,
-        subject: 'Redefinir senha - Leadgram'
-      }
-    });
-
-    if (error) {
-      console.error('Erro ao enviar email OTP de reset:', error);
-      throw error;
-    }
+      'Redefinir senha - Leadgram',
+      html,
+      text
+    );
   }
 
   // ============= LOGS =============
