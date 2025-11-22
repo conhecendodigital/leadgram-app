@@ -1,34 +1,40 @@
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
 /**
  * POST /api/auth/update-password
- * Atualiza a senha de um usuário (usado após verificação de OTP)
+ * Atualiza a senha de um usuário
+ *
+ * SEGURANÇA: Esta rota valida que o usuário está autenticado
+ * antes de permitir atualização de senha
  */
 export async function POST(request: Request) {
   try {
-    const { userId, newPassword } = await request.json()
-
-    // Validar campos obrigatórios
-    if (!userId || !newPassword) {
-      return NextResponse.json(
-        { error: 'userId e newPassword são obrigatórios' },
-        { status: 400 }
-      )
-    }
+    const { newPassword } = await request.json()
 
     // Validar senha
-    if (newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 6) {
       return NextResponse.json(
         { error: 'A senha deve ter pelo menos 6 caracteres' },
         { status: 400 }
       )
     }
 
-    // Atualizar senha usando service role
-    const supabase = createServiceClient()
+    // SEGURANÇA: Buscar usuário autenticado da sessão
+    const supabase = await createServerClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    const { error } = await supabase.auth.admin.updateUserById(userId, {
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Não autorizado. Faça login novamente.' },
+        { status: 401 }
+      )
+    }
+
+    // Atualizar senha do usuário autenticado
+    const serviceSupabase = createServiceClient()
+    const { error } = await serviceSupabase.auth.admin.updateUserById(user.id, {
       password: newPassword
     })
 
@@ -39,6 +45,8 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
+
+    console.log('✅ Senha atualizada para usuário:', user.id)
 
     return NextResponse.json({
       success: true,

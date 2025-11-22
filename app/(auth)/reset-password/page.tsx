@@ -141,21 +141,14 @@ function ResetPasswordContent() {
       return
     }
 
-    if (!userId) {
-      setError('Sessão inválida. Tente novamente.')
-      setLoading(false)
-      return
-    }
-
     try {
       const supabase = createClient()
 
-      // Atualizar senha usando o service role (via API)
+      // Atualizar senha (API usa sessão ativa criada pelo OTP)
       const response = await fetch('/api/auth/update-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           newPassword: password
         })
       })
