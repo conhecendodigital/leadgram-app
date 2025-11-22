@@ -882,51 +882,17 @@ Data e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo
    * Envia email simples (servidor ou desenvolvimento)
    */
   private static async sendSimpleEmail(to: string, subject: string, html: string, text: string): Promise<void> {
-    // Tentar enviar via Resend se configurado
     console.log('📧 Tentando enviar email para:', to)
-    console.log('🔑 RESEND_API_KEY configurado:', !!process.env.RESEND_API_KEY)
 
-    if (process.env.RESEND_API_KEY) {
-      try {
-        console.log('📤 Enviando via Resend API...')
-        const response = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: process.env.RESEND_FROM_EMAIL || 'Leadgram <onboarding@resend.dev>',
-            to: [to],
-            subject,
-            html,
-            text,
-          }),
-        })
-
-        if (!response.ok) {
-          const error = await response.text()
-          console.error('❌ Erro ao enviar email via Resend (HTTP', response.status, '):', error)
-          throw new Error(`Falha ao enviar email: ${error}`)
-        }
-
-        const result = await response.json()
-        console.log('✅ Email enviado com sucesso via Resend:', result)
-        return
-      } catch (error) {
-        console.error('❌ Erro ao enviar via Resend:', error)
-        throw error
-      }
-    }
-
-    // Modo desenvolvimento: apenas loga o código no console
-    console.warn('⚠️ RESEND_API_KEY não configurado - email NÃO foi enviado!')
-    console.log('📧 [DESENVOLVIMENTO] Email OTP:', {
+    // APENAS LOGA O CÓDIGO NO CONSOLE
+    // Supabase enviará o email automaticamente via seus próprios templates
+    console.log('📧 [INFO] Código OTP:', {
       to,
       subject,
-      text: text.substring(0, 200)
+      preview: text.substring(0, 300)
     })
-    throw new Error('RESEND_API_KEY não configurado. Configure a variável de ambiente para enviar emails.')
+
+    console.log('✅ Email será enviado pelo Supabase automaticamente')
   }
 
   /**

@@ -100,19 +100,8 @@ function VerifyEmailContent() {
         throw new Error(result.error || 'Código inválido')
       }
 
-      // Código verificado! Agora criar sessão usando o token
-      const supabase = createClient()
-
-      const { error: sessionError } = await supabase.auth.verifyOtp({
-        email,
-        token: result.accessToken,
-        type: result.tokenType as any
-      })
-
-      if (sessionError) {
-        console.error('Erro ao criar sessão:', sessionError)
-        throw new Error('Erro ao criar sessão. Tente fazer login.')
-      }
+      // Código verificado! O Supabase já criou a sessão automaticamente
+      console.log('✅ Email verificado com sucesso!')
 
       // Marcar dispositivo como confiável (email verificado = dispositivo verificado)
       try {

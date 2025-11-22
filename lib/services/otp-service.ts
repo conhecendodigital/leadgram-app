@@ -32,6 +32,7 @@ export class OTPService {
 
   /**
    * Cria e envia um código OTP para verificação de email
+   * USA O SISTEMA NATIVO DO SUPABASE
    */
   static async sendEmailVerificationOTP(
     email: string,
@@ -39,45 +40,37 @@ export class OTPService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const supabase = createServiceClient()
-      const code = this.generateCode()
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutos
 
-      // Invalidar códigos anteriores não verificados
-      await (supabase.from('email_otp_codes') as any)
-        .delete()
-        .eq('email', email)
-        .eq('purpose', 'email_verification')
-        .eq('verified', false)
+      console.log('📧 Enviando OTP de verificação via Supabase para:', email)
 
-      // Criar novo código
-      const { error: dbError } = await (supabase.from('email_otp_codes') as any)
-        .insert({
-          user_id: userId || null,
-          email,
-          code,
-          purpose: 'email_verification',
-          expires_at: expiresAt.toISOString(),
-          attempts: 0,
-          max_attempts: 5
-        })
+      // USAR O MÉTODO NATIVO DO SUPABASE PARA ENVIAR OTP
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false, // Não criar usuário (já foi criado)
+          data: {
+            purpose: 'email_verification',
+            user_id: userId
+          }
+        }
+      })
 
-      if (dbError) {
-        console.error('Erro ao criar código OTP:', dbError)
-        return { success: false, error: 'Erro ao criar código de verificação' }
+      if (error) {
+        console.error('❌ Erro ao enviar OTP via Supabase:', error)
+        return { success: false, error: error.message }
       }
 
-      // Enviar email
-      await EmailService.sendEmailVerificationOTP(email, code)
-
+      console.log('✅ OTP enviado via Supabase com sucesso!')
       return { success: true }
     } catch (error) {
-      console.error('Erro ao enviar OTP:', error)
+      console.error('❌ Erro ao enviar OTP:', error)
       return { success: false, error: 'Erro ao enviar código de verificação' }
     }
   }
 
   /**
    * Cria e envia um código OTP para reset de senha
+   * USA O SISTEMA NATIVO DO SUPABASE
    */
   static async sendPasswordResetOTP(
     email: string
@@ -85,56 +78,35 @@ export class OTPService {
     try {
       const supabase = createServiceClient()
 
-      // Verificar se o usuário existe (buscar pelo email no auth)
-      const { data: { users }, error: userError } = await supabase.auth.admin.listUsers()
+      console.log('📧 Enviando OTP de reset de senha via Supabase para:', email)
 
-      const user = users?.find(u => u.email === email)
+      // USAR O MÉTODO NATIVO DO SUPABASE PARA ENVIAR OTP
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          data: {
+            purpose: 'password_reset'
+          }
+        }
+      })
 
-      if (!user) {
+      if (error) {
+        console.error('❌ Erro ao enviar OTP via Supabase:', error)
         // Não revelar se o email existe ou não (segurança)
-        console.log('Email não encontrado:', email)
-        return { success: true } // Retornar sucesso mesmo se não existir
+        return { success: true } // Retornar sucesso mesmo se falhar
       }
 
-      const code = this.generateCode()
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 60 minutos
-
-      // Invalidar códigos anteriores não verificados
-      await (supabase.from('email_otp_codes') as any)
-        .delete()
-        .eq('email', email)
-        .eq('purpose', 'password_reset')
-        .eq('verified', false)
-
-      // Criar novo código
-      const { error: dbError } = await (supabase.from('email_otp_codes') as any)
-        .insert({
-          user_id: user.id,
-          email,
-          code,
-          purpose: 'password_reset',
-          expires_at: expiresAt.toISOString(),
-          attempts: 0,
-          max_attempts: 5
-        })
-
-      if (dbError) {
-        console.error('Erro ao criar código OTP:', dbError)
-        return { success: false, error: 'Erro ao criar código de recuperação' }
-      }
-
-      // Enviar email
-      await EmailService.sendPasswordResetOTP(email, code)
-
+      console.log('✅ OTP de reset enviado via Supabase com sucesso!')
       return { success: true }
     } catch (error) {
-      console.error('Erro ao enviar OTP de reset:', error)
+      console.error('❌ Erro ao enviar OTP de reset:', error)
       return { success: false, error: 'Erro ao enviar código de recuperação' }
     }
   }
 
   /**
-   * Verifica um código OTP
+   * Verifica um código OTP usando o sistema nativo do Supabase
    */
   static async verifyOTP(
     email: string,
@@ -149,66 +121,39 @@ export class OTPService {
     try {
       const supabase = createServiceClient()
 
-      // Buscar código válido
-      const { data: otpData, error: fetchError } = await (supabase
-        .from('email_otp_codes') as any)
-        .select('*')
-        .eq('email', email)
-        .eq('purpose', purpose)
-        .eq('verified', false)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+      console.log('🔍 Verificando OTP via Supabase para:', email)
 
-      if (fetchError || !otpData) {
+      // USAR O MÉTODO NATIVO DO SUPABASE PARA VERIFICAR OTP
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'email'
+      })
+
+      if (error) {
+        console.error('❌ Erro ao verificar OTP:', error)
         return {
           success: false,
           error: 'Código inválido ou expirado. Solicite um novo código.'
         }
       }
 
-      // Verificar se excedeu tentativas
-      if (otpData.attempts >= otpData.max_attempts) {
+      if (!data.user) {
         return {
           success: false,
-          error: 'Número máximo de tentativas excedido. Solicite um novo código.'
+          error: 'Erro ao verificar código'
         }
       }
 
-      // Verificar se o código está correto
-      if (otpData.code !== code) {
-        // Incrementar tentativas
-        await (supabase
-          .from('email_otp_codes') as any)
-          .update({
-            attempts: otpData.attempts + 1
-          })
-          .eq('id', otpData.id)
-
-        const remainingAttempts = otpData.max_attempts - (otpData.attempts + 1)
-
-        return {
-          success: false,
-          error: `Código incorreto. Tentativas restantes: ${remainingAttempts}`
-        }
-      }
-
-      // Código correto - DELETAR imediatamente para não sobrecarregar o banco
-      await (supabase
-        .from('email_otp_codes') as any)
-        .delete()
-        .eq('id', otpData.id)
-
-      console.log('✅ Código OTP verificado e deletado:', otpData.code)
+      console.log('✅ Código OTP verificado com sucesso!')
 
       return {
         success: true,
-        userId: otpData.user_id || undefined,
-        otpId: otpData.id
+        userId: data.user.id,
+        otpId: data.user.id // Usar user ID como referência
       }
     } catch (error) {
-      console.error('Erro ao verificar OTP:', error)
+      console.error('❌ Erro ao verificar OTP:', error)
       return {
         success: false,
         error: 'Erro ao verificar código'

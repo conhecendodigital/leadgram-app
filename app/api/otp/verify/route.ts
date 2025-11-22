@@ -36,24 +36,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Se for verificação de email, confirmar o email e criar sessão
+    // Se for verificação de email, marcar como verificado no perfil
     if (purpose === 'email_verification' && result.userId) {
       try {
         const supabase = await createServerClient()
-
-        // Verificar email do usuário no Supabase Auth
-        const { error: updateError } = await supabase.auth.admin.updateUserById(
-          result.userId,
-          { email_confirm: true }
-        )
-
-        if (updateError) {
-          console.error('Erro ao confirmar email no Supabase:', updateError)
-          return NextResponse.json(
-            { error: 'Erro ao confirmar email' },
-            { status: 500 }
-          )
-        }
 
         // Marcar email como verificado no perfil
         const { error: profileError } = await (supabase
@@ -70,48 +56,12 @@ export async function POST(request: Request) {
 
         console.log('✅ Email verificado via OTP para usuário:', result.userId)
 
-        // Buscar dados do usuário
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(result.userId)
-
-        if (userError || !userData.user) {
-          return NextResponse.json(
-            { error: 'Erro ao buscar dados do usuário' },
-            { status: 500 }
-          )
-        }
-
-        // Gerar link de acesso (magic link)
-        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-          type: 'magiclink',
-          email: userData.user.email!,
-        })
-
-        if (linkError || !linkData) {
-          console.error('Erro ao gerar link de acesso:', linkError)
-          return NextResponse.json(
-            { error: 'Erro ao criar sessão' },
-            { status: 500 }
-          )
-        }
-
-        // Extrair os query parameters do link
-        const url = new URL(linkData.properties.action_link)
-        const token = url.searchParams.get('token')
-        const type = url.searchParams.get('type')
-
-        if (!token || !type) {
-          return NextResponse.json(
-            { error: 'Erro ao gerar token de sessão' },
-            { status: 500 }
-          )
-        }
-
+        // O Supabase já criou a sessão automaticamente via verifyOtp
+        // Apenas retornar sucesso
         return NextResponse.json({
           success: true,
           message: 'Email verificado com sucesso!',
-          userId: result.userId,
-          accessToken: token,
-          tokenType: type
+          userId: result.userId
         })
       } catch (error) {
         console.error('Erro ao processar verificação de email:', error)
