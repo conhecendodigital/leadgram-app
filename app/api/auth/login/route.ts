@@ -84,9 +84,24 @@ export async function POST(request: Request) {
 
     // ===== LOGIN BEM-SUCEDIDO =====
     if (data.user) {
-      // ===== VERIFICAR SE O EMAIL FOI CONFIRMADO =====
-      if (!data.user.email_confirmed_at) {
-        console.log('❌ Tentativa de login com email não verificado:', email)
+      // ===== VERIFICAR SE O EMAIL FOI CONFIRMADO VIA OTP =====
+      // Buscar perfil para verificar email_verified_at
+      const { data: profile, error: profileError } = await (supabase
+        .from('profiles') as any)
+        .select('email_verified_at')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError)
+        return NextResponse.json(
+          { error: 'Erro ao verificar conta' },
+          { status: 500 }
+        )
+      }
+
+      if (!profile.email_verified_at) {
+        console.log('❌ Tentativa de login com email não verificado via OTP:', email)
         return NextResponse.json(
           {
             error: 'Email não verificado',

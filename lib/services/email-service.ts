@@ -896,7 +896,7 @@ Data e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Leadgram <noreply@formulareal.online>',
+            from: process.env.RESEND_FROM_EMAIL || 'Leadgram <onboarding@resend.dev>',
             to: [to],
             subject,
             html,

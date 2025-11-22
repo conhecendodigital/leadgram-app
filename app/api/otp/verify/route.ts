@@ -55,6 +55,21 @@ export async function POST(request: Request) {
           )
         }
 
+        // Marcar email como verificado no perfil
+        const { error: profileError } = await (supabase
+          .from('profiles') as any)
+          .update({
+            email_verified_at: new Date().toISOString()
+          })
+          .eq('id', result.userId)
+
+        if (profileError) {
+          console.error('Erro ao atualizar perfil:', profileError)
+          // Não bloquear o fluxo se falhar
+        }
+
+        console.log('✅ Email verificado via OTP para usuário:', result.userId)
+
         // Buscar dados do usuário
         const { data: userData, error: userError } = await supabase.auth.admin.getUserById(result.userId)
 

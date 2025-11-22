@@ -64,14 +64,22 @@ export default function RegisterPage() {
         })
 
         if (!otpResponse.ok) {
-          throw new Error('Erro ao enviar código de verificação')
+          const errorData = await otpResponse.json()
+          console.error('Erro ao enviar OTP:', errorData)
+
+          // Redirecionar para página de verificação mesmo com erro
+          // O usuário poderá tentar reenviar o código de lá
+          router.push(`/verify-email?email=${encodeURIComponent(email)}&error=send_failed`)
+          return
         }
 
         // Redirecionar para página de verificação OTP
         router.push(`/verify-email?email=${encodeURIComponent(email)}`)
       } catch (otpError) {
         console.error('Erro ao enviar OTP:', otpError)
-        throw new Error('Erro ao enviar código de verificação. Tente novamente.')
+        // Redirecionar para página de verificação mesmo com erro
+        // O usuário poderá tentar reenviar o código de lá
+        router.push(`/verify-email?email=${encodeURIComponent(email)}&error=send_failed`)
       }
     } catch (err) {
       console.error('Erro ao criar conta:', err)
