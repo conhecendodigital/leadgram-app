@@ -129,11 +129,21 @@ export async function POST(request: Request) {
         // Não bloquear o login se falhar
       }
 
+      // Buscar role do usuário
+      const { data: userProfile } = await (supabase
+        .from('profiles') as any)
+        .select('role')
+        .eq('id', data.user.id)
+        .single()
+
+      const role = userProfile?.role || 'user'
+
       return NextResponse.json({
         success: true,
         user: {
           id: data.user.id,
-          email: data.user.email
+          email: data.user.email,
+          role
         },
         session: data.session
       });

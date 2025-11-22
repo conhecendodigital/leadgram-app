@@ -59,9 +59,8 @@ export default function LoginPage() {
 
       // Login bem-sucedido
       if (result.success && result.user) {
-        // Redirecionar direto para dashboard
-        // O middleware vai verificar o role e redirecionar se necessário
-        if (email === 'matheussss.afiliado@gmail.com') {
+        // Redirecionar baseado no role retornado pelo backend
+        if (result.user.role === 'admin') {
           router.push('/admin/dashboard')
         } else {
           router.push('/dashboard')
