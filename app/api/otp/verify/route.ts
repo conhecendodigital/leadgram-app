@@ -1,83 +1,73 @@
 import { NextResponse } from 'next/server'
-import { OTPService } from '@/lib/services/otp-service'
 import { createServerClient } from '@/lib/supabase/server'
 
 /**
  * POST /api/otp/verify
- * Verifica um código OTP
+ *
+ * API SIMPLIFICADA de verificação OTP
+ *
+ * IMPORTANTE: O código OTP já foi verificado no client-side via supabase.auth.verifyOtp()
+ * Esta API apenas marca o email como verificado no perfil do usuário.
+ *
+ * Fluxo:
+ * 1. Client verifica OTP → cria sessão automaticamente
+ * 2. Client chama esta API (já autenticado)
+ * 3. API marca email_verified_at no perfil
  */
 export async function POST(request: Request) {
   try {
-    const { email, code, purpose } = await request.json()
+    const { email } = await request.json()
 
-    // Validar campos obrigatórios
-    if (!email || !code || !purpose) {
+    // Validar email
+    if (!email) {
       return NextResponse.json(
-        { error: 'Email, código e propósito são obrigatórios' },
+        { error: 'Email é obrigatório' },
         { status: 400 }
       )
     }
 
-    // Validar propósito
-    if (purpose !== 'email_verification' && purpose !== 'password_reset') {
+    const supabase = await createServerClient()
+
+    // Buscar usuário autenticado (já verificou OTP no client)
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError || !user) {
       return NextResponse.json(
-        { error: 'Propósito inválido' },
-        { status: 400 }
+        { error: 'Não autorizado. Faça login novamente.' },
+        { status: 401 }
       )
     }
 
-    // Esta API apenas marca o email como verificado no perfil
-    // A verificação real do OTP é feita no client-side via supabase.auth.verifyOtp()
-
-    if (purpose === 'email_verification') {
-      try {
-        const supabase = await createServerClient()
-
-        // Buscar usuário pelo email
-        const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(
-          await supabase.auth.getUser().then(u => u.data.user?.id || '')
-        )
-
-        if (userError || !user) {
-          // Buscar pelo email
-          const { data: { users } } = await supabase.auth.admin.listUsers()
-          const foundUser = users?.find(u => u.email === email)
-
-          if (!foundUser) {
-            return NextResponse.json(
-              { error: 'Usuário não encontrado' },
-              { status: 404 }
-            )
-          }
-
-          // Marcar email como verificado no perfil
-          await (supabase.from('profiles') as any)
-            .update({ email_verified_at: new Date().toISOString() })
-            .eq('id', foundUser.id)
-
-          console.log('✅ Email marcado como verificado para:', email)
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: 'Email verificado com sucesso!'
-        })
-      } catch (error) {
-        console.error('Erro ao processar verificação:', error)
-        return NextResponse.json(
-          { error: 'Erro ao processar verificação' },
-          { status: 500 }
-        )
-      }
+    // Verificar que o email corresponde ao usuário autenticado
+    if (user.email !== email) {
+      return NextResponse.json(
+        { error: 'Email não corresponde ao usuário autenticado' },
+        { status: 403 }
+      )
     }
 
-    // Para reset de senha
+    // Marcar email como verificado no perfil
+    const { error: updateError } = await (supabase
+      .from('profiles') as any)
+      .update({ email_verified_at: new Date().toISOString() })
+      .eq('id', user.id)
+
+    if (updateError) {
+      console.error('❌ Erro ao atualizar perfil:', updateError)
+      return NextResponse.json(
+        { error: 'Erro ao marcar email como verificado' },
+        { status: 500 }
+      )
+    }
+
+    console.log('✅ Email marcado como verificado:', email)
+
     return NextResponse.json({
       success: true,
-      message: 'Código verificado com sucesso!'
+      message: 'Email verificado com sucesso!'
     })
   } catch (error) {
-    console.error('Erro ao verificar OTP:', error)
+    console.error('❌ Erro ao verificar email:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
