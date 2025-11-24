@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { OTPService } from '@/lib/services/otp-service'
 import { rateLimit } from '@/lib/middleware/rate-limit'
 import { OTP_SEND_RATE_LIMIT, ERROR_MESSAGES, SUCCESS_MESSAGES, PATTERNS, OTP_PURPOSES } from '@/lib/constants/auth'
+import { protectCSRF } from '@/lib/middleware/csrf-protection'
 
 /**
  * POST /api/otp/send
@@ -10,6 +11,10 @@ import { OTP_SEND_RATE_LIMIT, ERROR_MESSAGES, SUCCESS_MESSAGES, PATTERNS, OTP_PU
  */
 export async function POST(request: Request) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await protectCSRF(request);
+    if (csrfError) return csrfError;
+
     // ===== RATE LIMITING =====
     const rateLimitCheck = await rateLimit({
       max: OTP_SEND_RATE_LIMIT.MAX_ATTEMPTS,

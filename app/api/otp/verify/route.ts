@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants/auth'
 import { badRequest, unauthorized, forbidden, serverError, success } from '@/lib/utils/api-error-handler'
+import { protectCSRF } from '@/lib/middleware/csrf-protection'
 
 /**
  * POST /api/otp/verify
@@ -18,6 +19,10 @@ import { badRequest, unauthorized, forbidden, serverError, success } from '@/lib
  */
 export async function POST(request: Request) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await protectCSRF(request);
+    if (csrfError) return csrfError;
+
     const { email } = await request.json()
 
     // Validar email

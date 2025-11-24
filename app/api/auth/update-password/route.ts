@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { PASSWORD_MIN_LENGTH, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants/auth'
 import { badRequest, unauthorized, serverError, success } from '@/lib/utils/api-error-handler'
+import { protectCSRF } from '@/lib/middleware/csrf-protection'
 
 /**
  * POST /api/auth/update-password
@@ -13,6 +14,10 @@ import { badRequest, unauthorized, serverError, success } from '@/lib/utils/api-
  */
 export async function POST(request: Request) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await protectCSRF(request);
+    if (csrfError) return csrfError;
+
     const { newPassword } = await request.json()
 
     // Validar senha

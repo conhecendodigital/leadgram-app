@@ -9,6 +9,7 @@ import { getRequestInfo } from '@/lib/utils/request-info';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { DeviceVerificationService } from '@/lib/services/device-verification-service';
 import { LOGIN_RATE_LIMIT, ERROR_MESSAGES } from '@/lib/constants/auth';
+import { protectCSRF } from '@/lib/middleware/csrf-protection';
 
 /**
  * API de Login com Sistema de Segurança Integrado
@@ -21,6 +22,10 @@ import { LOGIN_RATE_LIMIT, ERROR_MESSAGES } from '@/lib/constants/auth';
  */
 export async function POST(request: Request) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await protectCSRF(request);
+    if (csrfError) return csrfError;
+
     // ===== RATE LIMITING =====
     const rateLimitCheck = await rateLimit({
       max: LOGIN_RATE_LIMIT.MAX_ATTEMPTS,
