@@ -75,12 +75,14 @@ export async function POST(request: Request) {
 
       // Mensagens de erro em português (genéricas para segurança)
       let errorMessage = 'Email ou senha incorretos'
+      let needsVerification = false
 
       // Erros específicos do Supabase traduzidos
       if (error.message.includes('Invalid login credentials')) {
         errorMessage = 'Email ou senha incorretos'
       } else if (error.message.includes('Email not confirmed')) {
         errorMessage = 'Por favor, verifique seu email antes de fazer login'
+        needsVerification = true
       } else if (error.message.includes('Too many requests')) {
         errorMessage = 'Muitas tentativas. Aguarde um momento.'
       }
@@ -88,9 +90,11 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: errorMessage,
+          needsVerification: needsVerification,
+          email: email,
           remainingAttempts: result.remainingAttempts
         },
-        { status: 401 }
+        { status: needsVerification ? 403 : 401 }
       );
     }
 
