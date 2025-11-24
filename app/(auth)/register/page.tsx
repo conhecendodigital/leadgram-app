@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Mail, Lock, User, Loader2, CheckCircle2 } from 'lucide-react'
+import { Sparkles, Mail, Lock, User, Loader2 } from 'lucide-react'
 import AuthFooter from '@/components/auth/footer'
 import { PASSWORD_MIN_LENGTH, ERROR_MESSAGES, OTP_PURPOSES } from '@/lib/constants/auth'
 
@@ -16,8 +16,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,56 +112,6 @@ export default function RegisterPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  // Tela de email enviado (confirmação necessária)
-  if (emailSent) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Verifique seu email!</h2>
-            <p className="text-gray-600 mb-4">
-              Enviamos um link de confirmação para
-            </p>
-            <p className="text-primary font-semibold mb-6">{email}</p>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-              <p className="text-sm text-blue-900 mb-3">
-                Clique no link enviado para confirmar sua conta e acessar o dashboard.
-              </p>
-              <p className="text-xs text-blue-800">
-                Não esqueça de verificar sua caixa de spam!
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-2 text-gray-500">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <p className="text-sm">Aguardando confirmação do email...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Tela de sucesso (login automático)
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Conta criada com sucesso!</h2>
-            <p className="text-gray-600 mb-4">Redirecionando para o dashboard...</p>
-            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
