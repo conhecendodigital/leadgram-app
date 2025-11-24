@@ -1,25 +1,11 @@
 'use client'
 
 import { LogOut } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import NotificationBell from './notification-bell'
+import { useLogout } from '@/hooks/use-logout'
 
 export default function AdminHeader({ user }: { user: any }) {
-  const router = useRouter()
-  const supabase = createClient()
-
-  const handleLogout = async () => {
-    // Chamar API de logout (limpa sessões no servidor)
-    await fetch('/api/auth/logout', { method: 'POST' })
-
-    // Logout local (limpa cookies)
-    await supabase.auth.signOut()
-
-    // Redirecionar para login
-    router.push('/login')
-    router.refresh()
-  }
+  const { logout, isLoggingOut } = useLogout()
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
@@ -38,11 +24,12 @@ export default function AdminHeader({ user }: { user: any }) {
 
           {/* Logout */}
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg sm:rounded-xl font-medium transition-colors text-sm"
+            onClick={logout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg sm:rounded-xl font-medium transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Sair</span>
+            <span className="hidden sm:inline">{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
           </button>
         </div>
       </div>

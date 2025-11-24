@@ -5,15 +5,13 @@ import { m, AnimatePresence } from 'framer-motion'
 import { Menu, X, Home, Lightbulb, BarChart3, Instagram, Settings, LogOut, Search, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useLogout } from '@/hooks/use-logout'
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
+  const { logout, isLoggingOut } = useLogout()
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', href: '/dashboard' },
@@ -42,16 +40,9 @@ export default function MobileMenu() {
     checkAdminStatus()
   }, [])
 
-  const handleLogout = async () => {
-    // Chamar API de logout (limpa sessões no servidor)
-    await fetch('/api/auth/logout', { method: 'POST' })
-
-    // Logout local (limpa cookies)
-    await supabase.auth.signOut()
-
-    // Redirecionar para login
-    router.push('/login')
-    router.refresh()
+  const handleLogoutClick = async () => {
+    setIsOpen(false) // Fechar menu antes de fazer logout
+    await logout()
   }
 
   return (
@@ -155,11 +146,12 @@ export default function MobileMenu() {
 
               {/* Logout */}
               <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors"
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+                className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <LogOut className="w-5 h-5" />
-                Sair
+                {isLoggingOut ? 'Saindo...' : 'Sair'}
               </button>
             </div>
           </m.div>

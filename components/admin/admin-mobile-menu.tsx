@@ -16,8 +16,8 @@ import {
   ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { usePathname } from 'next/navigation'
+import { useLogout } from '@/hooks/use-logout'
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
@@ -32,19 +32,11 @@ const menuItems = [
 export default function AdminMobileMenu({ user }: { user: any }) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
+  const { logout, isLoggingOut } = useLogout()
 
-  const handleLogout = async () => {
-    // Chamar API de logout (limpa sessões no servidor)
-    await fetch('/api/auth/logout', { method: 'POST' })
-
-    // Logout local (limpa cookies)
-    await supabase.auth.signOut()
-
-    // Redirecionar para login
-    router.push('/login')
-    router.refresh()
+  const handleLogoutClick = async () => {
+    setIsOpen(false) // Fechar menu antes de fazer logout
+    await logout()
   }
 
   return (
@@ -154,11 +146,12 @@ export default function AdminMobileMenu({ user }: { user: any }) {
               </div>
 
               <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-950 rounded-xl font-medium transition-all"
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+                className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-950 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <LogOut className="w-5 h-5" />
-                <span>Sair</span>
+                <span>{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
               </button>
             </div>
           </m.div>

@@ -3,15 +3,15 @@
 import { Search, Settings, User, LogOut, Plus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import NotificationCenter from '@/components/notifications/notification-center'
+import { useLogout } from '@/hooks/use-logout'
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const supabase = createClient()
-  const router = useRouter()
+  const { logout, isLoggingOut } = useLogout()
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -20,18 +20,6 @@ export default function Header() {
     }
     fetchUser()
   }, [])
-
-  const handleLogout = async () => {
-    // Chamar API de logout (limpa sessões no servidor)
-    await fetch('/api/auth/logout', { method: 'POST' })
-
-    // Logout local (limpa cookies)
-    await supabase.auth.signOut()
-
-    // Redirecionar para login
-    router.push('/login')
-    router.refresh()
-  }
 
   return (
     <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-3 sm:px-6 py-3 sm:py-4">
@@ -107,11 +95,12 @@ export default function Header() {
                   </div>
 
                   <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                    onClick={logout}
+                    disabled={isLoggingOut}
+                    className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span>Sair</span>
+                    <span>{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
                   </button>
                 </div>
               </>
