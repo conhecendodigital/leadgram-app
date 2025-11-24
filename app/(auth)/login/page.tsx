@@ -38,7 +38,8 @@ export default function LoginPage() {
         }
 
         // Email não verificado - redirecionar para página de verificação
-        if (result.needsVerification) {
+        if (result.needsVerification || response.status === 403) {
+          // Redirecionar com o email para poder reenviar o código
           router.push(`/verify-email?email=${encodeURIComponent(email)}`)
           return
         }
