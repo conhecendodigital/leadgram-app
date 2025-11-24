@@ -1,218 +1,103 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Mail, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Sparkles, Loader2, CheckCircle2 } from 'lucide-react'
 import AuthFooter from '@/components/auth/footer'
+import OTPInput from '@/components/auth/otp-input'
+import { ERROR_MESSAGES, OTP_PURPOSES, RESEND_COUNTDOWN_SECONDS } from '@/lib/constants/auth'
 
 // Component que usa useSearchParams (precisa estar dentro de Suspense)
 function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
-
-  const [code, setCode] = useState(['', '', '', '', '', ''])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [resending, setResending] = useState(false)
-  const [resendSuccess, setResendSuccess] = useState(false)
-  const [canResend, setCanResend] = useState(true)
-  const [resendCountdown, setResendCountdown] = useState(0)
 
-  // Focar no primeiro input ao carregar
-  useEffect(() => {
-    const firstInput = document.getElementById('code-0')
-    if (firstInput) {
-      firstInput.focus()
-    }
-  }, [])
+  const handleVerifyCode = async (code: string) => {
+    const supabase = createClient()
 
-  // Countdown para reenvio
-  useEffect(() => {
-    if (resendCountdown > 0) {
-      const timer = setTimeout(() => {
-        setResendCountdown(resendCountdown - 1)
-      }, 1000)
-      return () => clearTimeout(timer)
-    } else {
-      setCanResend(true)
-    }
-  }, [resendCountdown])
+    // Verificar código OTP diretamente no client (cria sessão automaticamente)
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email'
+    })
 
-  const handleCodeChange = (index: number, value: string) => {
-    // Permitir apenas números
-    if (value && !/^\d$/.test(value)) return
+    if (verifyError) {
+      console.error('❌ Erro ao verificar OTP:', verifyError)
 
-    const newCode = [...code]
-    newCode[index] = value
-    setCode(newCode)
-
-    // Auto-focar no próximo input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`code-${index + 1}`)
-      if (nextInput) {
-        nextInput.focus()
+      // Traduzir erros comuns do Supabase
+      let errorMsg = ERROR_MESSAGES.OTP_INVALID
+      if (verifyError.message.includes('expired')) {
+        errorMsg = ERROR_MESSAGES.OTP_EXPIRED
+      } else if (verifyError.message.includes('invalid')) {
+        errorMsg = ERROR_MESSAGES.OTP_INCORRECT
+      } else if (verifyError.message.includes('not found')) {
+        errorMsg = ERROR_MESSAGES.OTP_NOT_FOUND
       }
+
+      throw new Error(errorMsg)
     }
 
-    // Auto-verificar quando todos os 6 dígitos forem preenchidos
-    if (newCode.every(digit => digit !== '') && index === 5) {
-      handleVerify(newCode.join(''))
-    }
-  }
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    // Backspace
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      const prevInput = document.getElementById(`code-${index - 1}`)
-      if (prevInput) {
-        prevInput.focus()
-      }
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault()
-    const pastedData = e.clipboardData.getData('text').trim()
-
-    // Verificar se são 6 dígitos
-    if (/^\d{6}$/.test(pastedData)) {
-      const newCode = pastedData.split('')
-      setCode(newCode)
-      handleVerify(pastedData)
-    }
-  }
-
-  const handleVerify = async (codeToVerify?: string) => {
-    const codeString = codeToVerify || code.join('')
-
-    if (codeString.length !== 6) {
-      setError('Por favor, digite o código completo de 6 dígitos')
-      return
+    if (!data.user) {
+      throw new Error('Erro ao verificar código')
     }
 
-    setLoading(true)
-    setError(null)
+    console.log('✅ Email verificado e sessão criada com sucesso!')
 
+    // Marcar email como verificado no perfil (via API)
     try {
-      const supabase = createClient()
-
-      // Verificar código OTP diretamente no client (cria sessão automaticamente)
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email,
-        token: codeString,
-        type: 'email'
-      })
-
-      if (verifyError) {
-        console.error('❌ Erro ao verificar OTP:', verifyError)
-
-        // Traduzir erros comuns do Supabase
-        let errorMsg = 'Código inválido ou expirado'
-        if (verifyError.message.includes('expired')) {
-          errorMsg = 'Este código expirou. Por favor, solicite um novo código.'
-        } else if (verifyError.message.includes('invalid')) {
-          errorMsg = 'Código inválido. Verifique se digitou corretamente.'
-        } else if (verifyError.message.includes('not found')) {
-          errorMsg = 'Código não encontrado. Solicite um novo código.'
-        }
-
-        throw new Error(errorMsg)
-      }
-
-      if (!data.user) {
-        throw new Error('Erro ao verificar código')
-      }
-
-      console.log('✅ Email verificado e sessão criada com sucesso!')
-
-      // Marcar email como verificado no perfil (via API)
-      try {
-        await fetch('/api/otp/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            code: codeString,
-            purpose: 'email_verification'
-          })
-        })
-      } catch (apiError) {
-        console.error('Erro ao marcar email como verificado:', apiError)
-        // Não bloquear o fluxo se falhar
-      }
-
-      // Marcar dispositivo como confiável (email verificado = dispositivo verificado)
-      try {
-        await fetch('/api/auth/trust-device', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        })
-      } catch (trustError) {
-        console.error('Erro ao marcar dispositivo como confiável:', trustError)
-        // Não bloquear o fluxo se falhar
-      }
-
-      setSuccess(true)
-
-      // Redirecionar para dashboard após 1.5 segundos
-      setTimeout(() => {
-        router.push('/dashboard')
-        router.refresh()
-      }, 1500)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao verificar código')
-      setCode(['', '', '', '', '', '']) // Limpar código
-      const firstInput = document.getElementById('code-0')
-      if (firstInput) firstInput.focus()
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleResendCode = async () => {
-    if (!canResend) return
-
-    setResending(true)
-    setError(null)
-    setResendSuccess(false)
-
-    try {
-      const response = await fetch('/api/otp/send', {
+      await fetch('/api/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
+          code,
           purpose: 'email_verification'
         })
       })
+    } catch (apiError) {
+      console.error('Erro ao marcar email como verificado:', apiError)
+      // Não bloquear o fluxo se falhar
+    }
 
-      const result = await response.json()
+    // Marcar dispositivo como confiável
+    try {
+      await fetch('/api/auth/trust-device', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+    } catch (trustError) {
+      console.error('Erro ao marcar dispositivo como confiável:', trustError)
+      // Não bloquear o fluxo se falhar
+    }
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao reenviar código')
-      }
+    setSuccess(true)
 
-      // Mostrar mensagem de sucesso e iniciar countdown
-      setResendSuccess(true)
-      setCode(['', '', '', '', '', ''])
-      setCanResend(false)
-      setResendCountdown(60) // 60 segundos de espera
+    // Redirecionar para dashboard após 1.5 segundos
+    setTimeout(() => {
+      router.push('/dashboard')
+      router.refresh()
+    }, 1500)
+  }
 
-      const firstInput = document.getElementById('code-0')
-      if (firstInput) firstInput.focus()
+  const handleResendCode = async () => {
+    const response = await fetch('/api/otp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        purpose: OTP_PURPOSES.EMAIL_VERIFICATION
+      })
+    })
 
-      // Esconder mensagem de sucesso após 3 segundos
-      setTimeout(() => {
-        setResendSuccess(false)
-      }, 3000)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao reenviar código')
-    } finally {
-      setResending(false)
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Erro ao reenviar código')
     }
   }
 
@@ -253,89 +138,15 @@ function VerifyEmailContent() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Verifique seu email</h2>
-            <p className="text-gray-600 text-sm">
-              Enviamos um código de 6 dígitos para
-            </p>
-            <p className="text-primary font-semibold mt-1">{email}</p>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
-          {resendSuccess && (
-            <div className="mb-4 p-3 rounded-xl bg-green-50 border border-green-200 flex items-start gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <p className="text-green-600 text-sm">Código reenviado com sucesso! Verifique seu email.</p>
-            </div>
-          )}
-
-          {/* Código OTP */}
-          <div className="mb-6">
-            <div className="flex justify-center gap-2 mb-4" onPaste={handlePaste}>
-              {code.map((digit, index) => (
-                <input
-                  key={index}
-                  id={`code-${index}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleCodeChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  disabled={loading}
-                  className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  autoComplete="off"
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={() => handleVerify()}
-              disabled={loading || code.some(d => d === '')}
-              className="w-full py-3 px-4 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                'Verificar código'
-              )}
-            </button>
-          </div>
-
-          {/* Reenviar código */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2">
-              Não recebeu o código?
-            </p>
-            <button
-              onClick={handleResendCode}
-              disabled={resending || !canResend}
-              className="text-primary font-medium text-sm hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 mx-auto"
-            >
-              {resending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Reenviando...
-                </>
-              ) : !canResend && resendCountdown > 0 ? (
-                `Aguarde ${resendCountdown}s para reenviar`
-              ) : (
-                'Reenviar código'
-              )}
-            </button>
-          </div>
+          <OTPInput
+            email={email}
+            title="Verifique seu email"
+            description="Enviamos um código de 6 dígitos para"
+            onComplete={handleVerifyCode}
+            onResend={handleResendCode}
+            enableResendCountdown
+            resendCountdownSeconds={RESEND_COUNTDOWN_SECONDS}
+          />
 
           {/* Voltar */}
           <div className="mt-6 text-center">

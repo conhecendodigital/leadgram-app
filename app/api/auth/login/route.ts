@@ -8,6 +8,7 @@ import {
 import { getRequestInfo } from '@/lib/utils/request-info';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { DeviceVerificationService } from '@/lib/services/device-verification-service';
+import { LOGIN_RATE_LIMIT, ERROR_MESSAGES } from '@/lib/constants/auth';
 
 /**
  * API de Login com Sistema de Segurança Integrado
@@ -20,11 +21,11 @@ import { DeviceVerificationService } from '@/lib/services/device-verification-se
  */
 export async function POST(request: Request) {
   try {
-    // ===== RATE LIMITING: 5 tentativas por minuto =====
+    // ===== RATE LIMITING =====
     const rateLimitCheck = await rateLimit({
-      max: 5,
-      windowSeconds: 60,
-      message: 'Muitas tentativas de login. Aguarde um minuto.'
+      max: LOGIN_RATE_LIMIT.MAX_ATTEMPTS,
+      windowSeconds: LOGIN_RATE_LIMIT.WINDOW_SECONDS,
+      message: LOGIN_RATE_LIMIT.MESSAGE
     });
 
     if (rateLimitCheck.limited) {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email e senha são obrigatórios' },
+        { error: ERROR_MESSAGES.EMAIL_REQUIRED },
         { status: 400 }
       );
     }
@@ -74,17 +75,17 @@ export async function POST(request: Request) {
       }
 
       // Mensagens de erro em português (genéricas para segurança)
-      let errorMessage = 'Email ou senha incorretos'
+      let errorMessage = ERROR_MESSAGES.INVALID_CREDENTIALS
       let needsVerification = false
 
       // Erros específicos do Supabase traduzidos
       if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Email ou senha incorretos'
+        errorMessage = ERROR_MESSAGES.INVALID_CREDENTIALS
       } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = 'Por favor, verifique seu email antes de fazer login'
+        errorMessage = ERROR_MESSAGES.EMAIL_NOT_CONFIRMED
         needsVerification = true
       } else if (error.message.includes('Too many requests')) {
-        errorMessage = 'Muitas tentativas. Aguarde um momento.'
+        errorMessage = ERROR_MESSAGES.TOO_MANY_REQUESTS
       }
 
       return NextResponse.json(
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
       if (profileError) {
         console.error('Erro ao buscar perfil:', profileError)
         return NextResponse.json(
-          { error: 'Erro ao verificar conta' },
+          { error: ERROR_MESSAGES.SERVER_ERROR },
           { status: 500 }
         )
       }
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(
           {
-            error: 'Por favor, verifique seu email antes de fazer login',
+            error: ERROR_MESSAGES.EMAIL_NOT_CONFIRMED,
             needsVerification: true,
             email: email
           },
@@ -170,7 +171,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: 'Falha na autenticação' },
+      { error: ERROR_MESSAGES.UNAUTHORIZED },
       { status: 401 }
     );
 
@@ -178,8 +179,8 @@ export async function POST(request: Request) {
     console.error('Erro no login:', error);
     return NextResponse.json(
       {
-        error: 'Erro interno do servidor',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: ERROR_MESSAGES.SERVER_ERROR,
+        details: error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR
       },
       { status: 500 }
     );

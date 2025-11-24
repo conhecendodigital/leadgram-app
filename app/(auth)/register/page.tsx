@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Sparkles, Mail, Lock, User, Loader2, CheckCircle2 } from 'lucide-react'
 import AuthFooter from '@/components/auth/footer'
+import { PASSWORD_MIN_LENGTH, ERROR_MESSAGES, OTP_PURPOSES } from '@/lib/constants/auth'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -25,13 +26,13 @@ export default function RegisterPage() {
 
     // Validar senhas
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
+      setError(ERROR_MESSAGES.PASSWORD_MISMATCH)
       setLoading(false)
       return
     }
 
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres')
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      setError(ERROR_MESSAGES.PASSWORD_TOO_SHORT)
       setLoading(false)
       return
     }
@@ -57,16 +58,16 @@ export default function RegisterPage() {
 
         // Traduzir mensagens de erro do Supabase
         if (signUpError.message.includes('already registered')) {
-          throw new Error('Este email já está cadastrado')
+          throw new Error(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS)
         }
         if (signUpError.message.includes('Invalid email')) {
-          throw new Error('Email inválido')
+          throw new Error(ERROR_MESSAGES.EMAIL_INVALID)
         }
         if (signUpError.message.includes('Password')) {
-          throw new Error('A senha deve ter pelo menos 6 caracteres')
+          throw new Error(ERROR_MESSAGES.PASSWORD_TOO_SHORT)
         }
 
-        throw new Error('Erro ao criar conta. Tente novamente.')
+        throw new Error(ERROR_MESSAGES.UNKNOWN_ERROR)
       }
 
       // Verificar se o usuário foi criado
@@ -84,7 +85,7 @@ export default function RegisterPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email,
-            purpose: 'email_verification',
+            purpose: OTP_PURPOSES.EMAIL_VERIFICATION,
             userId: data.user.id
           })
         })
@@ -241,14 +242,14 @@ export default function RegisterPage() {
                   id="password"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={PASSWORD_MIN_LENGTH}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Mínimo de 6 caracteres</p>
+              <p className="mt-1 text-xs text-gray-500">Mínimo de {PASSWORD_MIN_LENGTH} caracteres</p>
             </div>
 
             {/* Confirm Password */}
@@ -262,7 +263,7 @@ export default function RegisterPage() {
                   id="confirmPassword"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={PASSWORD_MIN_LENGTH}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"

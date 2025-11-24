@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { OTPService } from '@/lib/services/otp-service'
 import { rateLimit } from '@/lib/middleware/rate-limit'
+import { OTP_SEND_RATE_LIMIT, ERROR_MESSAGES, SUCCESS_MESSAGES, PATTERNS, OTP_PURPOSES } from '@/lib/constants/auth'
 
 /**
  * POST /api/otp/send
@@ -9,11 +10,11 @@ import { rateLimit } from '@/lib/middleware/rate-limit'
  */
 export async function POST(request: Request) {
   try {
-    // ===== RATE LIMITING: 3 códigos a cada 15 minutos =====
+    // ===== RATE LIMITING =====
     const rateLimitCheck = await rateLimit({
-      max: 3,
-      windowSeconds: 900, // 15 minutos
-      message: 'Você já solicitou muitos códigos. Aguarde 15 minutos antes de tentar novamente.'
+      max: OTP_SEND_RATE_LIMIT.MAX_ATTEMPTS,
+      windowSeconds: OTP_SEND_RATE_LIMIT.WINDOW_SECONDS,
+      message: OTP_SEND_RATE_LIMIT.MESSAGE
     })
 
     if (rateLimitCheck.limited) {
@@ -25,13 +26,13 @@ export async function POST(request: Request) {
     // Validar campos obrigatórios
     if (!email || !purpose) {
       return NextResponse.json(
-        { error: 'Email e tipo de verificação são obrigatórios' },
+        { error: ERROR_MESSAGES.EMAIL_REQUIRED },
         { status: 400 }
       )
     }
 
     // Validar propósito
-    if (purpose !== 'email_verification' && purpose !== 'password_reset') {
+    if (purpose !== OTP_PURPOSES.EMAIL_VERIFICATION && purpose !== OTP_PURPOSES.PASSWORD_RESET) {
       return NextResponse.json(
         { error: 'Tipo de verificação inválido' },
         { status: 400 }
@@ -39,10 +40,9 @@ export async function POST(request: Request) {
     }
 
     // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    if (!PATTERNS.EMAIL.test(email)) {
       return NextResponse.json(
-        { error: 'Formato de email inválido' },
+        { error: ERROR_MESSAGES.EMAIL_INVALID },
         { status: 400 }
       )
     }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     // Enviar OTP baseado no propósito
     let result
 
-    if (purpose === 'email_verification') {
+    if (purpose === OTP_PURPOSES.EMAIL_VERIFICATION) {
       result = await OTPService.sendEmailVerificationOTP(email, userId)
     } else {
       result = await OTPService.sendPasswordResetOTP(email)
@@ -58,19 +58,19 @@ export async function POST(request: Request) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error || 'Erro ao enviar código' },
+        { error: result.error || ERROR_MESSAGES.SERVER_ERROR },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Código enviado com sucesso. Verifique seu email.'
+      message: SUCCESS_MESSAGES.OTP_SENT
     })
   } catch (error) {
     console.error('Erro ao enviar OTP:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: ERROR_MESSAGES.SERVER_ERROR },
       { status: 500 }
     )
   }
