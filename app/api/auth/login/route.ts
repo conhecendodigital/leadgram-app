@@ -114,11 +114,15 @@ export async function POST(request: Request) {
 
       if (!profile.email_verified_at) {
         console.log('❌ Tentativa de login com email não verificado via OTP:', email)
+
+        // Fazer logout da sessão criada pelo Supabase
+        await supabase.auth.signOut()
+
         return NextResponse.json(
           {
-            error: 'Email não verificado',
-            message: 'Por favor, verifique seu email antes de fazer login. Enviamos um código de 6 dígitos para você.',
-            needsVerification: true
+            error: 'Por favor, verifique seu email antes de fazer login',
+            needsVerification: true,
+            email: email
           },
           { status: 403 }
         )

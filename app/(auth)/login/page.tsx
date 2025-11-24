@@ -32,16 +32,17 @@ export default function LoginPage() {
 
       // Tratar erros com informações de segurança
       if (!response.ok) {
+        // Email não verificado - redirecionar ANTES de qualquer outra verificação
+        if (result.needsVerification === true || response.status === 403) {
+          console.log('🔄 Redirecionando para verify-email...')
+          router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+          router.refresh()
+          return
+        }
+
         if (response.status === 429) {
           // Rate limit ou IP bloqueado
           throw new Error(result.error || 'Muitas tentativas. Aguarde um momento.')
-        }
-
-        // Email não verificado - redirecionar para página de verificação
-        if (result.needsVerification || response.status === 403) {
-          // Redirecionar com o email para poder reenviar o código
-          router.push(`/verify-email?email=${encodeURIComponent(email)}`)
-          return
         }
 
         throw new Error(result.error || 'Erro ao fazer login')
