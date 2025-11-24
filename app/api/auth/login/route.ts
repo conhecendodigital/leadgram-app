@@ -66,16 +66,28 @@ export async function POST(request: Request) {
       if (result.blocked) {
         return NextResponse.json(
           {
-            error: 'IP bloqueado',
+            error: 'IP bloqueado temporariamente devido a múltiplas tentativas de login. Aguarde 24 horas.',
             message: result.message
           },
           { status: 429 }
         );
       }
 
+      // Mensagens de erro em português (genéricas para segurança)
+      let errorMessage = 'Email ou senha incorretos'
+
+      // Erros específicos do Supabase traduzidos
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = 'Email ou senha incorretos'
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'Por favor, verifique seu email antes de fazer login'
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = 'Muitas tentativas. Aguarde um momento.'
+      }
+
       return NextResponse.json(
         {
-          error: error.message,
+          error: errorMessage,
           remainingAttempts: result.remainingAttempts
         },
         { status: 401 }

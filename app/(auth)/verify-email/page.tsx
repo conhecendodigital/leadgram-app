@@ -18,6 +18,9 @@ function VerifyEmailContent() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [resending, setResending] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
+  const [canResend, setCanResend] = useState(true)
+  const [resendCountdown, setResendCountdown] = useState(0)
 
   // Focar no primeiro input ao carregar
   useEffect(() => {
@@ -26,6 +29,18 @@ function VerifyEmailContent() {
       firstInput.focus()
     }
   }, [])
+
+  // Countdown para reenvio
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown(resendCountdown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    } else {
+      setCanResend(true)
+    }
+  }, [resendCountdown])
 
   const handleCodeChange = (index: number, value: string) => {
     // Permitir apenas números
@@ -94,7 +109,18 @@ function VerifyEmailContent() {
 
       if (verifyError) {
         console.error('❌ Erro ao verificar OTP:', verifyError)
-        throw new Error(verifyError.message || 'Código inválido ou expirado')
+
+        // Traduzir erros comuns do Supabase
+        let errorMsg = 'Código inválido ou expirado'
+        if (verifyError.message.includes('expired')) {
+          errorMsg = 'Este código expirou. Por favor, solicite um novo código.'
+        } else if (verifyError.message.includes('invalid')) {
+          errorMsg = 'Código inválido. Verifique se digitou corretamente.'
+        } else if (verifyError.message.includes('not found')) {
+          errorMsg = 'Código não encontrado. Solicite um novo código.'
+        }
+
+        throw new Error(errorMsg)
       }
 
       if (!data.user) {
@@ -148,8 +174,11 @@ function VerifyEmailContent() {
   }
 
   const handleResendCode = async () => {
+    if (!canResend) return
+
     setResending(true)
     setError(null)
+    setResendSuccess(false)
 
     try {
       const response = await fetch('/api/otp/send', {
@@ -167,11 +196,19 @@ function VerifyEmailContent() {
         throw new Error(result.error || 'Erro ao reenviar código')
       }
 
-      // Mostrar mensagem de sucesso temporária
-      setError(null)
+      // Mostrar mensagem de sucesso e iniciar countdown
+      setResendSuccess(true)
       setCode(['', '', '', '', '', ''])
+      setCanResend(false)
+      setResendCountdown(60) // 60 segundos de espera
+
       const firstInput = document.getElementById('code-0')
       if (firstInput) firstInput.focus()
+
+      // Esconder mensagem de sucesso após 3 segundos
+      setTimeout(() => {
+        setResendSuccess(false)
+      }, 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao reenviar código')
     } finally {
@@ -234,6 +271,13 @@ function VerifyEmailContent() {
             </div>
           )}
 
+          {resendSuccess && (
+            <div className="mb-4 p-3 rounded-xl bg-green-50 border border-green-200 flex items-start gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <p className="text-green-600 text-sm">Código reenviado com sucesso! Verifique seu email.</p>
+            </div>
+          )}
+
           {/* Código OTP */}
           <div className="mb-6">
             <div className="flex justify-center gap-2 mb-4" onPaste={handlePaste}>
@@ -277,7 +321,7 @@ function VerifyEmailContent() {
             </p>
             <button
               onClick={handleResendCode}
-              disabled={resending}
+              disabled={resending || !canResend}
               className="text-primary font-medium text-sm hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 mx-auto"
             >
               {resending ? (
@@ -285,6 +329,8 @@ function VerifyEmailContent() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Reenviando...
                 </>
+              ) : !canResend && resendCountdown > 0 ? (
+                `Aguarde ${resendCountdown}s para reenviar`
               ) : (
                 'Reenviar código'
               )}

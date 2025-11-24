@@ -1,18 +1,31 @@
 import { NextResponse } from 'next/server'
 import { OTPService } from '@/lib/services/otp-service'
+import { rateLimit } from '@/lib/middleware/rate-limit'
 
 /**
  * POST /api/otp/send
  * Gera e envia um código OTP para verificação de email ou reset de senha
+ * Rate limit: 3 tentativas a cada 15 minutos (900 segundos)
  */
 export async function POST(request: Request) {
   try {
+    // ===== RATE LIMITING: 3 códigos a cada 15 minutos =====
+    const rateLimitCheck = await rateLimit({
+      max: 3,
+      windowSeconds: 900, // 15 minutos
+      message: 'Você já solicitou muitos códigos. Aguarde 15 minutos antes de tentar novamente.'
+    })
+
+    if (rateLimitCheck.limited) {
+      return rateLimitCheck.response!
+    }
+
     const { email, purpose, userId } = await request.json()
 
     // Validar campos obrigatórios
     if (!email || !purpose) {
       return NextResponse.json(
-        { error: 'Email e propósito são obrigatórios' },
+        { error: 'Email e tipo de verificação são obrigatórios' },
         { status: 400 }
       )
     }
@@ -20,7 +33,7 @@ export async function POST(request: Request) {
     // Validar propósito
     if (purpose !== 'email_verification' && purpose !== 'password_reset') {
       return NextResponse.json(
-        { error: 'Propósito inválido. Use "email_verification" ou "password_reset"' },
+        { error: 'Tipo de verificação inválido' },
         { status: 400 }
       )
     }
@@ -29,7 +42,7 @@ export async function POST(request: Request) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: 'Email inválido' },
+        { error: 'Formato de email inválido' },
         { status: 400 }
       )
     }

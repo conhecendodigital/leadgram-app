@@ -34,7 +34,7 @@ export default function LoginPage() {
       if (!response.ok) {
         if (response.status === 429) {
           // Rate limit ou IP bloqueado
-          throw new Error(result.message || 'Muitas tentativas. Aguarde um momento.')
+          throw new Error(result.error || 'Muitas tentativas. Aguarde um momento.')
         }
 
         // Email não verificado - redirecionar para página de verificação
@@ -43,9 +43,10 @@ export default function LoginPage() {
           return
         }
 
-        // Mostrar tentativas restantes
-        if (result.remainingAttempts !== undefined) {
-          throw new Error(`${result.error}. Tentativas restantes: ${result.remainingAttempts}`)
+        // Mostrar tentativas restantes (se houver)
+        if (result.remainingAttempts !== undefined && result.remainingAttempts > 0) {
+          const tentativasTexto = result.remainingAttempts === 1 ? 'tentativa' : 'tentativas'
+          throw new Error(`${result.error}. ${result.remainingAttempts} ${tentativasTexto} restante${result.remainingAttempts === 1 ? '' : 's'}.`)
         }
 
         throw new Error(result.error || 'Erro ao fazer login')

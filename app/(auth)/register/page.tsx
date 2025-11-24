@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -21,6 +22,19 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    // Validar senhas
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem')
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres')
+      setLoading(false)
+      return
+    }
 
     try {
       const supabase = createClient()
@@ -40,7 +54,19 @@ export default function RegisterPage() {
 
       if (signUpError) {
         console.error('Erro no signUp:', signUpError)
-        throw signUpError
+
+        // Traduzir mensagens de erro do Supabase
+        if (signUpError.message.includes('already registered')) {
+          throw new Error('Este email já está cadastrado')
+        }
+        if (signUpError.message.includes('Invalid email')) {
+          throw new Error('Email inválido')
+        }
+        if (signUpError.message.includes('Password')) {
+          throw new Error('A senha deve ter pelo menos 6 caracteres')
+        }
+
+        throw new Error('Erro ao criar conta. Tente novamente.')
       }
 
       // Verificar se o usuário foi criado
@@ -223,6 +249,26 @@ export default function RegisterPage() {
                 />
               </div>
               <p className="mt-1 text-xs text-gray-500">Mínimo de 6 caracteres</p>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar senha
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
 
             {/* Submit Button */}
