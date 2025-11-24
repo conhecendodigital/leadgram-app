@@ -93,26 +93,40 @@ function ResetPasswordContent() {
     setError(null)
 
     try {
-      const response = await fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          code: codeString,
-          purpose: 'password_reset'
-        })
+      const supabase = createClient()
+
+      // Verificar código OTP diretamente no Supabase (para reset de senha)
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: codeString,
+        type: 'email' // Tipo correto para password reset
       })
 
-      const result = await response.json()
+      if (verifyError) {
+        console.error('❌ Erro ao verificar OTP:', verifyError)
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Código inválido')
+        // Traduzir erros comuns
+        let errorMsg = 'Código inválido ou expirado'
+        if (verifyError.message.includes('expired')) {
+          errorMsg = 'Este código expirou. Solicite um novo código.'
+        } else if (verifyError.message.includes('invalid')) {
+          errorMsg = 'Código inválido. Verifique se digitou corretamente.'
+        } else if (verifyError.message.includes('not found')) {
+          errorMsg = 'Código não encontrado. Solicite um novo código.'
+        }
+
+        throw new Error(errorMsg)
       }
 
-      // Código verificado com sucesso
+      if (!data.user) {
+        throw new Error('Erro ao verificar código')
+      }
+
+      console.log('✅ Código OTP verificado com sucesso! Sessão criada.')
+
+      // Código verificado com sucesso - sessão criada automaticamente
       setOtpVerified(true)
-      setOtpId(result.otpId)
-      setUserId(result.userId)
+      setUserId(data.user.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao verificar código')
       setCode(['', '', '', '', '', '']) // Limpar código
