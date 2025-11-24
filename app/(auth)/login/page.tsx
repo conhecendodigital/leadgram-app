@@ -43,12 +43,6 @@ export default function LoginPage() {
           return
         }
 
-        // Mostrar tentativas restantes (se houver)
-        if (result.remainingAttempts !== undefined && result.remainingAttempts > 0) {
-          const tentativasTexto = result.remainingAttempts === 1 ? 'tentativa' : 'tentativas'
-          throw new Error(`${result.error}. ${result.remainingAttempts} ${tentativasTexto} restante${result.remainingAttempts === 1 ? '' : 's'}.`)
-        }
-
         throw new Error(result.error || 'Erro ao fazer login')
       }
 
