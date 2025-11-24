@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { ERROR_MESSAGES } from '@/lib/constants/auth';
 
 /**
  * Handler centralizado de erros para API routes
@@ -38,11 +39,53 @@ export async function handleApiError(error: unknown, context?: string) {
   // Retornar resposta de erro para o cliente
   return NextResponse.json(
     {
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? err.message : ERROR_MESSAGES.SERVER_ERROR,
       ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     },
     { status: 500 }
   );
+}
+
+/**
+ * Helper functions para respostas de erro padronizadas
+ */
+export function badRequest(message: string = ERROR_MESSAGES.EMAIL_REQUIRED) {
+  return NextResponse.json({ error: message }, { status: 400 });
+}
+
+export function unauthorized(message: string = ERROR_MESSAGES.UNAUTHORIZED) {
+  return NextResponse.json({ error: message }, { status: 401 });
+}
+
+export function forbidden(message: string = 'Acesso negado') {
+  return NextResponse.json({ error: message }, { status: 403 });
+}
+
+export function notFound(message: string = 'Recurso não encontrado') {
+  return NextResponse.json({ error: message }, { status: 404 });
+}
+
+export function conflict(message: string = 'Conflito') {
+  return NextResponse.json({ error: message }, { status: 409 });
+}
+
+export function tooManyRequests(message: string = ERROR_MESSAGES.TOO_MANY_REQUESTS) {
+  return NextResponse.json({ error: message }, { status: 429 });
+}
+
+export function serverError(message: string = ERROR_MESSAGES.SERVER_ERROR) {
+  return NextResponse.json({ error: message }, { status: 500 });
+}
+
+/**
+ * Helper para respostas de sucesso padronizadas
+ */
+export function success<T = any>(data?: T, message?: string) {
+  return NextResponse.json({
+    success: true,
+    ...(message && { message }),
+    ...(data && { data })
+  });
 }
 
 /**

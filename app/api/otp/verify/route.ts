@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants/auth'
+import { badRequest, unauthorized, forbidden, serverError, success } from '@/lib/utils/api-error-handler'
 
 /**
  * POST /api/otp/verify
@@ -20,10 +22,7 @@ export async function POST(request: Request) {
 
     // Validar email
     if (!email) {
-      return NextResponse.json(
-        { error: 'Email é obrigatório' },
-        { status: 400 }
-      )
+      return badRequest(ERROR_MESSAGES.EMAIL_REQUIRED)
     }
 
     const supabase = await createServerClient()
@@ -32,18 +31,12 @@ export async function POST(request: Request) {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Não autorizado. Faça login novamente.' },
-        { status: 401 }
-      )
+      return unauthorized(ERROR_MESSAGES.UNAUTHORIZED)
     }
 
     // Verificar que o email corresponde ao usuário autenticado
     if (user.email !== email) {
-      return NextResponse.json(
-        { error: 'Email não corresponde ao usuário autenticado' },
-        { status: 403 }
-      )
+      return forbidden('Email não corresponde ao usuário autenticado')
     }
 
     // Marcar email como verificado no perfil
@@ -54,23 +47,14 @@ export async function POST(request: Request) {
 
     if (updateError) {
       console.error('❌ Erro ao atualizar perfil:', updateError)
-      return NextResponse.json(
-        { error: 'Erro ao marcar email como verificado' },
-        { status: 500 }
-      )
+      return serverError('Erro ao marcar email como verificado')
     }
 
     console.log('✅ Email marcado como verificado:', email)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Email verificado com sucesso!'
-    })
+    return success(null, SUCCESS_MESSAGES.EMAIL_VERIFIED)
   } catch (error) {
     console.error('❌ Erro ao verificar email:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return serverError(ERROR_MESSAGES.SERVER_ERROR)
   }
 }

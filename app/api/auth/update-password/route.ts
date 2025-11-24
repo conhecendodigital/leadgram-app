@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { PASSWORD_MIN_LENGTH, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants/auth'
+import { badRequest, unauthorized, serverError, success } from '@/lib/utils/api-error-handler'
 
 /**
  * POST /api/auth/update-password
@@ -14,11 +16,8 @@ export async function POST(request: Request) {
     const { newPassword } = await request.json()
 
     // Validar senha
-    if (!newPassword || newPassword.length < 6) {
-      return NextResponse.json(
-        { error: 'A senha deve ter pelo menos 6 caracteres' },
-        { status: 400 }
-      )
+    if (!newPassword || newPassword.length < PASSWORD_MIN_LENGTH) {
+      return badRequest(ERROR_MESSAGES.PASSWORD_TOO_SHORT)
     }
 
     // SEGURANÇA: Buscar usuário autenticado da sessão
@@ -26,10 +25,7 @@ export async function POST(request: Request) {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Não autorizado. Faça login novamente.' },
-        { status: 401 }
-      )
+      return unauthorized(ERROR_MESSAGES.UNAUTHORIZED)
     }
 
     // Atualizar senha do usuário autenticado
@@ -40,23 +36,14 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Erro ao atualizar senha:', error)
-      return NextResponse.json(
-        { error: 'Erro ao atualizar senha' },
-        { status: 500 }
-      )
+      return serverError('Erro ao atualizar senha')
     }
 
     console.log('✅ Senha atualizada para usuário:', user.id)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Senha atualizada com sucesso'
-    })
+    return success(null, SUCCESS_MESSAGES.PASSWORD_CHANGED)
   } catch (error) {
     console.error('Erro ao atualizar senha:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return serverError(ERROR_MESSAGES.SERVER_ERROR)
   }
 }

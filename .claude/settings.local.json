@@ -31,7 +31,8 @@
       "WebFetch(domain:formulareal.online)",
       "Bash(npx vercel:*)",
       "Bash(NUL)",
-      "Bash(dir /b \"C:\\Users\\guilh\\OneDrive\\Documentos\\Projetos\\leadgram-app\")"
+      "Bash(dir /b \"C:\\Users\\guilh\\OneDrive\\Documentos\\Projetos\\leadgram-app\")",
+      "Bash(dir /b NUL)"
     ],
     "deny": [],
     "ask": []
