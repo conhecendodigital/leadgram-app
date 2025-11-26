@@ -16,8 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Parse request body
-    const body = await request.json()
+    // Parse request body com validação
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+    }
+
     const { planId } = body
 
     if (!planId || !['PRO', 'PREMIUM'].includes(planId)) {

@@ -32,7 +32,8 @@
       "Bash(npx vercel:*)",
       "Bash(NUL)",
       "Bash(dir /b \"C:\\Users\\guilh\\OneDrive\\Documentos\\Projetos\\leadgram-app\")",
-      "Bash(dir /b NUL)"
+      "Bash(dir /b NUL)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

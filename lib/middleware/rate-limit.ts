@@ -60,7 +60,13 @@ export async function rateLimit(config: RateLimitConfig) {
   try {
     // Verificar se Redis está configurado
     if (!process.env.UPSTASH_REDIS_URL || !process.env.UPSTASH_REDIS_TOKEN) {
-      console.warn('⚠️ UPSTASH_REDIS_URL ou UPSTASH_REDIS_TOKEN não configurado. Rate limiting desabilitado.');
+      // Em produção, logar erro crítico - Redis deveria estar configurado
+      if (process.env.NODE_ENV === 'production') {
+        console.error('🚨 CRÍTICO: Redis não configurado em produção! Rate limiting usando fallback in-memory.');
+      } else {
+        console.warn('⚠️ UPSTASH_REDIS_URL ou UPSTASH_REDIS_TOKEN não configurado. Rate limiting desabilitado em desenvolvimento.');
+      }
+      // Permitir requisições mas logar o aviso
       return {
         limited: false,
         remaining: max,

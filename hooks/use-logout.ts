@@ -28,10 +28,20 @@ export function useLogout() {
       setIsLoggingOut(true)
 
       // 1. Chamar API de logout (limpa sessões no servidor)
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
+      try {
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+
+        if (!response.ok) {
+          console.warn('API de logout retornou erro:', response.status)
+          // Continuar mesmo assim - o logout local ainda deve funcionar
+        }
+      } catch (fetchError) {
+        // Erro de rede - continuar com logout local
+        console.warn('Erro ao chamar API de logout (rede):', fetchError)
+      }
 
       // 2. Logout local (limpa cookies do Supabase)
       const supabase = createClient()

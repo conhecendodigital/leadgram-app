@@ -140,10 +140,20 @@ export function validateWebhookSignature(
       .digest('hex')
 
     // Comparar hashes (timing-safe)
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(calculatedHash),
-      Buffer.from(receivedHash)
-    )
+    // Verificar se os hashes têm o mesmo tamanho antes de comparar
+    // timingSafeEqual lança erro se os buffers tiverem tamanhos diferentes
+    const calculatedBuffer = Buffer.from(calculatedHash)
+    const receivedBuffer = Buffer.from(receivedHash)
+
+    if (calculatedBuffer.length !== receivedBuffer.length) {
+      console.error('Webhook signature length mismatch', {
+        receivedLength: receivedBuffer.length,
+        calculatedLength: calculatedBuffer.length,
+      })
+      return false
+    }
+
+    const isValid = crypto.timingSafeEqual(calculatedBuffer, receivedBuffer)
 
     if (!isValid) {
       console.error('Webhook signature mismatch', {

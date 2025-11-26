@@ -14,6 +14,25 @@ import type {
   TestEmailData
 } from '@/lib/types/email';
 
+/**
+ * Sanitiza string HTML para prevenir XSS
+ * Remove tags HTML perigosas e escapa caracteres especiais
+ */
+function sanitizeHtml(input: string): string {
+  if (!input) return '';
+
+  return input
+    // Escapar caracteres HTML especiais
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    // Remover possíveis tentativas de injeção de script
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '');
+}
+
 export class EmailService {
   private supabase: SupabaseClient;
   private resend: Resend | null = null;
@@ -722,6 +741,10 @@ Ver Planos: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?tab=plans
   }
 
   private generateAdminNotificationHTML(data: AdminNotificationData): string {
+    // Sanitizar dados de entrada para prevenir XSS
+    const safeTitle = sanitizeHtml(data.title);
+    const safeMessage = sanitizeHtml(data.message);
+
     return `
 <!DOCTYPE html>
 <html>
@@ -739,7 +762,7 @@ Ver Planos: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?tab=plans
           <tr>
             <td style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
-                🔔 ${data.title}
+                ${safeTitle}
               </h1>
             </td>
           </tr>
@@ -748,7 +771,7 @@ Ver Planos: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?tab=plans
           <tr>
             <td style="padding: 40px;">
               <div style="color: #4b5563; line-height: 1.6; margin: 0 0 24px 0;">
-                ${data.message}
+                ${safeMessage}
               </div>
 
               ${data.link ? `
@@ -797,6 +820,9 @@ ${data.link ? `Ver Detalhes: ${data.link}` : ''}
   }
 
   private generateTestEmailHTML(data: TestEmailData): string {
+    // Sanitizar dados de entrada para prevenir XSS
+    const safeTestMessage = sanitizeHtml(data.test_message);
+
     return `
 <!DOCTYPE html>
 <html>
@@ -814,7 +840,7 @@ ${data.link ? `Ver Detalhes: ${data.link}` : ''}
           <tr>
             <td style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 40px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
-                🧪 Email de Teste
+                Email de Teste
               </h1>
             </td>
           </tr>
@@ -823,11 +849,11 @@ ${data.link ? `Ver Detalhes: ${data.link}` : ''}
           <tr>
             <td style="padding: 40px;">
               <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 24px;">
-                Teste bem-sucedido! ✅
+                Teste bem-sucedido!
               </h2>
 
               <p style="color: #4b5563; line-height: 1.6; margin: 0 0 24px 0;">
-                ${data.test_message}
+                ${safeTestMessage}
               </p>
 
               <div style="background-color: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 16px; margin: 0 0 24px 0;">

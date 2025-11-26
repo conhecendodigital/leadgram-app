@@ -57,9 +57,15 @@ export async function POST(request: NextRequest) {
 
   return withRateLimit(request, identifier, 20, 60, async () => {
     try {
+      // Validar JSON do body
+      let body
+      try {
+        body = await request.json()
+      } catch {
+        return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+      }
 
-    const body = await request.json()
-    const { title, theme, script, editor_instructions, status, funnel_stage, platforms } = body
+      const { title, theme, script, editor_instructions, status, funnel_stage, platforms } = body
 
     // Validação
     if (!title || !funnel_stage) {

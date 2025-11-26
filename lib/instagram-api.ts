@@ -174,11 +174,10 @@ export class InstagramAPI {
       return items.map((item: any) => {
         const likeCount = item.like_count || 0
         const commentCount = item.comment_count || 0
-        const followers = data.follower_count || 1000
+        // Garantir que followers nunca seja 0 ou negativo para evitar divisão por zero
+        const followers = Math.max(data.follower_count || 0, 1)
 
-        const engagementRate = followers > 0
-          ? ((likeCount + commentCount) / followers) * 100
-          : 0
+        const engagementRate = ((likeCount + commentCount) / followers) * 100
 
         return {
           id: item.id || item.pk,
