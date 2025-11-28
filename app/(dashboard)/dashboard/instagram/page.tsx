@@ -4,6 +4,10 @@ import InstagramConnect from '@/components/instagram/instagram-connect'
 import InstagramAccount from '@/components/instagram/instagram-account'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 
+// Forçar renderização dinâmica para sempre buscar dados atualizados
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const errorMessages: Record<string, string> = {
   no_code: 'Código de autorização não recebido',
   token_failed: 'Falha ao obter token de acesso',

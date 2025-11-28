@@ -91,26 +91,53 @@ export async function GET(request: NextRequest) {
     const accountMetrics = await accountMetricsResponse.json()
     console.log('✅ Métricas gerais recebidas')
 
-    // PASSO 2: Buscar posts recentes com métricas
-    const postsUrl = new URL(
+    // PASSO 2: Buscar TODOS os posts com métricas (com paginação)
+    let posts: any[] = []
+    let nextPageUrl: string | null = null
+
+    // Primeira requisição
+    const initialPostsUrl = new URL(
       `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/media`
     )
-    postsUrl.searchParams.set('fields', 'id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,insights.metric(impressions,reach,saved)')
-    postsUrl.searchParams.set('limit', '50')
-    postsUrl.searchParams.set('access_token', validAccount.access_token)
+    initialPostsUrl.searchParams.set('fields', 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,insights.metric(impressions,reach,saved)')
+    initialPostsUrl.searchParams.set('limit', '100') // Máximo permitido pela API
+    initialPostsUrl.searchParams.set('access_token', validAccount.access_token)
 
     console.log('📱 Buscando posts com insights...')
-    const postsResponse = await fetch(postsUrl.toString())
 
-    let posts = []
-    if (postsResponse.ok) {
-      const postsData = await postsResponse.json()
-      posts = postsData.data || []
-      console.log(`✅ ${posts.length} posts recebidos`)
-    } else {
-      const errorData = await postsResponse.json()
-      console.error('❌ Erro ao buscar posts:', errorData)
+    // Função para buscar uma página de posts
+    const fetchPostsPage = async (url: string) => {
+      const response = await fetch(url)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Erro ao buscar posts:', errorData)
+        return { data: [], paging: null }
+      }
+      return response.json()
     }
+
+    // Buscar primeira página
+    let postsData = await fetchPostsPage(initialPostsUrl.toString())
+    posts = postsData.data || []
+    nextPageUrl = postsData.paging?.next || null
+
+    // Continuar buscando enquanto houver mais páginas (máximo 10 páginas = ~1000 posts)
+    let pageCount = 1
+    const maxPages = 10
+
+    while (nextPageUrl && pageCount < maxPages) {
+      console.log(`📱 Buscando página ${pageCount + 1} de posts...`)
+      postsData = await fetchPostsPage(nextPageUrl)
+
+      if (postsData.data && postsData.data.length > 0) {
+        posts = [...posts, ...postsData.data]
+      }
+
+      nextPageUrl = postsData.paging?.next || null
+      pageCount++
+    }
+
+    console.log(`✅ ${posts.length} posts recebidos no total (${pageCount} página(s))`)
 
     // PASSO 3: Calcular métricas agregadas
     const totalPosts = posts.length
@@ -152,8 +179,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // PASSO 5: Identificar top posts
-    const topPosts = posts
+    // PASSO 5: Processar TODOS os posts com métricas
+    // media_type: IMAGE, VIDEO, CAROUSEL_ALBUM
+    // VIDEO = Reels, IMAGE/CAROUSEL_ALBUM = Feed
+    const allPosts = posts
       .map((post: any) => {
         const impressions = post.insights?.data?.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
         const reach = post.insights?.data?.find((i: any) => i.name === 'reach')?.values?.[0]?.value || 0
@@ -164,12 +193,19 @@ export async function GET(request: NextRequest) {
         const comments = post.comments_count || 0
         const engagement = likes + comments
 
+        // Determinar categoria: feed (IMAGE, CAROUSEL_ALBUM) ou reels (VIDEO)
+        const mediaType = post.media_type || 'IMAGE'
+        const category = mediaType === 'VIDEO' ? 'reels' : 'feed'
+
         return {
           id: post.id,
           caption: post.caption?.substring(0, 100) || '',
-          media_url: post.media_url,
+          media_url: post.media_url || post.thumbnail_url,
+          thumbnail_url: post.thumbnail_url || post.media_url,
           permalink: post.permalink,
           timestamp: post.timestamp,
+          media_type: mediaType,
+          category, // 'feed' ou 'reels'
           likes,
           comments,
           impressions,
@@ -180,7 +216,10 @@ export async function GET(request: NextRequest) {
         }
       })
       .sort((a: any, b: any) => b.engagement - a.engagement)
-      .slice(0, 10)
+
+    // Separar por categoria para estatísticas
+    const feedPosts = allPosts.filter((p: any) => p.category === 'feed')
+    const reelsPosts = allPosts.filter((p: any) => p.category === 'reels')
 
     // PASSO 6: Calcular crescimento de seguidores (aproximado)
     const followerGrowth = dailyData.length > 1 && dailyData[0].follower_count && dailyData[dailyData.length - 1].follower_count
@@ -204,9 +243,16 @@ export async function GET(request: NextRequest) {
         total_reach: totalPostReach,
         engagement_rate: isNaN(engagementRate) ? 0 : parseFloat(engagementRate.toFixed(2)),
         follower_growth: followerGrowth,
+        // Estatísticas por categoria
+        feed_count: feedPosts.length,
+        reels_count: reelsPosts.length,
       },
       daily_data: dailyData,
-      top_posts: topPosts,
+      // Retornar TODOS os posts (não mais limitado a 10)
+      top_posts: allPosts,
+      // Posts separados por categoria (opcional, para facilitar)
+      feed_posts: feedPosts,
+      reels_posts: reelsPosts,
       raw_metrics: accountMetrics.data || [],
     }
 

@@ -3,6 +3,10 @@ import { redirect } from 'next/navigation'
 import { BarChart3, Instagram } from 'lucide-react'
 import InstagramAnalyticsClient from '@/components/analytics/instagram-analytics-client'
 
+// Forçar renderização dinâmica para sempre buscar dados atualizados
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AnalyticsPage() {
   const supabase = await createServerClient()
 

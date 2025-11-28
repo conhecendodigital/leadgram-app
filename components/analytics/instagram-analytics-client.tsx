@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
-import { RefreshCw, TrendingUp, Users, Eye, Heart, MessageCircle, Award, Calendar, Clock } from 'lucide-react'
-import { showToast } from '@/lib/toast'
+import { TrendingUp, Users, Eye, Heart, MessageCircle, Calendar, Clock, List, Filter, Grid3X3, Film, Play } from 'lucide-react'
 import {
   calculateEngagementRate,
   calculateGrowthPercentage,
@@ -12,6 +11,9 @@ import {
   formatNumber,
   formatPercentage,
 } from '@/lib/analytics/metrics'
+
+type PostSortOption = 'engagement' | 'likes' | 'comments' | 'reach' | 'recent'
+type PostCategory = 'all' | 'feed' | 'reels'
 
 interface InstagramAnalyticsClientProps {
   account: {
@@ -28,8 +30,13 @@ export default function InstagramAnalyticsClient({
   account,
   historicalData,
 }: InstagramAnalyticsClientProps) {
-  const [loading, setLoading] = useState(false)
   const [insights, setInsights] = useState<any>(null)
+  const [postSortBy, setPostSortBy] = useState<PostSortOption>('engagement')
+  const [postCategory, setPostCategory] = useState<PostCategory>('all')
+  const [postsToShow, setPostsToShow] = useState(24)
+
+  // Ref para o elemento sentinela da rolagem infinita
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // Buscar insights ao carregar
   useEffect(() => {
@@ -47,34 +54,98 @@ export default function InstagramAnalyticsClient({
   }, [])
 
   const fetchInsights = async () => {
-    setLoading(true)
-    const loadingToast = showToast.loading('Buscando métricas do Instagram...')
-
     try {
       const response = await fetch('/api/instagram/insights')
       const data = await response.json()
 
       if (!response.ok) {
-        // Log detalhado do erro
         console.error('Erro detalhado da API:', data)
-
-        const errorMessage = data.details
-          ? `${data.error}: ${data.details}`
-          : data.error || 'Erro ao buscar insights'
-
-        throw new Error(errorMessage)
+        return
       }
 
       setInsights(data)
-      showToast.success('✅ Métricas atualizadas!', { id: loadingToast })
     } catch (error: any) {
       console.error('Error fetching insights:', error)
-      showToast.error(`❌ ${error.message}`, { id: loadingToast })
-    } finally {
-      setLoading(false)
     }
   }
 
+  // Extrair dados do insights (ou valores padrão se não houver dados)
+  const summary = insights?.summary || { total_impressions: 0, total_reach: 0, engagement_rate: 0, total_comments: 0, feed_count: 0, reels_count: 0 }
+  const daily_data = insights?.daily_data || []
+  const top_posts = insights?.top_posts || []
+
+  // Filtrar e ordenar posts baseado na categoria e filtro selecionados
+  // IMPORTANTE: useMemo deve estar ANTES de qualquer return condicional
+  const sortedPosts = useMemo(() => {
+    if (!top_posts || top_posts.length === 0) return []
+
+    // Primeiro filtrar por categoria (se não for "all")
+    let posts = [...top_posts]
+    if (postCategory !== 'all') {
+      posts = posts.filter((p: any) => p.category === postCategory)
+    }
+
+    // Depois ordenar
+    switch (postSortBy) {
+      case 'engagement':
+        return posts.sort((a: any, b: any) => b.engagement - a.engagement)
+      case 'likes':
+        return posts.sort((a: any, b: any) => b.likes - a.likes)
+      case 'comments':
+        return posts.sort((a: any, b: any) => b.comments - a.comments)
+      case 'reach':
+        return posts.sort((a: any, b: any) => (b.reach || 0) - (a.reach || 0))
+      case 'recent':
+        return posts.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      default:
+        return posts
+    }
+  }, [top_posts, postSortBy, postCategory])
+
+  const paginatedPosts = sortedPosts.slice(0, postsToShow)
+  const hasMorePosts = sortedPosts.length > postsToShow
+
+  // Contar posts por categoria
+  const feedCount = useMemo(() => top_posts.filter((p: any) => p.category === 'feed').length, [top_posts])
+  const reelsCount = useMemo(() => top_posts.filter((p: any) => p.category === 'reels').length, [top_posts])
+
+  // Intersection Observer para rolagem infinita
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (entry.isIntersecting && hasMorePosts) {
+          setPostsToShow(prev => prev + 24)
+        }
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Carrega antes de chegar ao fim
+        threshold: 0.1,
+      }
+    )
+
+    const currentRef = loadMoreRef.current
+    if (currentRef) {
+      observer.observe(currentRef)
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef)
+      }
+    }
+  }, [hasMorePosts])
+
+  const sortOptions = [
+    { value: 'engagement', label: 'Maior Engajamento' },
+    { value: 'likes', label: 'Mais Curtidas' },
+    { value: 'comments', label: 'Mais Comentários' },
+    { value: 'reach', label: 'Maior Alcance' },
+    { value: 'recent', label: 'Mais Recentes' },
+  ]
+
+  // Loading state - agora DEPOIS de todos os hooks
   if (!insights) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -85,8 +156,6 @@ export default function InstagramAnalyticsClient({
       </div>
     )
   }
-
-  const { summary, daily_data, top_posts } = insights
 
   // Calcular métricas adicionais
   // Impressões vêm dos posts individuais, não dos dados diários
@@ -135,19 +204,6 @@ export default function InstagramAnalyticsClient({
 
   return (
     <div className="space-y-6">
-      {/* Botão Atualizar */}
-      <div className="flex justify-end">
-        <button
-          onClick={fetchInsights}
-          disabled={loading}
-          className="flex items-center justify-center gap-2 px-4 sm:px-4 py-2 sm:py-2 bg-primary hover:bg-primary/90 text-white rounded-lg sm:rounded-xl font-medium transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">{loading ? 'Atualizando...' : 'Atualizar'}</span>
-          <span className="sm:hidden">{loading ? 'Carregando...' : 'Atualizar'}</span>
-        </button>
-      </div>
-
       {/* Cards de Métricas Principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
@@ -280,67 +336,6 @@ export default function InstagramAnalyticsClient({
         )}
       </div>
 
-      {/* Top Posts */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-pink-100 rounded-lg">
-            <Award className="w-5 h-5 text-pink-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Top 5 Posts (Maior Engajamento)
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-          {top_posts.slice(0, 5).map((post: any, index: number) => (
-            <a
-              key={post.id}
-              href={post.permalink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              {/* Ranking Badge */}
-              <div className="absolute top-2 left-2 w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center z-10">
-                <span className="text-sm font-bold text-white">{index + 1}</span>
-              </div>
-
-              {/* Image */}
-              {post.media_url && (
-                <div className="relative w-full aspect-square">
-                  <Image
-                    src={post.media_url}
-                    alt={post.caption || `Post ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                  />
-                </div>
-              )}
-
-              {/* Overlay com Métricas */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" />
-                      {formatNumber(post.likes)}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MessageCircle className="w-4 h-4" />
-                      {formatNumber(post.comments)}
-                    </div>
-                  </div>
-                  <p className="text-xs mt-2 opacity-80">
-                    Engajamento: {formatPercentage(post.engagement_rate)}
-                  </p>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-
       {/* Gráfico de Crescimento (Últimos 30 dias) */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">
@@ -366,6 +361,225 @@ export default function InstagramAnalyticsClient({
           <span className="hidden sm:inline">~15 dias</span>
           <span>Hoje</span>
         </div>
+      </div>
+
+      {/* Listagem de Todos os Posts com Abas Feed/Reels */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        {/* Header com título e filtro */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <List className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Todos os Posts
+              </h3>
+              <p className="text-sm text-gray-500">
+                {top_posts.length} posts no total • {feedCount} feed • {reelsCount} reels
+              </p>
+            </div>
+          </div>
+
+          {/* Filtro de Ordenação */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <select
+              value={postSortBy}
+              onChange={(e) => {
+                setPostSortBy(e.target.value as PostSortOption)
+                setPostsToShow(12) // Reset paginação ao mudar filtro
+              }}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Abas Feed / Reels */}
+        <div className="flex border-b border-gray-200 mb-6">
+          <button
+            onClick={() => {
+              setPostCategory('all')
+              setPostsToShow(12)
+            }}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              postCategory === 'all'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <List className="w-4 h-4" />
+            Todos
+            <span className={`px-2 py-0.5 text-xs rounded-full ${
+              postCategory === 'all' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {top_posts.length}
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setPostCategory('feed')
+              setPostsToShow(12)
+            }}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              postCategory === 'feed'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Grid3X3 className="w-4 h-4" />
+            Feed
+            <span className={`px-2 py-0.5 text-xs rounded-full ${
+              postCategory === 'feed' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {feedCount}
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setPostCategory('reels')
+              setPostsToShow(12)
+            }}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              postCategory === 'reels'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Film className="w-4 h-4" />
+            Reels
+            <span className={`px-2 py-0.5 text-xs rounded-full ${
+              postCategory === 'reels' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {reelsCount}
+            </span>
+          </button>
+        </div>
+
+        {/* Indicador de filtro ativo */}
+        {postSortBy !== 'engagement' && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">
+            <span>Ordenado por:</span>
+            <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg font-medium">
+              {sortOptions.find(o => o.value === postSortBy)?.label}
+            </span>
+            <span className="text-gray-400">•</span>
+            <span>{sortedPosts.length} posts</span>
+          </div>
+        )}
+
+        {/* Grid de Posts */}
+        {sortedPosts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              {postCategory === 'reels' ? (
+                <Film className="w-8 h-8 text-gray-400" />
+              ) : (
+                <Grid3X3 className="w-8 h-8 text-gray-400" />
+              )}
+            </div>
+            <p className="text-gray-500">
+              {postCategory === 'feed' && 'Nenhum post de feed encontrado'}
+              {postCategory === 'reels' && 'Nenhum reel encontrado'}
+              {postCategory === 'all' && 'Nenhum post encontrado'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              {paginatedPosts.map((post: any, index: number) => (
+                <a
+                  key={post.id}
+                  href={post.permalink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                >
+                  {/* Ranking Badge */}
+                  <div className="absolute top-2 left-2 w-6 h-6 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center z-10">
+                    <span className="text-xs font-bold text-white">{index + 1}</span>
+                  </div>
+
+                  {/* Indicador de Reels */}
+                  {post.category === 'reels' && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <Play className="w-5 h-5 text-white drop-shadow-lg" fill="white" />
+                    </div>
+                  )}
+
+                  {/* Image */}
+                  {(post.media_url || post.thumbnail_url) && (
+                    <div className="relative w-full aspect-square">
+                      <Image
+                        src={post.thumbnail_url || post.media_url}
+                        alt={post.caption || `Post ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                      />
+                    </div>
+                  )}
+
+                  {/* Overlay com Métricas */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="flex items-center gap-1">
+                          <Heart className="w-3 h-3" />
+                          {formatNumber(post.likes)}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3" />
+                          {formatNumber(post.comments)}
+                        </div>
+                      </div>
+                      {post.reach > 0 && (
+                        <p className="text-xs mt-1 opacity-80">
+                          Alcance: {formatNumber(post.reach)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Métricas Visíveis (Mobile) */}
+                  <div className="p-2 sm:hidden">
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Heart className="w-3 h-3 text-pink-500" />
+                        {formatNumber(post.likes)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageCircle className="w-3 h-3 text-blue-500" />
+                        {formatNumber(post.comments)}
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            {/* Sentinela para Rolagem Infinita */}
+            <div ref={loadMoreRef} className="mt-6 py-4">
+              {hasMorePosts && (
+                <div className="flex items-center justify-center gap-3 text-gray-500">
+                  <div className="w-5 h-5 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
+                  <span className="text-sm">Carregando mais posts...</span>
+                </div>
+              )}
+              {!hasMorePosts && sortedPosts.length > 0 && (
+                <p className="text-center text-sm text-gray-400">
+                  Todos os {sortedPosts.length} posts carregados
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

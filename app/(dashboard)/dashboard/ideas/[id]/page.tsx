@@ -14,6 +14,10 @@ import GoogleDriveSection from './google-drive-section'
 
 import type { Database } from '@/types/database.types'
 
+// Forçar renderização dinâmica para sempre buscar dados atualizados
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
   video_url?: string | null
   drive_folder_id?: string | null

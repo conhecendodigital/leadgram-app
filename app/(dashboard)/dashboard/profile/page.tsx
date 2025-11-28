@@ -5,6 +5,10 @@ import ProfileSettings from '@/components/profile/profile-settings'
 import AccountSettings from '@/components/profile/account-settings'
 import { User } from 'lucide-react'
 
+// Forçar renderização dinâmica para sempre buscar dados atualizados
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function ProfilePage() {
   const supabase = await createServerClient()
 

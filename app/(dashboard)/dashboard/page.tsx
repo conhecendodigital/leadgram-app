@@ -6,6 +6,10 @@ import DashboardError from '@/components/dashboard/dashboard-error'
 import SkipLink from '@/components/skip-link'
 import type { Database } from '@/types/database.types'
 
+// Forçar renderização dinâmica para sempre buscar dados atualizados
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type IdeaWithRelations = Database['public']['Tables']['ideas']['Row'] & {
   idea_platforms?: Array<
     Database['public']['Tables']['idea_platforms']['Row'] & {

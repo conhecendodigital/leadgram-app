@@ -3,6 +3,10 @@ import { redirect } from 'next/navigation'
 import { Settings as SettingsIcon } from 'lucide-react'
 import SettingsTabs from '@/components/settings/settings-tabs'
 
+// Forçar renderização dinâmica para sempre buscar dados atualizados
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function SettingsPage() {
   const supabase = await createServerClient()
 
