@@ -91,19 +91,21 @@ export async function GET(request: NextRequest) {
     const accountMetrics = await accountMetricsResponse.json()
     console.log('✅ Métricas gerais recebidas')
 
-    // PASSO 2: Buscar TODOS os posts com métricas (com paginação)
+    // PASSO 2: Buscar TODOS os posts (com paginação)
+    // IMPORTANTE: Buscar posts SEM insights primeiro para garantir que todos são retornados
+    // Alguns posts podem não ter insights disponíveis e seriam omitidos se pedíssemos junto
     let posts: any[] = []
     let nextPageUrl: string | null = null
 
-    // Primeira requisição
+    // Primeira requisição - busca básica sem insights
     const initialPostsUrl = new URL(
       `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/media`
     )
-    initialPostsUrl.searchParams.set('fields', 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,insights.metric(impressions,reach,saved)')
+    initialPostsUrl.searchParams.set('fields', 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count')
     initialPostsUrl.searchParams.set('limit', '100') // Máximo permitido pela API
     initialPostsUrl.searchParams.set('access_token', validAccount.access_token)
 
-    console.log('📱 Buscando posts com insights...')
+    console.log('📱 Buscando todos os posts...')
 
     // Função para buscar uma página de posts
     const fetchPostsPage = async (url: string) => {
@@ -150,19 +152,57 @@ export async function GET(request: NextRequest) {
     const postsWithId = posts.filter((p: any) => p.id)
     console.log(`📊 Posts com ID válido: ${postsWithId.length}/${posts.length}`)
 
+    // PASSO 2.5: Buscar insights para cada post em batches
+    // Fazemos isso separadamente para não perder posts que não têm insights
+    console.log('📈 Buscando insights individuais dos posts...')
+
+    const postsWithInsights = new Map<string, any>()
+    const BATCH_SIZE = 50 // Processar 50 posts por vez para não sobrecarregar
+
+    for (let i = 0; i < posts.length; i += BATCH_SIZE) {
+      const batch = posts.slice(i, i + BATCH_SIZE)
+
+      // Buscar insights em paralelo para o batch
+      const insightsPromises = batch.map(async (post: any) => {
+        try {
+          const insightsUrl = `https://graph.facebook.com/v18.0/${post.id}/insights?metric=impressions,reach,saved&access_token=${validAccount.access_token}`
+          const response = await fetch(insightsUrl)
+
+          if (response.ok) {
+            const data = await response.json()
+            return { postId: post.id, insights: data.data || [] }
+          }
+          return { postId: post.id, insights: [] }
+        } catch {
+          return { postId: post.id, insights: [] }
+        }
+      })
+
+      const batchResults = await Promise.all(insightsPromises)
+      batchResults.forEach(result => {
+        postsWithInsights.set(result.postId, result.insights)
+      })
+
+      console.log(`   📊 Processado batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(posts.length / BATCH_SIZE)}`)
+    }
+
+    console.log(`✅ Insights obtidos para ${postsWithInsights.size} posts`)
+
     // PASSO 3: Calcular métricas agregadas
     const totalPosts = posts.length
     const totalLikes = posts.reduce((sum: number, post: any) => sum + (post.like_count || 0), 0)
     const totalComments = posts.reduce((sum: number, post: any) => sum + (post.comments_count || 0), 0)
 
-    // Calcular total de impressions e reach dos posts
+    // Calcular total de impressions e reach dos posts usando o Map de insights
     const totalPostImpressions = posts.reduce((sum: number, post: any) => {
-      const impressions = post.insights?.data?.find((i: any) => i.name === 'impressions')
+      const insights = postsWithInsights.get(post.id) || []
+      const impressions = insights.find((i: any) => i.name === 'impressions')
       return sum + (impressions?.values?.[0]?.value || 0)
     }, 0)
 
     const totalPostReach = posts.reduce((sum: number, post: any) => {
-      const reach = post.insights?.data?.find((i: any) => i.name === 'reach')
+      const insights = postsWithInsights.get(post.id) || []
+      const reach = insights.find((i: any) => i.name === 'reach')
       return sum + (reach?.values?.[0]?.value || 0)
     }, 0)
 
@@ -197,9 +237,11 @@ export async function GET(request: NextRequest) {
 
     const allPosts = posts
       .map((post: any) => {
-        const impressions = post.insights?.data?.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
-        const reach = post.insights?.data?.find((i: any) => i.name === 'reach')?.values?.[0]?.value || 0
-        const saved = post.insights?.data?.find((i: any) => i.name === 'saved')?.values?.[0]?.value || 0
+        // Buscar insights do Map
+        const insights = postsWithInsights.get(post.id) || []
+        const impressions = insights.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
+        const reach = insights.find((i: any) => i.name === 'reach')?.values?.[0]?.value || 0
+        const saved = insights.find((i: any) => i.name === 'saved')?.values?.[0]?.value || 0
 
         // Calcular engagement manualmente: likes + comments
         const likes = post.like_count || 0
