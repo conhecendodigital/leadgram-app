@@ -121,9 +121,9 @@ export async function GET(request: NextRequest) {
     posts = postsData.data || []
     nextPageUrl = postsData.paging?.next || null
 
-    // Continuar buscando enquanto houver mais páginas (máximo 10 páginas = ~1000 posts)
+    // Continuar buscando enquanto houver mais páginas (sem limite)
     let pageCount = 1
-    const maxPages = 10
+    const maxPages = 50 // Aumentado para suportar até ~5000 posts
 
     while (nextPageUrl && pageCount < maxPages) {
       console.log(`📱 Buscando página ${pageCount + 1} de posts...`)
@@ -131,13 +131,24 @@ export async function GET(request: NextRequest) {
 
       if (postsData.data && postsData.data.length > 0) {
         posts = [...posts, ...postsData.data]
+        console.log(`   📥 +${postsData.data.length} posts (total: ${posts.length})`)
       }
 
       nextPageUrl = postsData.paging?.next || null
       pageCount++
+
+      // Se não houver mais páginas, sair do loop
+      if (!nextPageUrl) {
+        console.log(`📄 Fim da paginação - todas as páginas carregadas`)
+        break
+      }
     }
 
     console.log(`✅ ${posts.length} posts recebidos no total (${pageCount} página(s))`)
+
+    // Debug: verificar se todos os posts têm ID
+    const postsWithId = posts.filter((p: any) => p.id)
+    console.log(`📊 Posts com ID válido: ${postsWithId.length}/${posts.length}`)
 
     // PASSO 3: Calcular métricas agregadas
     const totalPosts = posts.length
@@ -182,6 +193,8 @@ export async function GET(request: NextRequest) {
     // PASSO 5: Processar TODOS os posts com métricas
     // media_type: IMAGE, VIDEO, CAROUSEL_ALBUM
     // VIDEO = Reels, IMAGE/CAROUSEL_ALBUM = Feed
+    console.log(`📊 Processando ${posts.length} posts para métricas...`)
+
     const allPosts = posts
       .map((post: any) => {
         const impressions = post.insights?.data?.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
@@ -216,6 +229,8 @@ export async function GET(request: NextRequest) {
         }
       })
       .sort((a: any, b: any) => b.engagement - a.engagement)
+
+    console.log(`✅ ${allPosts.length} posts processados com sucesso`)
 
     // Separar por categoria para estatísticas
     const feedPosts = allPosts.filter((p: any) => p.category === 'feed')

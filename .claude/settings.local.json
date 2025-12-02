@@ -33,7 +33,9 @@
       "Bash(NUL)",
       "Bash(dir /b \"C:\\Users\\guilh\\OneDrive\\Documentos\\Projetos\\leadgram-app\")",
       "Bash(dir /b NUL)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(xargs:*)",
+      "Bash(head:*)"
     ],
     "deny": [],
     "ask": []

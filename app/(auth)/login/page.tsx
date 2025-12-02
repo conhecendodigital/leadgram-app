@@ -169,6 +169,8 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   required
+                  autoComplete="off"
+                  data-form-type="other"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"

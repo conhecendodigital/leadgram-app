@@ -191,6 +191,9 @@ export default function RegisterPage() {
                   type="password"
                   required
                   minLength={PASSWORD_MIN_LENGTH}
+                  autoComplete="new-password"
+                  data-form-type="other"
+                  data-lpignore="true"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
@@ -212,6 +215,9 @@ export default function RegisterPage() {
                   type="password"
                   required
                   minLength={PASSWORD_MIN_LENGTH}
+                  autoComplete="new-password"
+                  data-form-type="other"
+                  data-lpignore="true"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
