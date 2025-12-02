@@ -35,7 +35,8 @@
       "Bash(dir /b NUL)",
       "Bash(cat:*)",
       "Bash(xargs:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "WebFetch(domain:www.instagram.com)"
     ],
     "deny": [],
     "ask": []
