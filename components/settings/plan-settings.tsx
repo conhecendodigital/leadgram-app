@@ -17,10 +17,10 @@ const plans = [
     icon: Gift,
     color: 'from-gray-500 to-gray-600',
     features: [
-      '10 ideias por mês',
-      '1 conta Instagram',
-      'Métricas básicas',
-      'Suporte comunitário'
+      '20 ideias por mês',
+      '5 posts sincronizados/mês',
+      'Métricas do Instagram',
+      'Dashboard básico'
     ]
   },
   {
@@ -32,11 +32,11 @@ const plans = [
     popular: true,
     features: [
       '100 ideias por mês',
-      '3 contas Instagram',
-      'Análise de concorrentes',
-      'Auto-save de ideias',
-      'Métricas avançadas',
-      'Suporte prioritário'
+      '30 posts sincronizados/mês',
+      'Métricas completas',
+      'Upload para Google Drive',
+      'Explorar perfis públicos',
+      'Suporte por email'
     ]
   },
   {
@@ -47,12 +47,11 @@ const plans = [
     color: 'from-orange-500 to-pink-600',
     features: [
       'Ideias ilimitadas',
-      '10 contas Instagram',
-      'IA de sugestões avançada',
-      'Análise preditiva',
-      'Auto-agendamento',
-      'Prioridade máxima no suporte',
-      'Acesso antecipado a recursos'
+      'Posts ilimitados',
+      'Métricas completas',
+      'Upload para Google Drive',
+      'Explorar perfis públicos',
+      'Suporte prioritário'
     ]
   }
 ]

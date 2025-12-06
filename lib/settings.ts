@@ -122,13 +122,13 @@ export async function isMaintenanceMode(): Promise<boolean> {
 export async function getIdeaLimit(planType: string): Promise<number> {
   switch (planType) {
     case 'free':
-      return (await getSetting('free_max_ideas')) ?? 10
+      return (await getSetting('free_max_ideas')) ?? 20
     case 'pro':
-      return (await getSetting('pro_max_ideas')) ?? 50
+      return (await getSetting('pro_max_ideas')) ?? 100
     case 'premium':
       return (await getSetting('premium_max_ideas')) ?? -1
     default:
-      return 10
+      return 20
   }
 }
 

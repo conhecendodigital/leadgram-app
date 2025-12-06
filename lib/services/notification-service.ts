@@ -1,12 +1,15 @@
 import { createClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AdminNotification, NotificationType, NotificationSettings } from '@/lib/types/notifications';
+import { EmailService } from './email-service';
 
 export class NotificationService {
   private supabase: SupabaseClient;
+  private emailService: EmailService;
 
   constructor(supabaseClient?: SupabaseClient) {
     this.supabase = supabaseClient || createClient();
+    this.emailService = new EmailService(this.supabase);
   }
 
   async createNotification(
@@ -33,7 +36,7 @@ export class NotificationService {
     if (error) throw error;
 
     // Verificar se deve enviar email
-    await this.checkAndSendEmail(type, title, message);
+    await this.checkAndSendEmail(type, title, message, link);
 
     return data;
   }
@@ -85,18 +88,39 @@ export class NotificationService {
   private async checkAndSendEmail(
     type: NotificationType,
     title: string,
-    message: string
+    message: string,
+    link?: string
   ) {
-    const { data: settings } = await (this.supabase
-      .from('admin_notification_settings') as any)
-      .select('*')
-      .maybeSingle();
+    try {
+      const { data: settings } = await (this.supabase
+        .from('admin_notification_settings') as any)
+        .select('*')
+        .maybeSingle();
 
-    if (!settings?.email_on_errors || type !== 'system_error') return;
-    if (!settings.admin_email) return;
+      if (!settings?.admin_email) return;
 
-    // TODO: Implementar envio de email
-    // await sendEmail(settings.admin_email, title, message);
+      // Verificar se deve enviar email baseado no tipo de notificação
+      const shouldSendEmail =
+        (type === 'system_error' && settings.email_on_errors) ||
+        (type === 'payment' && settings.notify_payments) ||
+        (type === 'cancellation' && settings.notify_cancellations) ||
+        (type === 'new_user' && settings.notify_new_users);
+
+      if (!shouldSendEmail) return;
+
+      // Enviar email usando o EmailService
+      await this.emailService.sendAdminNotification(settings.admin_email, {
+        title,
+        message,
+        link: link ? `${process.env.NEXT_PUBLIC_APP_URL}${link}` : undefined,
+        metadata: { type }
+      });
+
+      console.log(`📧 Email de notificação enviado para ${settings.admin_email} (${type})`);
+    } catch (error) {
+      // Não propagar erro para não interromper a criação da notificação
+      console.error('❌ Erro ao enviar email de notificação:', error);
+    }
   }
 
   async getSettings(): Promise<NotificationSettings | null> {
