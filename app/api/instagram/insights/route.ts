@@ -209,7 +209,26 @@ export async function GET(request: NextRequest) {
       ? ((totalEngagement / totalPosts) / validAccount.followers_count) * 100
       : 0
 
-    // PASSO 4: Processar dados diários (últimos 30 dias)
+    // PASSO 4: Buscar histórico de seguidores do banco de dados
+    // Isso permite mostrar a evolução real dos seguidores ao longo do tempo
+    const { data: historicalInsights } = await supabase
+      .from('instagram_insights')
+      .select('date, follower_count, impressions, reach, total_likes, total_comments')
+      .eq('instagram_account_id', validAccount.id)
+      .order('date', { ascending: true })
+      .limit(30)
+
+    // Criar mapa de histórico por data
+    const historicalMap = new Map<string, any>()
+    if (historicalInsights && historicalInsights.length > 0) {
+      historicalInsights.forEach((h: any) => {
+        const dateStr = h.date?.split('T')[0] || h.date
+        historicalMap.set(dateStr, h)
+      })
+      console.log(`📚 Histórico carregado do banco: ${historicalInsights.length} dias`)
+    }
+
+    // PASSO 4.1: Processar dados diários (últimos 30 dias)
     // Dados da API de métricas da CONTA (não dos posts individuais)
     const dailyData: any[] = []
 
@@ -235,7 +254,7 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      console.log(`📊 Dados diários processados: ${dailyData.length} dias`)
+      console.log(`📊 Dados diários da API: ${dailyData.length} dias`)
       console.log(`   - Impressões disponíveis: ${impressionsMetric ? 'Sim' : 'Não'}`)
       console.log(`   - Alcance disponível: ${reachMetric ? 'Sim' : 'Não'}`)
       console.log(`   - Seguidores disponível: ${followerMetric ? 'Sim' : 'Não'}`)
@@ -243,18 +262,31 @@ export async function GET(request: NextRequest) {
 
     // Se não houver dados diários da API, criar estrutura baseada nos últimos 30 dias
     if (dailyData.length === 0) {
-      console.log('⚠️ Sem dados de métricas de conta, criando estrutura baseada em datas')
+      console.log('⚠️ Sem dados da API de métricas, usando histórico do banco e posts')
       for (let i = 29; i >= 0; i--) {
         const date = new Date()
         date.setDate(date.getDate() - i)
         const dateStr = date.toISOString().split('T')[0]
+
+        // Buscar dados do histórico se disponível
+        const historical = historicalMap.get(dateStr)
+
         dailyData.push({
           date: dateStr,
-          impressions: 0,
-          reach: 0,
-          follower_count: validAccount.followers_count || 0,
+          impressions: historical?.impressions || 0,
+          reach: historical?.reach || 0,
+          follower_count: historical?.follower_count || validAccount.followers_count || 0,
         })
       }
+    } else {
+      // Complementar dados da API com histórico do banco para seguidores
+      dailyData.forEach((day: any) => {
+        const historical = historicalMap.get(day.date)
+        // Se API não retornou follower_count mas temos no histórico, usar
+        if ((day.follower_count === 0 || !day.follower_count) && historical?.follower_count) {
+          day.follower_count = historical.follower_count
+        }
+      })
     }
 
     // Agregar likes, comentários e métricas dos posts por dia de PUBLICAÇÃO
@@ -386,20 +418,32 @@ export async function GET(request: NextRequest) {
       raw_metrics: accountMetrics.data || [],
     }
 
-    // PASSO 7: Salvar snapshot no banco para histórico
-    await (supabase.from('instagram_insights') as any).insert({
-      instagram_account_id: validAccount.id,
-      date: new Date().toISOString().split('T')[0],
-      impressions: totalPostImpressions, // De posts individuais
-      reach: totalPostReach, // De posts individuais
-      profile_views: 0, // Não disponível na API atual
-      follower_count: validAccount.followers_count,
-      engagement_rate: isNaN(engagementRate) ? 0 : parseFloat(engagementRate.toFixed(2)),
-      total_likes: totalLikes,
-      total_comments: totalComments,
-    })
+    // PASSO 7: Salvar snapshot no banco para histórico (UPSERT - atualiza se já existir)
+    const today = new Date().toISOString().split('T')[0]
+    const { error: upsertError } = await (supabase
+      .from('instagram_insights') as any)
+      .upsert({
+        instagram_account_id: validAccount.id,
+        date: today,
+        impressions: totalPostImpressions,
+        reach: totalPostReach,
+        profile_views: 0,
+        follower_count: validAccount.followers_count,
+        engagement_rate: isNaN(engagementRate) ? 0 : parseFloat(engagementRate.toFixed(2)),
+        total_likes: totalLikes,
+        total_comments: totalComments,
+        media_count: totalPosts,
+      }, {
+        onConflict: 'instagram_account_id,date',
+      })
 
-    console.log('✅ Insights processados e salvos')
+    if (upsertError) {
+      console.error('⚠️ Erro ao salvar snapshot:', upsertError.message)
+    } else {
+      console.log('✅ Snapshot salvo para:', today)
+    }
+
+    console.log('✅ Insights processados com sucesso')
 
     return NextResponse.json(response)
   } catch (error: any) {
