@@ -2,9 +2,12 @@
 
 import NextImage from 'next/image'
 import { Instagram, Users, Image, Calendar, RefreshCw, XCircle, Loader, AlertTriangle, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { showToast } from '@/lib/toast'
+import UpgradeBanner from '@/components/plan/upgrade-banner'
+import UsageIndicator from '@/components/plan/usage-indicator'
+import { usePlanLimits } from '@/hooks/usePlanLimits'
 
 interface InstagramAccountProps {
   account: {
@@ -26,11 +29,16 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [needsReconnect, setNeedsReconnect] = useState(false)
+  const [limitWarning, setLimitWarning] = useState<string | null>(null)
+
+  // Hook de limites do plano
+  const { limits, canSyncPost, refetch } = usePlanLimits()
 
   const handleSync = async () => {
     setSyncing(true)
     setSyncError(null)
     setNeedsReconnect(false)
+    setLimitWarning(null)
     const loadingToast = showToast.loading('Sincronizando Instagram...')
 
     try {
@@ -52,6 +60,15 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
         throw new Error(data.error || 'Erro ao sincronizar')
       }
 
+      // Verificar se atingiu limite
+      if (data.planLimits?.limitReached) {
+        setLimitWarning(
+          `Limite de posts atingido (${data.planLimits.postLimit}/mês). ` +
+          `${data.planLimits.skippedDueToLimit} posts não foram sincronizados. ` +
+          `Faça upgrade para sincronizar mais.`
+        )
+      }
+
       // Sucesso
       showToast.success(
         `✅ Sincronizado! ${data.newPosts || 0} novos posts importados`,
@@ -60,6 +77,9 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
 
       setSyncError(null)
       setNeedsReconnect(false)
+
+      // Atualizar limites
+      refetch()
 
       // Refresh da página para mostrar dados atualizados
       router.refresh()
@@ -106,8 +126,37 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 lg:p-8 shadow-sm">
-      <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
+    <div className="space-y-4">
+      {/* Banner de Limite (se próximo ou atingido) */}
+      {limits && limits.limits.posts.limit !== -1 && (
+        <UpgradeBanner
+          type="posts"
+          current={limits.limits.posts.current}
+          limit={limits.limits.posts.limit}
+          planType={limits.planType}
+        />
+      )}
+
+      {/* Aviso de limite atingido na sincronização */}
+      {limitWarning && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-800">{limitWarning}</p>
+            </div>
+            <button
+              onClick={() => setLimitWarning(null)}
+              className="p-1 hover:bg-amber-100 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4 text-amber-600" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 lg:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           {/* Profile Picture */}
           {account.profile_picture_url ? (
@@ -253,6 +302,19 @@ export default function InstagramAccount({ account }: InstagramAccountProps) {
           Última sincronização: {formatDate(account.last_sync_at)}
         </div>
       )}
+
+      {/* Indicador de uso de posts */}
+      {limits && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <UsageIndicator
+            current={limits.limits.posts.current}
+            limit={limits.limits.posts.limit}
+            label="Posts sincronizados este mês"
+            size="sm"
+          />
+        </div>
+      )}
+      </div>
 
       {/* Disconnect Confirmation Modal */}
       {showDisconnectModal && (

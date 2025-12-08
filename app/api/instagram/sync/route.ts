@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { withRateLimit, getRequestIdentifier } from '@/lib/api-middleware'
+import { getPostLimit } from '@/lib/settings'
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerClient()
@@ -37,6 +38,31 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Verificar plano do usuário e limite de posts
+    const { data: subscription } = await (supabase
+      .from('user_subscriptions') as any)
+      .select('plan_type')
+      .eq('user_id', user.id)
+      .single()
+
+    const planType = subscription?.plan_type || 'free'
+    const postLimit = await getPostLimit(planType)
+
+    // Contar posts sincronizados do mês atual
+    const firstDayOfMonth = new Date()
+    firstDayOfMonth.setDate(1)
+    firstDayOfMonth.setHours(0, 0, 0, 0)
+
+    const { count: currentPostsCount } = await (supabase
+      .from('instagram_posts') as any)
+      .select('*', { count: 'exact', head: true })
+      .eq('instagram_account_id', account.id)
+      .gte('synced_at', firstDayOfMonth.toISOString())
+
+    // Verificar se já atingiu o limite (apenas para novos posts)
+    const canSyncNewPosts = postLimit === -1 || (currentPostsCount || 0) < postLimit
+    const remainingSlots = postLimit === -1 ? Infinity : Math.max(0, postLimit - (currentPostsCount || 0))
 
     // Verificar se o token ainda é válido
     if (account.token_expires_at) {
@@ -185,18 +211,39 @@ export async function POST(request: NextRequest) {
 
     let newPostsCount = 0
     let updatedPostsCount = 0
+    let limitReached = false
+    let skippedDueToLimit = 0
 
-    // Bulk insert de novos posts
+    // Bulk insert de novos posts (respeitando limite do plano)
     if (postsToInsert.length > 0) {
-      console.log(`➕ Inserindo ${postsToInsert.length} novos posts...`)
-      const { error: insertError } = await (supabase
-        .from('instagram_posts') as any)
-        .insert(postsToInsert)
-
-      if (!insertError) {
-        newPostsCount = postsToInsert.length
+      // Se não pode sincronizar novos posts, pular inserção
+      if (!canSyncNewPosts) {
+        limitReached = true
+        skippedDueToLimit = postsToInsert.length
+        console.log(`⚠️ Limite de posts atingido (${postLimit}). Pulando ${skippedDueToLimit} novos posts.`)
       } else {
-        console.error('❌ Erro ao inserir posts:', insertError)
+        // Limitar quantidade de posts a inserir baseado no plano
+        const postsToInsertLimited = remainingSlots === Infinity
+          ? postsToInsert
+          : postsToInsert.slice(0, remainingSlots)
+
+        skippedDueToLimit = postsToInsert.length - postsToInsertLimited.length
+
+        if (skippedDueToLimit > 0) {
+          limitReached = true
+          console.log(`⚠️ Limite parcial: inserindo ${postsToInsertLimited.length} de ${postsToInsert.length} posts`)
+        }
+
+        console.log(`➕ Inserindo ${postsToInsertLimited.length} novos posts...`)
+        const { error: insertError } = await (supabase
+          .from('instagram_posts') as any)
+          .insert(postsToInsertLimited)
+
+        if (!insertError) {
+          newPostsCount = postsToInsertLimited.length
+        } else {
+          console.error('❌ Erro ao inserir posts:', insertError)
+        }
       }
     }
 
@@ -259,12 +306,30 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', account.id)
 
+    // Construir mensagem de resposta
+    let message = `${newPostsCount} novos posts importados, ${updatedPostsCount} posts atualizados`
+
+    if (limitReached) {
+      message += `. Limite do plano ${planType} atingido (${postLimit} posts/mês)`
+      if (skippedDueToLimit > 0) {
+        message += ` - ${skippedDueToLimit} posts não foram sincronizados`
+      }
+    }
+
     return NextResponse.json({
       success: true,
       newPosts: newPostsCount,
       updatedPosts: updatedPostsCount,
       totalPosts: instagramData.data.length,
-      message: `${newPostsCount} novos posts importados, ${updatedPostsCount} posts atualizados`,
+      message,
+      // Informações de limite para o frontend
+      planLimits: {
+        planType,
+        postLimit,
+        currentPosts: (currentPostsCount || 0) + newPostsCount,
+        limitReached,
+        skippedDueToLimit,
+      },
     })
     } catch (error: any) {
       console.error('Sync error:', error)

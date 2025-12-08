@@ -6,6 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import { Plus, Filter, Search, X } from 'lucide-react'
 import IdeaCard from '@/components/ideas/idea-card'
 import GoogleDriveConnect from '@/components/google-drive/google-drive-connect'
+import UpgradeBanner from '@/components/plan/upgrade-banner'
+import UsageIndicator from '@/components/plan/usage-indicator'
+import { usePlanLimits } from '@/hooks/usePlanLimits'
 import type { Idea, IdeaStatus, FunnelStage } from '@/types/idea.types'
 
 type SortOption = 'newest' | 'oldest' | 'most-views' | 'title-asc'
@@ -19,6 +22,9 @@ export default function IdeasPage() {
   const [funnelFilter, setFunnelFilter] = useState<FunnelStage | 'all'>('all')
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [itemsToShow, setItemsToShow] = useState(20)
+
+  // Hook de limites do plano
+  const { limits, canCreateIdea } = usePlanLimits()
 
   useEffect(() => {
     fetchIdeas()
@@ -167,6 +173,18 @@ export default function IdeasPage() {
           </div>
         )}
 
+        {/* Banner de Limite (se próximo ou atingido) */}
+        {limits && limits.limits.ideas.limit !== -1 && (
+          <div className="mb-6">
+            <UpgradeBanner
+              type="ideas"
+              current={limits.limits.ideas.current}
+              limit={limits.limits.ideas.limit}
+              planType={limits.planType}
+            />
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -174,13 +192,29 @@ export default function IdeasPage() {
             <p className="text-sm sm:text-base text-gray-600 mt-1">
               {filteredAndSortedIdeas.length} {filteredAndSortedIdeas.length === 1 ? 'ideia' : 'ideias'} encontrada{filteredAndSortedIdeas.length !== 1 && 's'}
             </p>
+            {/* Indicador de uso */}
+            {limits && (
+              <div className="mt-2 w-48">
+                <UsageIndicator
+                  current={limits.limits.ideas.current}
+                  limit={limits.limits.ideas.limit}
+                  label="Ideias utilizadas"
+                  size="sm"
+                />
+              </div>
+            )}
           </div>
           <Link
             href="/dashboard/ideas/new"
-            className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-primary text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto justify-center"
+            className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 font-medium rounded-xl shadow-lg transition-all duration-200 text-sm sm:text-base w-full sm:w-auto justify-center ${
+              canCreateIdea
+                ? 'bg-primary text-white hover:shadow-xl hover:scale-[1.02] hover:opacity-90'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+            onClick={(e) => !canCreateIdea && e.preventDefault()}
           >
             <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            Nova Ideia
+            {canCreateIdea ? 'Nova Ideia' : 'Limite Atingido'}
           </Link>
         </div>
 
