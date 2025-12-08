@@ -67,11 +67,13 @@ export async function GET() {
       })
     }
 
-    // Buscar configurações de email
+    // Buscar configurações de email (pegar apenas a primeira, ordenada por criação)
     const { data, error } = await (adminClient
       .from('email_settings') as any)
       .select('*')
-      .maybeSingle()
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()
 
     // Se a tabela não existe ou outro erro, retornar configurações padrão
     if (error) {
@@ -174,11 +176,13 @@ export async function PUT(request: Request) {
     // Usar cliente admin para operações no banco (bypass RLS)
     const adminClient = createServiceClient()
 
-    // Buscar ID das configurações atuais
+    // Buscar ID das configurações atuais (pegar apenas a primeira)
     const { data: current, error: fetchError } = await (adminClient
       .from('email_settings') as any)
       .select('id')
-      .maybeSingle()
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()
 
     if (fetchError) {
       console.error('Erro ao buscar configurações:', fetchError)
