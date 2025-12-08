@@ -1398,7 +1398,7 @@ function EmailSettings() {
     }
   };
 
-  if (loading || !settings) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div>
@@ -1407,6 +1407,54 @@ function EmailSettings() {
         </div>
         <div className="p-8 text-center text-gray-500">
           <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-red-600 rounded-full mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se houve erro ao carregar e settings é null, mostrar erro
+  if (!settings && error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Configurações de Email</h2>
+          <p className="text-gray-600">Configure o serviço de envio de emails</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <AlertCircle className="w-12 h-12 text-red-600" />
+            <div>
+              <p className="text-lg font-medium text-red-900">Erro ao carregar configurações</p>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
+            <button
+              onClick={loadSettings}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se settings ainda é null (sem erro), mostrar estado vazio
+  if (!settings) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Configurações de Email</h2>
+          <p className="text-gray-600">Configure o serviço de envio de emails</p>
+        </div>
+        <div className="p-8 text-center text-gray-500">
+          <p>Nenhuma configuração encontrada.</p>
+          <button
+            onClick={loadSettings}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+          >
+            Recarregar
+          </button>
         </div>
       </div>
     );
