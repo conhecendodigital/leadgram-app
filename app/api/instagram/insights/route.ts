@@ -68,31 +68,26 @@ export async function GET(request: NextRequest) {
     accountMetricsUrl.searchParams.set('access_token', validAccount.access_token)
 
     console.log('🔍 Buscando métricas gerais...')
-    const accountMetricsResponse = await fetch(accountMetricsUrl.toString())
+    let accountMetrics: any = { data: [] }
 
-    if (!accountMetricsResponse.ok) {
-      const error = await accountMetricsResponse.json()
-      console.error('❌ Erro ao buscar métricas da API do Facebook:', {
-        status: accountMetricsResponse.status,
-        error: error,
-        url: accountMetricsUrl.toString().replace(validAccount.access_token, 'TOKEN_HIDDEN'),
-      })
+    try {
+      const accountMetricsResponse = await fetch(accountMetricsUrl.toString())
 
-      // Retornar erro detalhado para o cliente
-      return NextResponse.json(
-        {
-          error: 'Erro ao buscar insights da API do Facebook',
-          details: error.error?.message || error.message || 'Erro desconhecido',
-          error_code: error.error?.code || 'unknown',
-          type: error.error?.type || 'unknown',
-          fbtrace_id: error.error?.fbtrace_id || null,
-        },
-        { status: accountMetricsResponse.status }
-      )
+      if (!accountMetricsResponse.ok) {
+        const error = await accountMetricsResponse.json()
+        console.error('⚠️ Erro ao buscar métricas da conta (continuando com posts):', {
+          status: accountMetricsResponse.status,
+          error: error.error?.message || error.message || 'Erro desconhecido',
+        })
+        // Não retorna erro - continua para buscar posts
+      } else {
+        accountMetrics = await accountMetricsResponse.json()
+        console.log('✅ Métricas gerais recebidas')
+      }
+    } catch (metricsError) {
+      console.error('⚠️ Exceção ao buscar métricas da conta:', metricsError)
+      // Continua para buscar posts
     }
-
-    const accountMetrics = await accountMetricsResponse.json()
-    console.log('✅ Métricas gerais recebidas')
 
     // PASSO 2: Buscar TODOS os posts (com paginação)
     // IMPORTANTE: Buscar posts SEM insights primeiro para garantir que todos são retornados
@@ -246,30 +241,61 @@ export async function GET(request: NextRequest) {
       console.log(`   - Seguidores disponível: ${followerMetric ? 'Sim' : 'Não'}`)
     }
 
-    // Agregar likes e comentários dos posts por dia de PUBLICAÇÃO
-    // (para os gráficos de engajamento, curtidas e comentários)
-    const postsByDay = new Map<string, { likes: number; comments: number; posts_count: number }>()
+    // Se não houver dados diários da API, criar estrutura baseada nos últimos 30 dias
+    if (dailyData.length === 0) {
+      console.log('⚠️ Sem dados de métricas de conta, criando estrutura baseada em datas')
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date()
+        date.setDate(date.getDate() - i)
+        const dateStr = date.toISOString().split('T')[0]
+        dailyData.push({
+          date: dateStr,
+          impressions: 0,
+          reach: 0,
+          follower_count: validAccount.followers_count || 0,
+        })
+      }
+    }
+
+    // Agregar likes, comentários e métricas dos posts por dia de PUBLICAÇÃO
+    // (para os gráficos de engajamento, curtidas, comentários, impressões e alcance)
+    const postsByDay = new Map<string, { likes: number; comments: number; impressions: number; reach: number; posts_count: number }>()
 
     posts.forEach((post: any) => {
       if (post.timestamp) {
         const dateStr = post.timestamp.split('T')[0]
-        const existing = postsByDay.get(dateStr) || { likes: 0, comments: 0, posts_count: 0 }
+        const existing = postsByDay.get(dateStr) || { likes: 0, comments: 0, impressions: 0, reach: 0, posts_count: 0 }
+
+        // Buscar impressões e reach do post no Map de insights
+        const postInsights = postsWithInsights.get(post.id) || []
+        const postImpressions = postInsights.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
+        const postReach = postInsights.find((i: any) => i.name === 'reach')?.values?.[0]?.value || 0
 
         postsByDay.set(dateStr, {
           likes: existing.likes + (post.like_count || 0),
           comments: existing.comments + (post.comments_count || 0),
+          impressions: existing.impressions + postImpressions,
+          reach: existing.reach + postReach,
           posts_count: existing.posts_count + 1,
         })
       }
     })
 
     // Adicionar dados de engajamento dos posts aos dados diários
+    // Se métricas de conta não disponíveis, usar dados dos posts
     dailyData.forEach((day: any) => {
       const postData = postsByDay.get(day.date)
       if (postData) {
         day.likes = postData.likes
         day.comments = postData.comments
         day.posts_count = postData.posts_count
+        // Usar impressões/reach dos posts se a métrica de conta for 0
+        if ((day.impressions === 0 || day.impressions === undefined) && postData.impressions > 0) {
+          day.impressions = postData.impressions
+        }
+        if ((day.reach === 0 || day.reach === undefined) && postData.reach > 0) {
+          day.reach = postData.reach
+        }
       } else {
         day.likes = 0
         day.comments = 0
