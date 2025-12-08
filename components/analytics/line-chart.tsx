@@ -232,33 +232,6 @@ export default function LineChart({
           vectorEffect="non-scaling-stroke"
         />
 
-        {/* Pontos - apenas o hover ativo */}
-        {chartData.points.map((point, i) => (
-          <g key={i}>
-            {/* Ponto pequeno sempre visível */}
-            <circle
-              cx={point.x}
-              cy={point.y}
-              r={hoveredPoint === i ? "4" : "0"}
-              fill="white"
-              stroke={color}
-              strokeWidth="2.5"
-              vectorEffect="non-scaling-stroke"
-              className="transition-all duration-150"
-            />
-            {/* Anel externo no hover */}
-            {hoveredPoint === i && (
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="8"
-                fill={color}
-                opacity="0.2"
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-          </g>
-        ))}
       </svg>
 
       {/* Tooltip flutuante */}

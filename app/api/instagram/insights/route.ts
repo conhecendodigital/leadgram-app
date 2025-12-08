@@ -221,14 +221,46 @@ export async function GET(request: NextRequest) {
 
       if (reachMetric?.values) {
         reachMetric.values.forEach((value: any, index: number) => {
+          const dateStr = value.end_time?.split('T')[0] || new Date().toISOString().split('T')[0]
           dailyData.push({
-            date: value.end_time,
+            date: dateStr,
             reach: value.value || 0,
             follower_count: followerMetric?.values?.[index]?.value || 0,
+            impressions: 0, // Será calculado abaixo
           })
         })
       }
     }
+
+    // Agregar impressões, likes e comentários dos posts por dia
+    const postsByDay = new Map<string, { impressions: number; likes: number; comments: number }>()
+
+    posts.forEach((post: any) => {
+      if (post.timestamp) {
+        const dateStr = post.timestamp.split('T')[0]
+        const existing = postsByDay.get(dateStr) || { impressions: 0, likes: 0, comments: 0 }
+
+        // Buscar insights do post
+        const insights = postsWithInsights.get(post.id) || []
+        const impressions = insights.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
+
+        postsByDay.set(dateStr, {
+          impressions: existing.impressions + impressions,
+          likes: existing.likes + (post.like_count || 0),
+          comments: existing.comments + (post.comments_count || 0),
+        })
+      }
+    })
+
+    // Adicionar dados dos posts aos dados diários
+    dailyData.forEach((day: any) => {
+      const postData = postsByDay.get(day.date)
+      if (postData) {
+        day.impressions = postData.impressions
+        day.likes = postData.likes
+        day.comments = postData.comments
+      }
+    })
 
     // PASSO 5: Processar TODOS os posts com métricas
     // media_type: IMAGE, VIDEO, CAROUSEL_ALBUM

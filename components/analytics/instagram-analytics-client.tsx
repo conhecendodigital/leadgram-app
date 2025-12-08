@@ -590,43 +590,29 @@ function AnalyticsCharts({
   const chartData = useMemo(() => {
     const daysCount = timePeriod === 'week' ? 7 : timePeriod === 'month' ? 30 : 365
 
-    // Dados de alcance diário
-    const reachData = filterDataByPeriod(daily_data, timePeriod)
-      .map((day: any) => ({
-        date: day.date,
-        value: day.reach || 0,
-      }))
+    // Criar mapa de dados diários por data
+    const dailyDataMap = new Map<string, any>()
+    daily_data.forEach((day: any) => {
+      const dateStr = day.date?.split('T')[0] || day.date
+      dailyDataMap.set(dateStr, day)
+    })
 
-    // Dados de impressões diário
-    const impressionsData = filterDataByPeriod(daily_data, timePeriod)
-      .map((day: any) => ({
-        date: day.date,
-        value: day.impressions || 0,
-      }))
-
-    // Dados de seguidores diário
-    const followersData = filterDataByPeriod(daily_data, timePeriod)
-      .map((day: any) => ({
-        date: day.date,
-        value: day.follower_count || 0,
-      }))
-
-    // Agregar engajamento e curtidas por dia dos posts
-    const engagementByDay = new Map<string, number>()
-    const likesByDay = new Map<string, number>()
-    const commentsByDay = new Map<string, number>()
-
+    // Agregar dados dos posts por dia
+    const postsByDay = new Map<string, { likes: number; comments: number; engagement: number }>()
     top_posts.forEach((post: any) => {
       if (post.timestamp) {
-        const date = post.timestamp.split('T')[0]
-        engagementByDay.set(date, (engagementByDay.get(date) || 0) + (post.likes || 0) + (post.comments || 0))
-        likesByDay.set(date, (likesByDay.get(date) || 0) + (post.likes || 0))
-        commentsByDay.set(date, (commentsByDay.get(date) || 0) + (post.comments || 0))
+        const dateStr = post.timestamp.split('T')[0]
+        const existing = postsByDay.get(dateStr) || { likes: 0, comments: 0, engagement: 0 }
+        postsByDay.set(dateStr, {
+          likes: existing.likes + (post.likes || 0),
+          comments: existing.comments + (post.comments || 0),
+          engagement: existing.engagement + (post.likes || 0) + (post.comments || 0),
+        })
       }
     })
 
     // Gerar array de datas para o período
-    const dates = []
+    const dates: string[] = []
     for (let i = daysCount - 1; i >= 0; i--) {
       const date = new Date()
       date.setDate(date.getDate() - i)
@@ -634,23 +620,39 @@ function AnalyticsCharts({
       dates.push(dateStr)
     }
 
-    const engagementData = dates.map(date => ({
+    // Mapear dados para cada métrica
+    const reachData = dates.map(date => ({
       date,
-      value: engagementByDay.get(date) || 0,
+      value: dailyDataMap.get(date)?.reach || 0,
+    }))
+
+    const impressionsData = dates.map(date => ({
+      date,
+      value: dailyDataMap.get(date)?.impressions || 0,
+    }))
+
+    const followersData = dates.map(date => ({
+      date,
+      value: dailyDataMap.get(date)?.follower_count || 0,
     }))
 
     const likesData = dates.map(date => ({
       date,
-      value: likesByDay.get(date) || 0,
+      value: postsByDay.get(date)?.likes || dailyDataMap.get(date)?.likes || 0,
     }))
 
     const commentsData = dates.map(date => ({
       date,
-      value: commentsByDay.get(date) || 0,
+      value: postsByDay.get(date)?.comments || dailyDataMap.get(date)?.comments || 0,
+    }))
+
+    const engagementData = dates.map(date => ({
+      date,
+      value: postsByDay.get(date)?.engagement || 0,
     }))
 
     return { reachData, impressionsData, followersData, engagementData, likesData, commentsData }
-  }, [daily_data, top_posts, timePeriod, filterDataByPeriod])
+  }, [daily_data, top_posts, timePeriod])
 
   // Configurações dos gráficos
   const chartConfigs = [
