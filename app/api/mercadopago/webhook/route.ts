@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { validateWebhookSignature } from '@/lib/mercadopago'
+import { logError } from '@/lib/utils/api-error-handler'
 
 export async function POST(request: NextRequest) {
   try {
@@ -160,7 +161,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true })
   } catch (error: any) {
-    console.error('Webhook error:', error)
+    // Registrar erro crítico de pagamento no sistema de notificações
+    await logError(error, 'Webhook Mercado Pago - Erro ao processar pagamento', 'critical')
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

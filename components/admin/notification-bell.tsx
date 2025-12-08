@@ -26,10 +26,9 @@ export default function NotificationBell() {
       ]);
       setNotifications(notifs);
 
-      // Verificar se há nova notificação
+      // Verificar se há nova notificação (apenas animação visual, sem som)
       if (count > previousCountRef.current && previousCountRef.current > 0) {
         setHasNewNotification(true);
-        playNotificationSound();
         // Reset animação após 2 segundos
         setTimeout(() => setHasNewNotification(false), 2000);
       }
@@ -41,36 +40,6 @@ export default function NotificationBell() {
       setLoading(false);
     }
   }, []);
-
-  // Som de notificação usando Web Audio API
-  const playNotificationSound = () => {
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-      // Criar um som de notificação simples
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      // Configurar o som (tom agradável)
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // Nota A5
-      oscillator.frequency.setValueAtTime(1100, audioContext.currentTime + 0.1); // Sobe
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.2); // Volta
-
-      oscillator.type = 'sine';
-
-      // Volume
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
-    } catch {
-      // Ignorar se não conseguir tocar som
-    }
-  };
 
   // Real-time subscription com Supabase
   useEffect(() => {
