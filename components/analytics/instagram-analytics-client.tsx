@@ -13,10 +13,6 @@ import {
 import PremiumFeatureLock from '@/components/plan/premium-feature-lock'
 import {
   BarChartComponent,
-  AreaChartComponent,
-  LineChartComponent,
-  FollowersChart,
-  EngagementComboChart,
   LollipopChart,
 } from '@/components/analytics/charts'
 import Link from 'next/link'
@@ -549,7 +545,7 @@ function OverviewTab({
 
       {/* Gráficos de Métricas - Apenas Pro/Premium */}
       {hasFullAccess ? (
-        <AnalyticsCharts daily_data={daily_data} top_posts={top_posts} followersCount={account.followers_count} />
+        <AnalyticsCharts daily_data={daily_data} />
       ) : (
         <PremiumFeatureLock
           title="Gráficos de Métricas"
@@ -566,23 +562,17 @@ type TimePeriod = 'week' | 'month'
 
 function AnalyticsCharts({
   daily_data,
-  top_posts,
-  followersCount = 0,
 }: {
   daily_data: any[]
-  top_posts: any[]
-  followersCount?: number
 }) {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
 
   // Preparar dados para os gráficos baseado no período
-  // IMPORTANTE: Usar dados diários da API (daily_data) como fonte principal
-  // Esses dados representam a evolução REAL das métricas da conta dia a dia
+  // Usa dados de curtidas e comentários dos posts publicados em cada dia
   const chartData = useMemo(() => {
     const daysCount = timePeriod === 'week' ? 7 : 30
 
-    // Criar mapa de dados diários por data (da API de métricas da conta)
-    // daily_data contém: date, impressions, reach, follower_count, likes, comments, posts_count
+    // Criar mapa de dados diários por data
     const dailyDataMap = new Map<string, any>()
     daily_data.forEach((day: any) => {
       const dateStr = day.date?.split('T')[0] || day.date
@@ -598,38 +588,7 @@ function AnalyticsCharts({
       dates.push(dateStr)
     }
 
-    // ALCANCE: Contas únicas que viram seu conteúdo (métrica da conta)
-    // Evolução diária real do alcance da conta
-    const reachData = dates.map(date => {
-      const dayData = dailyDataMap.get(date)
-      return {
-        date,
-        value: dayData?.reach || 0,
-      }
-    })
-
-    // IMPRESSÕES: Total de visualizações do conteúdo (métrica da conta)
-    // Evolução diária real das impressões da conta
-    const impressionsData = dates.map(date => {
-      const dayData = dailyDataMap.get(date)
-      return {
-        date,
-        value: dayData?.impressions || 0,
-      }
-    })
-
-    // SEGUIDORES: Número total de seguidores no dia (métrica da conta)
-    // Evolução diária do número de seguidores
-    const followersData = dates.map(date => {
-      const dayData = dailyDataMap.get(date)
-      return {
-        date,
-        value: dayData?.follower_count || 0,
-      }
-    })
-
-    // CURTIDAS: Total de curtidas recebidas nos posts publicados naquele dia
-    // Usa dados agregados do daily_data (já processados pela API)
+    // CURTIDAS: Total de curtidas dos posts publicados naquele dia
     const likesData = dates.map(date => {
       const dayData = dailyDataMap.get(date)
       return {
@@ -638,7 +597,7 @@ function AnalyticsCharts({
       }
     })
 
-    // COMENTÁRIOS: Total de comentários recebidos nos posts publicados naquele dia
+    // COMENTÁRIOS: Total de comentários dos posts publicados naquele dia
     const commentsData = dates.map(date => {
       const dayData = dailyDataMap.get(date)
       return {
@@ -648,7 +607,6 @@ function AnalyticsCharts({
     })
 
     // ENGAJAMENTO: Soma de likes + comments do dia
-    // Representa o total de interações recebidas nos posts daquele dia
     const engagementData = dates.map(date => {
       const dayData = dailyDataMap.get(date)
       const likes = dayData?.likes || 0
@@ -659,7 +617,7 @@ function AnalyticsCharts({
       }
     })
 
-    return { reachData, impressionsData, followersData, engagementData, likesData, commentsData }
+    return { engagementData, likesData, commentsData }
   }, [daily_data, timePeriod])
 
   const periodLabels = {
@@ -708,12 +666,12 @@ function AnalyticsCharts({
         </div>
       </div>
 
-      {/* Grid de Gráficos - 6 gráficos específicos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Grid de Gráficos - 3 gráficos com dados reais */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 1. Curtidas - Barras Verticais */}
         <ChartCard
           title="Curtidas"
-          description="Evolução diária de curtidas recebidas"
+          description="Curtidas nos posts publicados"
           icon={Heart}
           color="#EF4444"
           stats={calculateStats(chartData.likesData)}
@@ -722,83 +680,32 @@ function AnalyticsCharts({
           <BarChartComponent
             data={chartData.likesData}
             color="#EF4444"
-            height={180}
+            height={200}
             showAverage={true}
           />
         </ChartCard>
 
-        {/* 2. Seguidores - Barras Divergentes (Crescimento) */}
-        <ChartCard
-          title="Seguidores"
-          description="Crescimento diário de seguidores"
-          icon={Users}
-          color="#10B981"
-          stats={calculateStats(chartData.followersData)}
-          periodLabel={periodLabels[timePeriod]}
-          showGrowthBadge={true}
-        >
-          <FollowersChart
-            data={chartData.followersData}
-            height={180}
-          />
-        </ChartCard>
-
-        {/* 3. Impressões - Gráfico de Área */}
-        <ChartCard
-          title="Impressões"
-          description="Evolução diária de visualizações da conta"
-          icon={Eye}
-          color="#3B82F6"
-          stats={calculateStats(chartData.impressionsData)}
-          periodLabel={periodLabels[timePeriod]}
-        >
-          <AreaChartComponent
-            data={chartData.impressionsData}
-            color="#3B82F6"
-            gradientFrom="#06B6D4"
-            gradientTo="#3B82F6"
-            height={180}
-          />
-        </ChartCard>
-
-        {/* 4. Alcance - Linha Suave */}
-        <ChartCard
-          title="Alcance"
-          description="Evolução diária de contas alcançadas"
-          icon={Users}
-          color="#8B5CF6"
-          stats={calculateStats(chartData.reachData)}
-          periodLabel={periodLabels[timePeriod]}
-        >
-          <LineChartComponent
-            data={chartData.reachData}
-            color="#8B5CF6"
-            height={180}
-            label="Alcance"
-          />
-        </ChartCard>
-
-        {/* 5. Engajamento - Gráfico Combo (Barras + Linha de Taxa) */}
+        {/* 2. Engajamento - Gráfico de Barras */}
         <ChartCard
           title="Engajamento"
-          description="Evolução diária de interações (curtidas + comentários)"
-          icon={Heart}
+          description="Total de interações (curtidas + comentários)"
+          icon={TrendingUp}
           color="#EC4899"
           stats={calculateStats(chartData.engagementData)}
           periodLabel={periodLabels[timePeriod]}
         >
-          <EngagementComboChart
+          <BarChartComponent
             data={chartData.engagementData}
-            reachData={chartData.reachData}
-            followersCount={followersCount}
-            height={180}
+            color="#EC4899"
+            height={200}
+            showAverage={true}
           />
         </ChartCard>
 
-        {/* 6. Comentários - Lollipop Chart */}
+        {/* 3. Comentários - Lollipop Chart */}
         <ChartCard
           title="Comentários"
-          description="Evolução diária de comentários recebidos"
+          description="Comentários nos posts publicados"
           icon={MessageCircle}
           color="#06B6D4"
           stats={calculateStats(chartData.commentsData)}
@@ -807,7 +714,7 @@ function AnalyticsCharts({
           <LollipopChart
             data={chartData.commentsData}
             color="#06B6D4"
-            height={180}
+            height={200}
           />
         </ChartCard>
       </div>
