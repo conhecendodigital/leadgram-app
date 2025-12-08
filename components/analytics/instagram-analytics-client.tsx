@@ -576,44 +576,20 @@ function AnalyticsCharts({
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
 
   // Preparar dados para os gráficos baseado no período
+  // IMPORTANTE: Usar dados diários da API (daily_data) como fonte principal
+  // Esses dados representam a evolução REAL das métricas da conta dia a dia
   const chartData = useMemo(() => {
     const daysCount = timePeriod === 'week' ? 7 : 30
 
     // Criar mapa de dados diários por data (da API de métricas da conta)
+    // daily_data contém: date, impressions, reach, follower_count, likes, comments, posts_count
     const dailyDataMap = new Map<string, any>()
     daily_data.forEach((day: any) => {
       const dateStr = day.date?.split('T')[0] || day.date
       dailyDataMap.set(dateStr, day)
     })
 
-    // Agregar TODOS os dados dos posts por dia (fallback quando API não retorna)
-    const postsByDay = new Map<string, {
-      likes: number
-      comments: number
-      engagement: number
-      impressions: number
-      reach: number
-      posts: number
-    }>()
-
-    top_posts.forEach((post: any) => {
-      if (post.timestamp) {
-        const dateStr = post.timestamp.split('T')[0]
-        const existing = postsByDay.get(dateStr) || {
-          likes: 0, comments: 0, engagement: 0, impressions: 0, reach: 0, posts: 0
-        }
-        postsByDay.set(dateStr, {
-          likes: existing.likes + (post.likes || 0),
-          comments: existing.comments + (post.comments || 0),
-          engagement: existing.engagement + (post.likes || 0) + (post.comments || 0),
-          impressions: existing.impressions + (post.impressions || 0),
-          reach: existing.reach + (post.reach || 0),
-          posts: existing.posts + 1,
-        })
-      }
-    })
-
-    // Gerar array de datas para o período
+    // Gerar array de datas para o período selecionado
     const dates: string[] = []
     for (let i = daysCount - 1; i >= 0; i--) {
       const date = new Date()
@@ -622,43 +598,69 @@ function AnalyticsCharts({
       dates.push(dateStr)
     }
 
-    // Mapear dados para cada métrica
-    const reachData = dates.map(date => ({
-      date,
-      value: dailyDataMap.get(date)?.reach || postsByDay.get(date)?.reach || 0,
-    }))
-
-    const impressionsData = dates.map(date => ({
-      date,
-      value: postsByDay.get(date)?.impressions || dailyDataMap.get(date)?.impressions || 0,
-    }))
-
-    const followersData = dates.map(date => ({
-      date,
-      value: dailyDataMap.get(date)?.follower_count || 0,
-    }))
-
-    const likesData = dates.map(date => ({
-      date,
-      value: postsByDay.get(date)?.likes || dailyDataMap.get(date)?.likes || 0,
-    }))
-
-    const commentsData = dates.map(date => ({
-      date,
-      value: postsByDay.get(date)?.comments || dailyDataMap.get(date)?.comments || 0,
-    }))
-
-    const engagementData = dates.map(date => {
-      const postData = postsByDay.get(date)
-      const dailyData = dailyDataMap.get(date)
+    // ALCANCE: Contas únicas que viram seu conteúdo (métrica da conta)
+    // Evolução diária real do alcance da conta
+    const reachData = dates.map(date => {
+      const dayData = dailyDataMap.get(date)
       return {
         date,
-        value: postData?.engagement || ((dailyData?.likes || 0) + (dailyData?.comments || 0)),
+        value: dayData?.reach || 0,
+      }
+    })
+
+    // IMPRESSÕES: Total de visualizações do conteúdo (métrica da conta)
+    // Evolução diária real das impressões da conta
+    const impressionsData = dates.map(date => {
+      const dayData = dailyDataMap.get(date)
+      return {
+        date,
+        value: dayData?.impressions || 0,
+      }
+    })
+
+    // SEGUIDORES: Número total de seguidores no dia (métrica da conta)
+    // Evolução diária do número de seguidores
+    const followersData = dates.map(date => {
+      const dayData = dailyDataMap.get(date)
+      return {
+        date,
+        value: dayData?.follower_count || 0,
+      }
+    })
+
+    // CURTIDAS: Total de curtidas recebidas nos posts publicados naquele dia
+    // Usa dados agregados do daily_data (já processados pela API)
+    const likesData = dates.map(date => {
+      const dayData = dailyDataMap.get(date)
+      return {
+        date,
+        value: dayData?.likes || 0,
+      }
+    })
+
+    // COMENTÁRIOS: Total de comentários recebidos nos posts publicados naquele dia
+    const commentsData = dates.map(date => {
+      const dayData = dailyDataMap.get(date)
+      return {
+        date,
+        value: dayData?.comments || 0,
+      }
+    })
+
+    // ENGAJAMENTO: Soma de likes + comments do dia
+    // Representa o total de interações recebidas nos posts daquele dia
+    const engagementData = dates.map(date => {
+      const dayData = dailyDataMap.get(date)
+      const likes = dayData?.likes || 0
+      const comments = dayData?.comments || 0
+      return {
+        date,
+        value: likes + comments,
       }
     })
 
     return { reachData, impressionsData, followersData, engagementData, likesData, commentsData }
-  }, [daily_data, top_posts, timePeriod])
+  }, [daily_data, timePeriod])
 
   const periodLabels = {
     week: 'Última Semana',
@@ -711,7 +713,7 @@ function AnalyticsCharts({
         {/* 1. Curtidas - Barras Verticais */}
         <ChartCard
           title="Curtidas"
-          description="Curtidas em posts publicados no dia"
+          description="Evolução diária de curtidas recebidas"
           icon={Heart}
           color="#EF4444"
           stats={calculateStats(chartData.likesData)}
@@ -728,7 +730,7 @@ function AnalyticsCharts({
         {/* 2. Seguidores - Barras Divergentes (Crescimento) */}
         <ChartCard
           title="Seguidores"
-          description="Crescimento líquido de seguidores"
+          description="Crescimento diário de seguidores"
           icon={Users}
           color="#10B981"
           stats={calculateStats(chartData.followersData)}
@@ -744,7 +746,7 @@ function AnalyticsCharts({
         {/* 3. Impressões - Gráfico de Área */}
         <ChartCard
           title="Impressões"
-          description="Total de visualizações do seu conteúdo"
+          description="Evolução diária de visualizações da conta"
           icon={Eye}
           color="#3B82F6"
           stats={calculateStats(chartData.impressionsData)}
@@ -762,7 +764,7 @@ function AnalyticsCharts({
         {/* 4. Alcance - Linha Suave */}
         <ChartCard
           title="Alcance"
-          description="Contas únicas que viram seu conteúdo"
+          description="Evolução diária de contas alcançadas"
           icon={Users}
           color="#8B5CF6"
           stats={calculateStats(chartData.reachData)}
@@ -779,7 +781,7 @@ function AnalyticsCharts({
         {/* 5. Engajamento - Gráfico Combo (Barras + Linha de Taxa) */}
         <ChartCard
           title="Engajamento"
-          description="Interações e taxa de engajamento"
+          description="Evolução diária de interações (curtidas + comentários)"
           icon={Heart}
           color="#EC4899"
           stats={calculateStats(chartData.engagementData)}
@@ -796,7 +798,7 @@ function AnalyticsCharts({
         {/* 6. Comentários - Lollipop Chart */}
         <ChartCard
           title="Comentários"
-          description="Comentários em posts publicados"
+          description="Evolução diária de comentários recebidos"
           icon={MessageCircle}
           color="#06B6D4"
           stats={calculateStats(chartData.commentsData)}
