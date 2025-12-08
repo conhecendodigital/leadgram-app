@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
-import { TrendingUp, Users, Eye, Heart, MessageCircle, Calendar, Clock, List, Filter, Grid3X3, Film, Play } from 'lucide-react'
+import { TrendingUp, Users, Eye, Heart, MessageCircle, Calendar, Clock, List, Filter, Grid3X3, Film, Play, Lock, Zap } from 'lucide-react'
 import {
   calculateEngagementRate,
   calculateGrowthPercentage,
@@ -11,6 +11,8 @@ import {
   formatNumber,
   formatPercentage,
 } from '@/lib/analytics/metrics'
+import PremiumFeatureLock from '@/components/plan/premium-feature-lock'
+import Link from 'next/link'
 
 type PostSortOption = 'engagement' | 'likes' | 'comments' | 'reach' | 'recent'
 type PostCategory = 'all' | 'feed' | 'reels'
@@ -24,13 +26,19 @@ interface InstagramAnalyticsClientProps {
     media_count: number
   }
   historicalData: any[]
+  planType: string
 }
 
 export default function InstagramAnalyticsClient({
   account,
   historicalData,
+  planType,
 }: InstagramAnalyticsClientProps) {
   const [insights, setInsights] = useState<any>(null)
+
+  // Verificar se tem acesso às métricas completas (Pro, Premium ou Admin)
+  const hasFullAccess = planType === 'pro' || planType === 'premium' || planType === 'admin'
+  const isFree = planType === 'free'
   const [postSortBy, setPostSortBy] = useState<PostSortOption>('engagement')
   const [postCategory, setPostCategory] = useState<PostCategory>('all')
   const [postsToShow, setPostsToShow] = useState(24)
@@ -204,7 +212,33 @@ export default function InstagramAnalyticsClient({
 
   return (
     <div className="space-y-6">
-      {/* Cards de Métricas Principais */}
+      {/* Banner informativo para usuários Free */}
+      {isFree && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-2xl p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="p-3 bg-purple-100 rounded-xl">
+              <Zap className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 mb-1">
+                Você está no plano Free
+              </h3>
+              <p className="text-sm text-gray-600">
+                Faça upgrade para o plano Pro e tenha acesso a métricas completas,
+                gráficos históricos, melhores horários para postar e muito mais!
+              </p>
+            </div>
+            <Link
+              href="/dashboard/settings?tab=plan"
+              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium rounded-xl hover:opacity-90 transition-opacity text-center"
+            >
+              Ver planos
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Cards de Métricas Principais - Visível para todos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           icon={<Eye className="w-5 h-5" />}
@@ -236,132 +270,156 @@ export default function InstagramAnalyticsClient({
         />
       </div>
 
-      {/* Métricas Diárias Médias */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Eye className="w-5 h-5 text-blue-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900">Média Diária de Impressões</h3>
-          </div>
-          <p className="text-3xl font-bold text-blue-600">
-            {formatNumber(Math.round(avgDailyImpressions))}
-          </p>
-          <p className="text-sm text-gray-600 mt-1">Últimos 30 dias</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Users className="w-5 h-5 text-purple-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900">Média Diária de Alcance</h3>
-          </div>
-          <p className="text-3xl font-bold text-purple-600">
-            {formatNumber(Math.round(avgDailyReach))}
-          </p>
-          <p className="text-sm text-gray-600 mt-1">Últimos 30 dias</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900">Taxa de Alcance</h3>
-          </div>
-          <p className="text-3xl font-bold text-green-600">
-            {account.followers_count > 0
-              ? formatPercentage((avgDailyReach / account.followers_count) * 100)
-              : formatPercentage(0)}
-          </p>
-          <p className="text-sm text-gray-600 mt-1">Do total de seguidores</p>
-        </div>
-      </div>
-
-      {/* Melhor Horário e Dia para Postar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Melhor Horário */}
-        {bestTime && (
+      {/* Métricas Diárias Médias - Apenas Pro/Premium */}
+      {hasFullAccess ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Clock className="w-5 h-5 text-orange-600" />
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Eye className="w-5 h-5 text-blue-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Melhor Horário para Postar
-              </h3>
+              <h3 className="font-semibold text-gray-900">Média Diária de Impressões</h3>
             </div>
-            <div className="text-center py-4">
-              <p className="text-5xl font-bold text-orange-600">
-                {bestTime.hour}:00
-              </p>
-              <p className="text-gray-600 mt-2">
-                Engajamento médio: {formatNumber(bestTime.engagement)}
-              </p>
-            </div>
+            <p className="text-3xl font-bold text-blue-600">
+              {formatNumber(Math.round(avgDailyImpressions))}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">Últimos 30 dias</p>
           </div>
-        )}
 
-        {/* Melhores Dias */}
-        {bestDays.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-indigo-100 rounded-lg">
-                <Calendar className="w-5 h-5 text-indigo-600" />
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Users className="w-5 h-5 text-purple-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Melhores Dias para Postar
-              </h3>
+              <h3 className="font-semibold text-gray-900">Média Diária de Alcance</h3>
             </div>
-            <div className="space-y-3">
-              {bestDays.slice(0, 3).map((day, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-indigo-600">
-                        {index + 1}
-                      </span>
-                    </div>
-                    <span className="font-medium text-gray-900">{day.day}</span>
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {formatNumber(day.engagement)} eng.
-                  </span>
+            <p className="text-3xl font-bold text-purple-600">
+              {formatNumber(Math.round(avgDailyReach))}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">Últimos 30 dias</p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Taxa de Alcance</h3>
+            </div>
+            <p className="text-3xl font-bold text-green-600">
+              {account.followers_count > 0
+                ? formatPercentage((avgDailyReach / account.followers_count) * 100)
+                : formatPercentage(0)}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">Do total de seguidores</p>
+          </div>
+        </div>
+      ) : (
+        <PremiumFeatureLock
+          title="Métricas Diárias Detalhadas"
+          description="Veja a média diária de impressões, alcance e taxa de alcance dos seus posts."
+          requiredPlan="pro"
+        />
+      )}
+
+      {/* Melhor Horário e Dia para Postar - Apenas Pro/Premium */}
+      {hasFullAccess ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Melhor Horário */}
+          {bestTime && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Clock className="w-5 h-5 text-orange-600" />
                 </div>
-              ))}
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Melhor Horário para Postar
+                </h3>
+              </div>
+              <div className="text-center py-4">
+                <p className="text-5xl font-bold text-orange-600">
+                  {bestTime.hour}:00
+                </p>
+                <p className="text-gray-600 mt-2">
+                  Engajamento médio: {formatNumber(bestTime.engagement)}
+                </p>
+              </div>
             </div>
+          )}
+
+          {/* Melhores Dias */}
+          {bestDays.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Calendar className="w-5 h-5 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Melhores Dias para Postar
+                </h3>
+              </div>
+              <div className="space-y-3">
+                {bestDays.slice(0, 3).map((day, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-bold text-indigo-600">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <span className="font-medium text-gray-900">{day.day}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      {formatNumber(day.engagement)} eng.
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <PremiumFeatureLock
+          title="Melhores Horários e Dias para Postar"
+          description="Descubra os horários e dias da semana que geram mais engajamento nos seus posts."
+          requiredPlan="pro"
+        />
+      )}
+
+      {/* Gráfico de Crescimento (Últimos 30 dias) - Apenas Pro/Premium */}
+      {hasFullAccess ? (
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">
+            Alcance (Últimos 30 Dias)
+          </h3>
+          <div className="h-64 flex items-end justify-between gap-1">
+            {daily_data.slice(0, 30).reverse().map((day: any, index: number) => {
+              const maxValue = Math.max(...daily_data.map((d: any) => d.reach || 0))
+              const height = maxValue > 0 ? ((day.reach || 0) / maxValue) * 100 : 0
+
+              return (
+                <div
+                  key={index}
+                  className="flex-1 bg-gradient-to-t from-blue-500 to-purple-500 rounded-t hover:opacity-80 transition-opacity cursor-pointer"
+                  style={{ height: `${height}%` }}
+                  title={`${day.date}: ${formatNumber(day.reach || 0)} alcance`}
+                />
+              )
+            })}
           </div>
-        )}
-      </div>
-
-      {/* Gráfico de Crescimento (Últimos 30 dias) */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">
-          Alcance (Últimos 30 Dias)
-        </h3>
-        <div className="h-64 flex items-end justify-between gap-1">
-          {daily_data.slice(0, 30).reverse().map((day: any, index: number) => {
-            const maxValue = Math.max(...daily_data.map((d: any) => d.reach || 0))
-            const height = maxValue > 0 ? ((day.reach || 0) / maxValue) * 100 : 0
-
-            return (
-              <div
-                key={index}
-                className="flex-1 bg-gradient-to-t from-blue-500 to-purple-500 rounded-t hover:opacity-80 transition-opacity cursor-pointer"
-                style={{ height: `${height}%` }}
-                title={`${day.date}: ${formatNumber(day.reach || 0)} alcance`}
-              />
-            )
-          })}
+          <div className="flex justify-between mt-4 text-xs text-gray-600">
+            <span>30 dias atrás</span>
+            <span className="hidden sm:inline">~15 dias</span>
+            <span>Hoje</span>
+          </div>
         </div>
-        <div className="flex justify-between mt-4 text-xs text-gray-600">
-          <span>30 dias atrás</span>
-          <span className="hidden sm:inline">~15 dias</span>
-          <span>Hoje</span>
-        </div>
-      </div>
+      ) : (
+        <PremiumFeatureLock
+          title="Gráfico de Alcance Histórico"
+          description="Visualize a evolução do alcance dos seus posts nos últimos 30 dias."
+          requiredPlan="pro"
+        />
+      )}
 
       {/* Listagem de Todos os Posts com Abas Feed/Reels */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
@@ -373,97 +431,104 @@ export default function InstagramAnalyticsClient({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Todos os Posts
+                {isFree ? 'Top Posts' : 'Todos os Posts'}
               </h3>
               <p className="text-sm text-gray-500">
-                {top_posts.length} posts no total • {feedCount} feed • {reelsCount} reels
+                {isFree
+                  ? `Mostrando 6 de ${top_posts.length} posts`
+                  : `${top_posts.length} posts no total • ${feedCount} feed • ${reelsCount} reels`
+                }
               </p>
             </div>
           </div>
 
-          {/* Filtro de Ordenação */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <select
-              value={postSortBy}
-              onChange={(e) => {
-                setPostSortBy(e.target.value as PostSortOption)
-                setPostsToShow(12) // Reset paginação ao mudar filtro
+          {/* Filtro de Ordenação - Apenas Pro/Premium */}
+          {hasFullAccess && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <select
+                value={postSortBy}
+                onChange={(e) => {
+                  setPostSortBy(e.target.value as PostSortOption)
+                  setPostsToShow(12) // Reset paginação ao mudar filtro
+                }}
+                className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Abas Feed / Reels - Apenas Pro/Premium */}
+        {hasFullAccess && (
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              onClick={() => {
+                setPostCategory('all')
+                setPostsToShow(12)
               }}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                postCategory === 'all'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
             >
-              {sortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              <List className="w-4 h-4" />
+              Todos
+              <span className={`px-2 py-0.5 text-xs rounded-full ${
+                postCategory === 'all' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {top_posts.length}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setPostCategory('feed')
+                setPostsToShow(12)
+              }}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                postCategory === 'feed'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Grid3X3 className="w-4 h-4" />
+              Feed
+              <span className={`px-2 py-0.5 text-xs rounded-full ${
+                postCategory === 'feed' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {feedCount}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setPostCategory('reels')
+                setPostsToShow(12)
+              }}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                postCategory === 'reels'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Film className="w-4 h-4" />
+              Reels
+              <span className={`px-2 py-0.5 text-xs rounded-full ${
+                postCategory === 'reels' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {reelsCount}
+              </span>
+            </button>
           </div>
-        </div>
+        )}
 
-        {/* Abas Feed / Reels */}
-        <div className="flex border-b border-gray-200 mb-6">
-          <button
-            onClick={() => {
-              setPostCategory('all')
-              setPostsToShow(12)
-            }}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              postCategory === 'all'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <List className="w-4 h-4" />
-            Todos
-            <span className={`px-2 py-0.5 text-xs rounded-full ${
-              postCategory === 'all' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
-            }`}>
-              {top_posts.length}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setPostCategory('feed')
-              setPostsToShow(12)
-            }}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              postCategory === 'feed'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Grid3X3 className="w-4 h-4" />
-            Feed
-            <span className={`px-2 py-0.5 text-xs rounded-full ${
-              postCategory === 'feed' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
-            }`}>
-              {feedCount}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setPostCategory('reels')
-              setPostsToShow(12)
-            }}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              postCategory === 'reels'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Film className="w-4 h-4" />
-            Reels
-            <span className={`px-2 py-0.5 text-xs rounded-full ${
-              postCategory === 'reels' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
-            }`}>
-              {reelsCount}
-            </span>
-          </button>
-        </div>
-
-        {/* Indicador de filtro ativo */}
-        {postSortBy !== 'engagement' && (
+        {/* Indicador de filtro ativo - Apenas Pro/Premium */}
+        {hasFullAccess && postSortBy !== 'engagement' && (
           <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">
             <span>Ordenado por:</span>
             <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg font-medium">
@@ -474,7 +539,7 @@ export default function InstagramAnalyticsClient({
           </div>
         )}
 
-        {/* Grid de Posts */}
+        {/* Grid de Posts - Free vê apenas 6 posts */}
         {sortedPosts.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -493,7 +558,7 @@ export default function InstagramAnalyticsClient({
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-              {paginatedPosts.map((post: any, index: number) => (
+              {(isFree ? sortedPosts.slice(0, 6) : paginatedPosts).map((post: any, index: number) => (
                 <a
                   key={post.id}
                   href={post.permalink}
@@ -564,20 +629,43 @@ export default function InstagramAnalyticsClient({
               ))}
             </div>
 
-            {/* Sentinela para Rolagem Infinita */}
-            <div ref={loadMoreRef} className="mt-6 py-4">
-              {hasMorePosts && (
-                <div className="flex items-center justify-center gap-3 text-gray-500">
-                  <div className="w-5 h-5 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
-                  <span className="text-sm">Carregando mais posts...</span>
+            {/* Sentinela para Rolagem Infinita ou CTA de Upgrade */}
+            {isFree ? (
+              /* CTA de Upgrade para usuários Free */
+              <div className="mt-6 py-6 text-center border-t border-gray-100">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-3">
+                  <Lock className="w-6 h-6 text-purple-600" />
                 </div>
-              )}
-              {!hasMorePosts && sortedPosts.length > 0 && (
-                <p className="text-center text-sm text-gray-400">
-                  Todos os {sortedPosts.length} posts carregados
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Veja todos os {sortedPosts.length} posts
+                </h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Faça upgrade para Pro e tenha acesso a análise detalhada de todos os seus posts
                 </p>
-              )}
-            </div>
+                <Link
+                  href="/dashboard/settings?tab=plan"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  <Zap className="w-5 h-5" />
+                  Ver planos
+                </Link>
+              </div>
+            ) : (
+              /* Rolagem infinita para Pro/Premium */
+              <div ref={loadMoreRef} className="mt-6 py-4">
+                {hasMorePosts && (
+                  <div className="flex items-center justify-center gap-3 text-gray-500">
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
+                    <span className="text-sm">Carregando mais posts...</span>
+                  </div>
+                )}
+                {!hasMorePosts && sortedPosts.length > 0 && (
+                  <p className="text-center text-sm text-gray-400">
+                    Todos os {sortedPosts.length} posts carregados
+                  </p>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

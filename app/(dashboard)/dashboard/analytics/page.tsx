@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { BarChart3, Instagram } from 'lucide-react'
 import InstagramAnalyticsClient from '@/components/analytics/instagram-analytics-client'
+import { getUserRole } from '@/lib/roles'
 
 // Forçar renderização dinâmica para sempre buscar dados atualizados
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,18 @@ export default async function AnalyticsPage() {
   if (authError || !user) {
     redirect('/login')
   }
+
+  // Verificar plano do usuário
+  const userRole = await getUserRole(user.id)
+  const isAdmin = userRole === 'admin'
+
+  const { data: subscription } = await (supabase
+    .from('user_subscriptions') as any)
+    .select('plan_type')
+    .eq('user_id', user.id)
+    .single()
+
+  const planType = isAdmin ? 'admin' : (subscription?.plan_type || 'free')
 
   // Verificar se tem Instagram conectado
   const { data: accountData } = await supabase
@@ -93,6 +106,7 @@ export default async function AnalyticsPage() {
       <InstagramAnalyticsClient
         account={account}
         historicalData={insights || []}
+        planType={planType}
       />
     </div>
   )
