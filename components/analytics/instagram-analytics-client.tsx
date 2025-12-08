@@ -11,7 +11,14 @@ import {
   formatPercentage,
 } from '@/lib/analytics/metrics'
 import PremiumFeatureLock from '@/components/plan/premium-feature-lock'
-import LineChart from '@/components/analytics/line-chart'
+import {
+  BarChartComponent,
+  AreaChartComponent,
+  LineChartComponent,
+  FollowersChart,
+  EngagementComboChart,
+  LollipopChart,
+} from '@/components/analytics/charts'
 import Link from 'next/link'
 
 type PostSortOption = 'engagement' | 'likes' | 'comments' | 'reach' | 'recent'
@@ -542,7 +549,7 @@ function OverviewTab({
 
       {/* Gráficos de Métricas - Apenas Pro/Premium */}
       {hasFullAccess ? (
-        <AnalyticsCharts daily_data={daily_data} top_posts={top_posts} />
+        <AnalyticsCharts daily_data={daily_data} top_posts={top_posts} followersCount={account.followers_count} />
       ) : (
         <PremiumFeatureLock
           title="Gráficos de Métricas"
@@ -560,17 +567,13 @@ type TimePeriod = 'week' | 'month'
 function AnalyticsCharts({
   daily_data,
   top_posts,
+  followersCount = 0,
 }: {
   daily_data: any[]
   top_posts: any[]
+  followersCount?: number
 }) {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
-
-  // Função para filtrar dados por período
-  const filterDataByPeriod = useCallback((data: any[], period: TimePeriod) => {
-    const daysToShow = period === 'week' ? 7 : 30
-    return data.slice(0, daysToShow).reverse()
-  }, [])
 
   // Preparar dados para os gráficos baseado no período
   const chartData = useMemo(() => {
@@ -620,25 +623,21 @@ function AnalyticsCharts({
     }
 
     // Mapear dados para cada métrica
-    // Prioridade: dados da API da conta > dados agregados dos posts
     const reachData = dates.map(date => ({
       date,
       value: dailyDataMap.get(date)?.reach || postsByDay.get(date)?.reach || 0,
     }))
 
-    // Impressões: usar dados dos posts (são mais precisos para o dia)
     const impressionsData = dates.map(date => ({
       date,
       value: postsByDay.get(date)?.impressions || dailyDataMap.get(date)?.impressions || 0,
     }))
 
-    // Seguidores: dados da API da conta
     const followersData = dates.map(date => ({
       date,
       value: dailyDataMap.get(date)?.follower_count || 0,
     }))
 
-    // Likes e Comments: dados dos posts
     const likesData = dates.map(date => ({
       date,
       value: postsByDay.get(date)?.likes || dailyDataMap.get(date)?.likes || 0,
@@ -649,7 +648,6 @@ function AnalyticsCharts({
       value: postsByDay.get(date)?.comments || dailyDataMap.get(date)?.comments || 0,
     }))
 
-    // Engajamento: likes + comments
     const engagementData = dates.map(date => {
       const postData = postsByDay.get(date)
       const dailyData = dailyDataMap.get(date)
@@ -662,73 +660,23 @@ function AnalyticsCharts({
     return { reachData, impressionsData, followersData, engagementData, likesData, commentsData }
   }, [daily_data, top_posts, timePeriod])
 
-  // Configurações dos gráficos
-  const chartConfigs = [
-    {
-      key: 'reach',
-      title: 'Alcance',
-      description: 'Contas únicas que viram seu conteúdo',
-      data: chartData.reachData,
-      color: '#8B5CF6',
-      gradientFrom: '#3B82F6',
-      gradientTo: '#8B5CF6',
-      icon: Users,
-    },
-    {
-      key: 'impressions',
-      title: 'Impressões',
-      description: 'Total de visualizações do seu conteúdo',
-      data: chartData.impressionsData,
-      color: '#3B82F6',
-      gradientFrom: '#06B6D4',
-      gradientTo: '#3B82F6',
-      icon: Eye,
-    },
-    {
-      key: 'engagement',
-      title: 'Engajamento',
-      description: 'Curtidas + comentários em posts publicados',
-      data: chartData.engagementData,
-      color: '#EC4899',
-      gradientFrom: '#EC4899',
-      gradientTo: '#F43F5E',
-      icon: Heart,
-    },
-    {
-      key: 'likes',
-      title: 'Curtidas',
-      description: 'Curtidas em posts publicados no dia',
-      data: chartData.likesData,
-      color: '#EF4444',
-      gradientFrom: '#F97316',
-      gradientTo: '#EF4444',
-      icon: Heart,
-    },
-    {
-      key: 'comments',
-      title: 'Comentários',
-      description: 'Comentários em posts publicados no dia',
-      data: chartData.commentsData,
-      color: '#06B6D4',
-      gradientFrom: '#06B6D4',
-      gradientTo: '#0891B2',
-      icon: MessageCircle,
-    },
-    {
-      key: 'followers',
-      title: 'Seguidores',
-      description: 'Número total de seguidores',
-      data: chartData.followersData,
-      color: '#10B981',
-      gradientFrom: '#10B981',
-      gradientTo: '#059669',
-      icon: Users,
-    },
-  ]
-
   const periodLabels = {
     week: 'Última Semana',
     month: 'Último Mês',
+  }
+
+  // Calcular estatísticas para cada métrica
+  const calculateStats = (data: { date: string; value: number }[]) => {
+    const values = data.map(d => d.value)
+    const nonZeroValues = values.filter(v => v > 0)
+    const total = values.reduce((a, b) => a + b, 0)
+    const avg = values.length > 0 ? total / values.length : 0
+    const min = nonZeroValues.length > 0 ? Math.min(...nonZeroValues) : 0
+    const max = Math.max(...values) || 0
+    const firstValue = values[0] || 0
+    const lastValue = values[values.length - 1] || 0
+    const variation = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0
+    return { total, avg, min, max, variation }
   }
 
   return (
@@ -758,15 +706,108 @@ function AnalyticsCharts({
         </div>
       </div>
 
-      {/* Grid de Gráficos */}
+      {/* Grid de Gráficos - 6 gráficos específicos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {chartConfigs.map((config) => (
-          <ChartCard
-            key={config.key}
-            config={config}
-            periodLabel={periodLabels[timePeriod]}
+        {/* 1. Curtidas - Barras Verticais */}
+        <ChartCard
+          title="Curtidas"
+          description="Curtidas em posts publicados no dia"
+          icon={Heart}
+          color="#EF4444"
+          stats={calculateStats(chartData.likesData)}
+          periodLabel={periodLabels[timePeriod]}
+        >
+          <BarChartComponent
+            data={chartData.likesData}
+            color="#EF4444"
+            height={180}
+            showAverage={true}
           />
-        ))}
+        </ChartCard>
+
+        {/* 2. Seguidores - Barras Divergentes (Crescimento) */}
+        <ChartCard
+          title="Seguidores"
+          description="Crescimento líquido de seguidores"
+          icon={Users}
+          color="#10B981"
+          stats={calculateStats(chartData.followersData)}
+          periodLabel={periodLabels[timePeriod]}
+          showGrowthBadge={true}
+        >
+          <FollowersChart
+            data={chartData.followersData}
+            height={180}
+          />
+        </ChartCard>
+
+        {/* 3. Impressões - Gráfico de Área */}
+        <ChartCard
+          title="Impressões"
+          description="Total de visualizações do seu conteúdo"
+          icon={Eye}
+          color="#3B82F6"
+          stats={calculateStats(chartData.impressionsData)}
+          periodLabel={periodLabels[timePeriod]}
+        >
+          <AreaChartComponent
+            data={chartData.impressionsData}
+            color="#3B82F6"
+            gradientFrom="#06B6D4"
+            gradientTo="#3B82F6"
+            height={180}
+          />
+        </ChartCard>
+
+        {/* 4. Alcance - Linha Suave */}
+        <ChartCard
+          title="Alcance"
+          description="Contas únicas que viram seu conteúdo"
+          icon={Users}
+          color="#8B5CF6"
+          stats={calculateStats(chartData.reachData)}
+          periodLabel={periodLabels[timePeriod]}
+        >
+          <LineChartComponent
+            data={chartData.reachData}
+            color="#8B5CF6"
+            height={180}
+            label="Alcance"
+          />
+        </ChartCard>
+
+        {/* 5. Engajamento - Gráfico Combo (Barras + Linha de Taxa) */}
+        <ChartCard
+          title="Engajamento"
+          description="Interações e taxa de engajamento"
+          icon={Heart}
+          color="#EC4899"
+          stats={calculateStats(chartData.engagementData)}
+          periodLabel={periodLabels[timePeriod]}
+        >
+          <EngagementComboChart
+            data={chartData.engagementData}
+            reachData={chartData.reachData}
+            followersCount={followersCount}
+            height={180}
+          />
+        </ChartCard>
+
+        {/* 6. Comentários - Lollipop Chart */}
+        <ChartCard
+          title="Comentários"
+          description="Comentários em posts publicados"
+          icon={MessageCircle}
+          color="#06B6D4"
+          stats={calculateStats(chartData.commentsData)}
+          periodLabel={periodLabels[timePeriod]}
+        >
+          <LollipopChart
+            data={chartData.commentsData}
+            color="#06B6D4"
+            height={180}
+          />
+        </ChartCard>
       </div>
     </div>
   )
@@ -774,36 +815,24 @@ function AnalyticsCharts({
 
 // ===== COMPONENTE: Card de Gráfico Individual =====
 function ChartCard({
-  config,
+  title,
+  description,
+  icon: Icon,
+  color,
+  stats,
   periodLabel,
+  showGrowthBadge = false,
+  children,
 }: {
-  config: {
-    key: string
-    title: string
-    description: string
-    data: { date: string; value: number }[]
-    color: string
-    gradientFrom: string
-    gradientTo: string
-    icon: any
-  }
+  title: string
+  description: string
+  icon: any
+  color: string
+  stats: { total: number; avg: number; min: number; max: number; variation: number }
   periodLabel: string
+  showGrowthBadge?: boolean
+  children: React.ReactNode
 }) {
-  const Icon = config.icon
-  const values = config.data.map(d => d.value)
-  const nonZeroValues = values.filter(v => v > 0)
-
-  // Calcular estatísticas
-  const total = values.reduce((a, b) => a + b, 0)
-  const avg = values.length > 0 ? total / values.length : 0
-  const min = nonZeroValues.length > 0 ? Math.min(...nonZeroValues) : 0
-  const max = Math.max(...values) || 0
-
-  // Calcular variação (primeiro vs último)
-  const firstValue = values[0] || 0
-  const lastValue = values[values.length - 1] || 0
-  const variation = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0
-
   return (
     <div className="bg-gray-50 rounded-2xl p-5 hover:shadow-md transition-shadow">
       {/* Header do Card */}
@@ -811,55 +840,49 @@ function ChartCard({
         <div className="flex items-center gap-3">
           <div
             className="p-2.5 rounded-xl"
-            style={{ backgroundColor: `${config.color}15` }}
+            style={{ backgroundColor: `${color}15` }}
           >
-            <Icon className="w-5 h-5" style={{ color: config.color }} />
+            <Icon className="w-5 h-5" style={{ color }} />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900">{config.title}</h4>
-            <p className="text-xs text-gray-500">{config.description}</p>
+            <h4 className="font-semibold text-gray-900">{title}</h4>
+            <p className="text-xs text-gray-500">{description}</p>
           </div>
         </div>
 
         {/* Badge de variação */}
         <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-          variation >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          stats.variation >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
         }`}>
-          <TrendingUp className={`w-3 h-3 ${variation < 0 ? 'rotate-180' : ''}`} />
-          {variation >= 0 ? '+' : ''}{variation.toFixed(1)}%
+          <TrendingUp className={`w-3 h-3 ${stats.variation < 0 ? 'rotate-180' : ''}`} />
+          {stats.variation >= 0 ? '+' : ''}{stats.variation.toFixed(1)}%
         </div>
       </div>
 
       {/* Valor Principal */}
       <div className="mb-4">
-        <p className="text-3xl font-bold text-gray-900">{formatNumber(total)}</p>
+        <p className="text-3xl font-bold text-gray-900">
+          {showGrowthBadge ? formatNumber(stats.max) : formatNumber(stats.total)}
+        </p>
         <p className="text-xs text-gray-500">{periodLabel}</p>
       </div>
 
       {/* Gráfico */}
-      <LineChart
-        data={config.data}
-        color={config.color}
-        gradientFrom={config.gradientFrom}
-        gradientTo={config.gradientTo}
-        height={180}
-        title={config.title}
-        formatValue={(v) => formatNumber(v)}
-      />
+      {children}
 
       {/* Estatísticas */}
       <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-200">
         <div className="text-center">
           <p className="text-xs text-gray-500 mb-0.5">Mínimo</p>
-          <p className="text-sm font-semibold text-gray-700">{formatNumber(min)}</p>
+          <p className="text-sm font-semibold text-gray-700">{formatNumber(stats.min)}</p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500 mb-0.5">Média</p>
-          <p className="text-sm font-semibold text-gray-700">{formatNumber(Math.round(avg))}</p>
+          <p className="text-sm font-semibold text-gray-700">{formatNumber(Math.round(stats.avg))}</p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500 mb-0.5">Máximo</p>
-          <p className="text-sm font-semibold text-gray-700">{formatNumber(max)}</p>
+          <p className="text-sm font-semibold text-gray-700">{formatNumber(stats.max)}</p>
         </div>
       </div>
     </div>
