@@ -49,7 +49,7 @@ export default function InstagramAnalyticsClient({
   const isFree = planType === 'free'
 
   // Estados de posts (lazy loaded)
-  const [postSortBy, setPostSortBy] = useState<PostSortOption>('engagement')
+  const [postSortBy, setPostSortBy] = useState<PostSortOption>('recent')
   const [postCategory, setPostCategory] = useState<PostCategory>('all')
   const [postsToShow, setPostsToShow] = useState(12) // Reduzido de 24 para 12
 
@@ -169,11 +169,11 @@ export default function InstagramAnalyticsClient({
   }, [hasMorePosts, activeTab])
 
   const sortOptions = [
+    { value: 'recent', label: 'Mais Recentes' },
     { value: 'engagement', label: 'Maior Engajamento' },
     { value: 'likes', label: 'Mais Curtidas' },
     { value: 'comments', label: 'Mais Comentários' },
     { value: 'reach', label: 'Maior Alcance' },
-    { value: 'recent', label: 'Mais Recentes' },
   ]
 
   // Calcular métricas (memoizado)
