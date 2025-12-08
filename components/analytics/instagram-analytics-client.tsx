@@ -555,6 +555,8 @@ function OverviewTab({
 }
 
 // ===== COMPONENTE: Gráficos de Analytics =====
+type TimePeriod = 'week' | 'month' | 'year'
+
 function AnalyticsCharts({
   daily_data,
   top_posts,
@@ -562,183 +564,293 @@ function AnalyticsCharts({
   daily_data: any[]
   top_posts: any[]
 }) {
-  const [activeChart, setActiveChart] = useState<'reach' | 'engagement' | 'likes' | 'followers'>('reach')
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
 
-  // Preparar dados para os gráficos
+  // Função para filtrar dados por período
+  const filterDataByPeriod = useCallback((data: any[], period: TimePeriod) => {
+    const now = new Date()
+    let daysToShow = 30
+
+    switch (period) {
+      case 'week':
+        daysToShow = 7
+        break
+      case 'month':
+        daysToShow = 30
+        break
+      case 'year':
+        daysToShow = 365
+        break
+    }
+
+    return data.slice(0, daysToShow).reverse()
+  }, [])
+
+  // Preparar dados para os gráficos baseado no período
   const chartData = useMemo(() => {
-    // Dados de alcance diário (invertido para mostrar do mais antigo ao mais recente)
-    const reachData = daily_data
-      .slice(0, 30)
-      .reverse()
+    const daysCount = timePeriod === 'week' ? 7 : timePeriod === 'month' ? 30 : 365
+
+    // Dados de alcance diário
+    const reachData = filterDataByPeriod(daily_data, timePeriod)
       .map((day: any) => ({
         date: day.date,
         value: day.reach || 0,
       }))
 
+    // Dados de impressões diário
+    const impressionsData = filterDataByPeriod(daily_data, timePeriod)
+      .map((day: any) => ({
+        date: day.date,
+        value: day.impressions || 0,
+      }))
+
     // Dados de seguidores diário
-    const followersData = daily_data
-      .slice(0, 30)
-      .reverse()
+    const followersData = filterDataByPeriod(daily_data, timePeriod)
       .map((day: any) => ({
         date: day.date,
         value: day.follower_count || 0,
       }))
 
-    // Agregar engajamento por dia dos posts
+    // Agregar engajamento e curtidas por dia dos posts
     const engagementByDay = new Map<string, number>()
     const likesByDay = new Map<string, number>()
+    const commentsByDay = new Map<string, number>()
 
     top_posts.forEach((post: any) => {
       if (post.timestamp) {
         const date = post.timestamp.split('T')[0]
         engagementByDay.set(date, (engagementByDay.get(date) || 0) + (post.likes || 0) + (post.comments || 0))
         likesByDay.set(date, (likesByDay.get(date) || 0) + (post.likes || 0))
+        commentsByDay.set(date, (commentsByDay.get(date) || 0) + (post.comments || 0))
       }
     })
 
-    // Converter para array ordenado (últimos 30 dias)
-    const last30Days = []
-    for (let i = 29; i >= 0; i--) {
+    // Gerar array de datas para o período
+    const dates = []
+    for (let i = daysCount - 1; i >= 0; i--) {
       const date = new Date()
       date.setDate(date.getDate() - i)
       const dateStr = date.toISOString().split('T')[0]
-      last30Days.push(dateStr)
+      dates.push(dateStr)
     }
 
-    const engagementData = last30Days.map(date => ({
+    const engagementData = dates.map(date => ({
       date,
       value: engagementByDay.get(date) || 0,
     }))
 
-    const likesData = last30Days.map(date => ({
+    const likesData = dates.map(date => ({
       date,
       value: likesByDay.get(date) || 0,
     }))
 
-    return { reachData, followersData, engagementData, likesData }
-  }, [daily_data, top_posts])
+    const commentsData = dates.map(date => ({
+      date,
+      value: commentsByDay.get(date) || 0,
+    }))
 
-  const chartConfigs = {
-    reach: {
+    return { reachData, impressionsData, followersData, engagementData, likesData, commentsData }
+  }, [daily_data, top_posts, timePeriod, filterDataByPeriod])
+
+  // Configurações dos gráficos
+  const chartConfigs = [
+    {
+      key: 'reach',
       title: 'Alcance',
+      description: 'Contas únicas alcançadas',
       data: chartData.reachData,
       color: '#8B5CF6',
       gradientFrom: '#3B82F6',
       gradientTo: '#8B5CF6',
       icon: Users,
     },
-    engagement: {
+    {
+      key: 'impressions',
+      title: 'Impressões',
+      description: 'Total de visualizações',
+      data: chartData.impressionsData,
+      color: '#3B82F6',
+      gradientFrom: '#06B6D4',
+      gradientTo: '#3B82F6',
+      icon: Eye,
+    },
+    {
+      key: 'engagement',
       title: 'Engajamento',
+      description: 'Curtidas + Comentários',
       data: chartData.engagementData,
       color: '#EC4899',
       gradientFrom: '#EC4899',
       gradientTo: '#F43F5E',
       icon: Heart,
     },
-    likes: {
+    {
+      key: 'likes',
       title: 'Curtidas',
+      description: 'Total de curtidas recebidas',
       data: chartData.likesData,
       color: '#EF4444',
       gradientFrom: '#F97316',
       gradientTo: '#EF4444',
       icon: Heart,
     },
-    followers: {
+    {
+      key: 'comments',
+      title: 'Comentários',
+      description: 'Total de comentários',
+      data: chartData.commentsData,
+      color: '#06B6D4',
+      gradientFrom: '#06B6D4',
+      gradientTo: '#0891B2',
+      icon: MessageCircle,
+    },
+    {
+      key: 'followers',
       title: 'Seguidores',
+      description: 'Evolução de seguidores',
       data: chartData.followersData,
       color: '#10B981',
       gradientFrom: '#10B981',
       gradientTo: '#059669',
       icon: Users,
     },
+  ]
+
+  const periodLabels = {
+    week: 'Última Semana',
+    month: 'Último Mês',
+    year: 'Último Ano',
   }
 
-  const currentChart = chartConfigs[activeChart]
-  const Icon = currentChart.icon
+  return (
+    <div className="space-y-6">
+      {/* Header com filtro de tempo */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Evolução das Métricas</h3>
+          <p className="text-sm text-gray-500">Acompanhe o desempenho ao longo do tempo</p>
+        </div>
 
-  // Calcular variação
-  const chartValues = currentChart.data.map(d => d.value)
-  const firstValue = chartValues[0] || 0
-  const lastValue = chartValues[chartValues.length - 1] || 0
+        {/* Filtro de período */}
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+          {(['week', 'month', 'year'] as TimePeriod[]).map((period) => (
+            <button
+              key={period}
+              onClick={() => setTimePeriod(period)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                timePeriod === period
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {period === 'week' ? 'Semana' : period === 'month' ? 'Mês' : 'Ano'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid de Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {chartConfigs.map((config) => (
+          <ChartCard
+            key={config.key}
+            config={config}
+            periodLabel={periodLabels[timePeriod]}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===== COMPONENTE: Card de Gráfico Individual =====
+function ChartCard({
+  config,
+  periodLabel,
+}: {
+  config: {
+    key: string
+    title: string
+    description: string
+    data: { date: string; value: number }[]
+    color: string
+    gradientFrom: string
+    gradientTo: string
+    icon: any
+  }
+  periodLabel: string
+}) {
+  const Icon = config.icon
+  const values = config.data.map(d => d.value)
+  const nonZeroValues = values.filter(v => v > 0)
+
+  // Calcular estatísticas
+  const total = values.reduce((a, b) => a + b, 0)
+  const avg = values.length > 0 ? total / values.length : 0
+  const min = nonZeroValues.length > 0 ? Math.min(...nonZeroValues) : 0
+  const max = Math.max(...values) || 0
+
+  // Calcular variação (primeiro vs último)
+  const firstValue = values[0] || 0
+  const lastValue = values[values.length - 1] || 0
   const variation = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0
 
   return (
-    <div className="space-y-4">
-      {/* Seletor de gráfico */}
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(chartConfigs).map(([key, config]) => (
-          <button
-            key={key}
-            onClick={() => setActiveChart(key as any)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              activeChart === key
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+    <div className="bg-gray-50 rounded-2xl p-5 hover:shadow-md transition-shadow">
+      {/* Header do Card */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2.5 rounded-xl"
+            style={{ backgroundColor: `${config.color}15` }}
           >
-            <config.icon className="w-4 h-4" />
-            {config.title}
-          </button>
-        ))}
-      </div>
-
-      {/* Gráfico */}
-      <div className="bg-gray-50 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="p-2 rounded-lg"
-              style={{ backgroundColor: `${currentChart.color}20` }}
-            >
-              <Icon className="w-5 h-5" style={{ color: currentChart.color }} />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {currentChart.title}
-              </h3>
-              <p className="text-sm text-gray-500">Últimos 30 dias</p>
-            </div>
+            <Icon className="w-5 h-5" style={{ color: config.color }} />
           </div>
-
-          {/* Variação */}
-          <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-            variation >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}>
-            <TrendingUp className={`w-4 h-4 ${variation < 0 ? 'rotate-180' : ''}`} />
-            {variation >= 0 ? '+' : ''}{variation.toFixed(1)}%
+          <div>
+            <h4 className="font-semibold text-gray-900">{config.title}</h4>
+            <p className="text-xs text-gray-500">{config.description}</p>
           </div>
         </div>
 
-        {/* Gráfico de Linha */}
-        <LineChart
-          data={currentChart.data}
-          color={currentChart.color}
-          gradientFrom={currentChart.gradientFrom}
-          gradientTo={currentChart.gradientTo}
-          height={250}
-          formatValue={(v) => formatNumber(v)}
-        />
+        {/* Badge de variação */}
+        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+          variation >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}>
+          <TrendingUp className={`w-3 h-3 ${variation < 0 ? 'rotate-180' : ''}`} />
+          {variation >= 0 ? '+' : ''}{variation.toFixed(1)}%
+        </div>
+      </div>
 
-        {/* Resumo */}
-        <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-gray-200">
-          <div className="text-center">
-            <p className="text-sm text-gray-500">Mínimo</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {formatNumber(Math.min(...chartValues.filter(v => v > 0)) || 0)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm text-gray-500">Média</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {formatNumber(Math.round(chartValues.reduce((a, b) => a + b, 0) / chartValues.length) || 0)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm text-gray-500">Máximo</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {formatNumber(Math.max(...chartValues) || 0)}
-            </p>
-          </div>
+      {/* Valor Principal */}
+      <div className="mb-4">
+        <p className="text-3xl font-bold text-gray-900">{formatNumber(total)}</p>
+        <p className="text-xs text-gray-500">{periodLabel}</p>
+      </div>
+
+      {/* Gráfico */}
+      <LineChart
+        data={config.data}
+        color={config.color}
+        gradientFrom={config.gradientFrom}
+        gradientTo={config.gradientTo}
+        height={180}
+        title={config.title}
+        formatValue={(v) => formatNumber(v)}
+      />
+
+      {/* Estatísticas */}
+      <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-200">
+        <div className="text-center">
+          <p className="text-xs text-gray-500 mb-0.5">Mínimo</p>
+          <p className="text-sm font-semibold text-gray-700">{formatNumber(min)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-gray-500 mb-0.5">Média</p>
+          <p className="text-sm font-semibold text-gray-700">{formatNumber(Math.round(avg))}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-gray-500 mb-0.5">Máximo</p>
+          <p className="text-sm font-semibold text-gray-700">{formatNumber(max)}</p>
         </div>
       </div>
     </div>
