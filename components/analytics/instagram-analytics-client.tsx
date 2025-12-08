@@ -576,6 +576,13 @@ function AnalyticsCharts({
   const chartData = useMemo(() => {
     const daysCount = timePeriod === 'week' ? 7 : 30
 
+    // Debug: verificar dados recebidos
+    console.log('📊 [Charts] daily_data recebido:', daily_data?.length || 0, 'dias')
+    if (daily_data && daily_data.length > 0) {
+      console.log('📊 [Charts] Primeiro dia:', daily_data[0])
+      console.log('📊 [Charts] Último dia:', daily_data[daily_data.length - 1])
+    }
+
     // Criar mapa de dados diários por data (da API de métricas da CONTA)
     // Esses dados são métricas REAIS do Instagram por dia
     const dailyDataMap = new Map<string, any>()
@@ -583,6 +590,8 @@ function AnalyticsCharts({
       const dateStr = day.date?.split('T')[0] || day.date
       dailyDataMap.set(dateStr, day)
     })
+
+    console.log('📊 [Charts] dailyDataMap keys:', Array.from(dailyDataMap.keys()).slice(0, 5))
 
     // Gerar array de datas para o período (do mais antigo ao mais recente)
     const dates: string[] = []
@@ -592,6 +601,15 @@ function AnalyticsCharts({
       const dateStr = date.toISOString().split('T')[0]
       dates.push(dateStr)
     }
+
+    console.log('📊 [Charts] Datas geradas:', dates.slice(0, 5))
+
+    // Verificar matches entre datas geradas e dailyDataMap
+    let matchCount = 0
+    dates.forEach(date => {
+      if (dailyDataMap.has(date)) matchCount++
+    })
+    console.log('📊 [Charts] Matches encontrados:', matchCount, 'de', dates.length)
 
     // ALCANCE: dados diários da CONTA (métricas reais do Instagram)
     const reachData = dates.map(date => ({
@@ -631,6 +649,12 @@ function AnalyticsCharts({
         value: (dayData?.likes || 0) + (dayData?.comments || 0),
       }
     })
+
+    // Debug: verificar dados finais
+    const totalReach = reachData.reduce((sum, d) => sum + d.value, 0)
+    const totalImpressions = impressionsData.reduce((sum, d) => sum + d.value, 0)
+    const totalEngagement = engagementData.reduce((sum, d) => sum + d.value, 0)
+    console.log('📊 [Charts] Totais calculados - Reach:', totalReach, 'Impressions:', totalImpressions, 'Engagement:', totalEngagement)
 
     return { reachData, impressionsData, followersData, engagementData, likesData, commentsData }
   }, [daily_data, timePeriod])
