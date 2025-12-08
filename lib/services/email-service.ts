@@ -115,28 +115,30 @@ export class EmailService {
 
   // ============= ENVIO DE EMAILS =============
 
-  async sendEmail(params: SendEmailParams): Promise<boolean> {
+  async sendEmail(params: SendEmailParams): Promise<{ success: boolean; error?: string }> {
     try {
       const settings = await this.getSettings();
 
       // Verificar se está habilitado
       if (!settings.enabled) {
         console.log('📧 Email desabilitado nas configurações');
-        return false;
+        return { success: false, error: 'Sistema de email desabilitado' };
       }
 
       // Verificar limite diário
       if (settings.emails_sent_today >= settings.daily_limit) {
         console.warn('⚠️ Limite diário de emails atingido');
-        return false;
+        return { success: false, error: 'Limite diário de emails atingido' };
       }
 
       // Inicializar Resend
       const resend = await this.initializeResend();
       if (!resend) {
-        console.error('❌ Resend não configurado');
-        return false;
+        console.error('❌ Resend não configurado - enabled:', settings.enabled, 'api_key:', !!settings.api_key, 'provider:', settings.provider);
+        return { success: false, error: 'Resend não configurado. Verifique API Key e provedor.' };
       }
+
+      console.log('📧 Enviando email para:', params.to, 'de:', settings.from_email);
 
       // Enviar email
       const { data, error } = await resend.emails.send({
@@ -145,18 +147,18 @@ export class EmailService {
         subject: params.subject,
         html: params.html,
         text: params.text,
-        replyTo: settings.reply_to
+        replyTo: settings.reply_to || undefined
       });
 
       if (error) {
-        console.error('❌ Erro ao enviar email:', error);
+        console.error('❌ Erro Resend:', error);
         await this.logEmail({
           ...params,
           from_email: settings.from_email,
           status: 'failed',
           error_message: error.message
         });
-        return false;
+        return { success: false, error: `Erro Resend: ${error.message}` };
       }
 
       // Log de sucesso
@@ -172,11 +174,11 @@ export class EmailService {
       await this.supabase.rpc('increment_email_count');
 
       console.log('✅ Email enviado:', data?.id);
-      return true;
+      return { success: true };
 
-    } catch (error) {
-      console.error('❌ Erro ao enviar email:', error);
-      return false;
+    } catch (error: any) {
+      console.error('❌ Erro ao enviar email:', error?.message || error);
+      return { success: false, error: error?.message || 'Erro desconhecido ao enviar email' };
     }
   }
 
@@ -214,7 +216,7 @@ export class EmailService {
     const html = this.generateWelcomeEmailHTML(data);
     const text = this.generateWelcomeEmailText(data);
 
-    return this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
       subject: `Bem-vindo ao Leadgram, ${data.user_name}! 🎉`,
       html,
@@ -222,6 +224,7 @@ export class EmailService {
       template_type: 'welcome',
       metadata: { user_name: data.user_name, plan_name: data.plan_name }
     });
+    return result.success;
   }
 
   async sendPaymentConfirmation(email: string, data: PaymentConfirmationData): Promise<boolean> {
@@ -231,7 +234,7 @@ export class EmailService {
     const html = this.generatePaymentConfirmationHTML(data);
     const text = this.generatePaymentConfirmationText(data);
 
-    return this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
       subject: `Pagamento confirmado - ${data.plan_name}`,
       html,
@@ -243,6 +246,7 @@ export class EmailService {
         payment_id: data.payment_id
       }
     });
+    return result.success;
   }
 
   async sendPaymentFailed(email: string, data: PaymentFailedData): Promise<boolean> {
@@ -252,7 +256,7 @@ export class EmailService {
     const html = this.generatePaymentFailedHTML(data);
     const text = this.generatePaymentFailedText(data);
 
-    return this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
       subject: `Problema com pagamento - ${data.plan_name}`,
       html,
@@ -264,6 +268,7 @@ export class EmailService {
         error_message: data.error_message
       }
     });
+    return result.success;
   }
 
   async sendSubscriptionCancelled(email: string, data: SubscriptionCancelledData): Promise<boolean> {
@@ -273,7 +278,7 @@ export class EmailService {
     const html = this.generateSubscriptionCancelledHTML(data);
     const text = this.generateSubscriptionCancelledText(data);
 
-    return this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
       subject: `Assinatura cancelada - ${data.plan_name}`,
       html,
@@ -285,6 +290,7 @@ export class EmailService {
         reason: data.reason
       }
     });
+    return result.success;
   }
 
   async sendAdminNotification(email: string, data: AdminNotificationData): Promise<boolean> {
@@ -294,7 +300,7 @@ export class EmailService {
     const html = this.generateAdminNotificationHTML(data);
     const text = this.generateAdminNotificationText(data);
 
-    return this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
       subject: `[Admin] ${data.title}`,
       html,
@@ -302,9 +308,10 @@ export class EmailService {
       template_type: 'admin_notification',
       metadata: data.metadata
     });
+    return result.success;
   }
 
-  async sendTestEmail(email: string, data: TestEmailData): Promise<boolean> {
+  async sendTestEmail(email: string, data: TestEmailData): Promise<{ success: boolean; error?: string }> {
     const html = this.generateTestEmailHTML(data);
     const text = this.generateTestEmailText(data);
 

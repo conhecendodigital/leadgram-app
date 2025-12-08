@@ -41,13 +41,14 @@ export async function POST(request: Request) {
 
     // Enviar email de teste
     const emailService = new EmailService(adminClient);
-    const success = await emailService.sendTestEmail(email, {
+    const result = await emailService.sendTestEmail(email, {
       test_message: 'Se você está lendo isso, significa que seu sistema de emails está configurado corretamente! 🎉'
     });
 
-    if (!success) {
+    if (!result.success) {
+      console.error('Erro ao enviar email de teste:', result.error);
       return NextResponse.json(
-        { error: 'Erro ao enviar email. Verifique as configurações e API Key.' },
+        { error: result.error || 'Erro ao enviar email. Verifique as configurações e API Key.' },
         { status: 500 }
       );
     }
