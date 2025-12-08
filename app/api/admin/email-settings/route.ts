@@ -25,19 +25,25 @@ const DEFAULT_EMAIL_SETTINGS = {
 // GET - Buscar configurações de email
 export async function GET() {
   try {
+    console.log('[email-settings] Iniciando GET...')
+
     // Usar cliente normal para autenticação
     const supabase = await createServerClient()
+    console.log('[email-settings] Server client criado')
 
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
 
+    console.log('[email-settings] Auth check:', { userId: user?.id, authError: authError?.message })
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
     const role = await getUserRole(user.id)
+    console.log('[email-settings] Role:', role)
 
     if (role !== 'admin') {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
@@ -46,14 +52,18 @@ export async function GET() {
     // Usar cliente admin para operações no banco (bypass RLS)
     let adminClient
     try {
+      console.log('[email-settings] Criando service client...')
+      console.log('[email-settings] SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+      console.log('[email-settings] SERVICE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
       adminClient = createServiceClient()
-    } catch (serviceError) {
-      console.error('Erro ao criar service client:', serviceError)
+      console.log('[email-settings] Service client criado com sucesso')
+    } catch (serviceError: any) {
+      console.error('[email-settings] Erro ao criar service client:', serviceError?.message)
       // Retornar configurações padrão se não conseguir criar o service client
       return NextResponse.json({
         success: true,
         settings: DEFAULT_EMAIL_SETTINGS,
-        warning: 'Service client não disponível, usando configurações padrão'
+        warning: 'Service client não disponível: ' + serviceError?.message
       })
     }
 
