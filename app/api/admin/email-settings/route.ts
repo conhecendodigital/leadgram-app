@@ -3,6 +3,25 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { getUserRole } from '@/lib/roles'
 import { NextResponse } from 'next/server'
 
+// Configurações padrão caso a tabela não exista
+const DEFAULT_EMAIL_SETTINGS = {
+  id: 'default',
+  provider: 'resend',
+  from_email: 'noreply@leadgram.app',
+  from_name: 'Leadgram',
+  enabled: false,
+  daily_limit: 1000,
+  emails_sent_today: 0,
+  send_welcome_email: true,
+  send_payment_confirmation: true,
+  send_payment_failed: true,
+  send_subscription_cancelled: true,
+  send_password_reset: true,
+  send_admin_notifications: true,
+  api_key: '',
+  reply_to: ''
+}
+
 // GET - Buscar configurações de email
 export async function GET() {
   try {
@@ -25,7 +44,18 @@ export async function GET() {
     }
 
     // Usar cliente admin para operações no banco (bypass RLS)
-    const adminClient = createServiceClient()
+    let adminClient
+    try {
+      adminClient = createServiceClient()
+    } catch (serviceError) {
+      console.error('Erro ao criar service client:', serviceError)
+      // Retornar configurações padrão se não conseguir criar o service client
+      return NextResponse.json({
+        success: true,
+        settings: DEFAULT_EMAIL_SETTINGS,
+        warning: 'Service client não disponível, usando configurações padrão'
+      })
+    }
 
     // Buscar configurações de email
     const { data, error } = await (adminClient
@@ -33,13 +63,28 @@ export async function GET() {
       .select('*')
       .maybeSingle()
 
+    // Se a tabela não existe ou outro erro, retornar configurações padrão
     if (error) {
-      console.error('Erro ao buscar configurações de email:', error)
-      return NextResponse.json({ error: 'Erro ao buscar configurações' }, { status: 500 })
+      console.error('Erro ao buscar configurações de email:', error.message, error.code)
+
+      // Se for erro de tabela não existir (código 42P01), retornar defaults
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        return NextResponse.json({
+          success: true,
+          settings: DEFAULT_EMAIL_SETTINGS,
+          warning: 'Tabela email_settings não existe. Execute a migration.'
+        })
+      }
+
+      return NextResponse.json({
+        error: 'Erro ao buscar configurações',
+        details: error.message
+      }, { status: 500 })
     }
 
-    // Se não existe, criar configuração padrão
+    // Se não existe registro, criar configuração padrão ou retornar defaults
     if (!data) {
+      // Tentar criar configuração padrão
       const { data: newSettings, error: insertError } = await (adminClient
         .from('email_settings') as any)
         .insert({
@@ -60,8 +105,13 @@ export async function GET() {
         .maybeSingle()
 
       if (insertError) {
-        console.error('Erro ao criar configurações padrão:', insertError)
-        return NextResponse.json({ error: 'Erro ao criar configurações' }, { status: 500 })
+        console.error('Erro ao criar configurações padrão:', insertError.message)
+        // Retornar defaults mesmo se não conseguir inserir
+        return NextResponse.json({
+          success: true,
+          settings: DEFAULT_EMAIL_SETTINGS,
+          warning: 'Não foi possível salvar configurações padrão'
+        })
       }
 
       return NextResponse.json({
@@ -74,9 +124,12 @@ export async function GET() {
       success: true,
       settings: data
     })
-  } catch (error) {
-    console.error('Erro no GET /api/admin/email-settings:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Erro no GET /api/admin/email-settings:', error?.message || error)
+    return NextResponse.json({
+      error: 'Erro interno do servidor',
+      details: error?.message || 'Erro desconhecido'
+    }, { status: 500 })
   }
 }
 
