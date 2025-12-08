@@ -555,7 +555,7 @@ function OverviewTab({
 }
 
 // ===== COMPONENTE: Gráficos de Analytics =====
-type TimePeriod = 'week' | 'month' | 'year'
+type TimePeriod = 'week' | 'month'
 
 function AnalyticsCharts({
   daily_data,
@@ -568,27 +568,13 @@ function AnalyticsCharts({
 
   // Função para filtrar dados por período
   const filterDataByPeriod = useCallback((data: any[], period: TimePeriod) => {
-    const now = new Date()
-    let daysToShow = 30
-
-    switch (period) {
-      case 'week':
-        daysToShow = 7
-        break
-      case 'month':
-        daysToShow = 30
-        break
-      case 'year':
-        daysToShow = 365
-        break
-    }
-
+    const daysToShow = period === 'week' ? 7 : 30
     return data.slice(0, daysToShow).reverse()
   }, [])
 
   // Preparar dados para os gráficos baseado no período
   const chartData = useMemo(() => {
-    const daysCount = timePeriod === 'week' ? 7 : timePeriod === 'month' ? 30 : 365
+    const daysCount = timePeriod === 'week' ? 7 : 30
 
     // Criar mapa de dados diários por data (da API de métricas da conta)
     const dailyDataMap = new Map<string, any>()
@@ -739,7 +725,6 @@ function AnalyticsCharts({
   const periodLabels = {
     week: 'Última Semana',
     month: 'Último Mês',
-    year: 'Último Ano',
   }
 
   return (
@@ -753,7 +738,7 @@ function AnalyticsCharts({
 
         {/* Filtro de período */}
         <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-          {(['week', 'month', 'year'] as TimePeriod[]).map((period) => (
+          {(['week', 'month'] as TimePeriod[]).map((period) => (
             <button
               key={period}
               onClick={() => setTimePeriod(period)}
@@ -763,7 +748,7 @@ function AnalyticsCharts({
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {period === 'week' ? 'Semana' : period === 'month' ? 'Mês' : 'Ano'}
+              {period === 'week' ? 'Semana' : 'Mês'}
             </button>
           ))}
         </div>
