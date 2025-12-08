@@ -55,10 +55,13 @@ export async function GET(request: NextRequest) {
 
     // PASSO 1: Buscar insights da conta (métricas gerais)
     // Métricas permitidas pela API do Facebook Instagram Insights
+    // impressions = total de visualizações do conteúdo
+    // reach = contas únicas que viram o conteúdo
+    // follower_count = número de seguidores
     const accountMetricsUrl = new URL(
       `https://graph.facebook.com/v18.0/${validAccount.instagram_user_id}/insights`
     )
-    accountMetricsUrl.searchParams.set('metric', 'reach,follower_count')
+    accountMetricsUrl.searchParams.set('metric', 'impressions,reach,follower_count')
     accountMetricsUrl.searchParams.set('period', 'day')
     accountMetricsUrl.searchParams.set('since', since.toString())
     accountMetricsUrl.searchParams.set('until', until.toString())
@@ -212,53 +215,65 @@ export async function GET(request: NextRequest) {
       : 0
 
     // PASSO 4: Processar dados diários (últimos 30 dias)
+    // Dados da API de métricas da CONTA (não dos posts individuais)
     const dailyData: any[] = []
 
     if (accountMetrics.data && accountMetrics.data.length > 0) {
       // Processar métricas disponíveis por dia
+      const impressionsMetric = accountMetrics.data.find((m: any) => m.name === 'impressions')
       const reachMetric = accountMetrics.data.find((m: any) => m.name === 'reach')
       const followerMetric = accountMetrics.data.find((m: any) => m.name === 'follower_count')
 
-      if (reachMetric?.values) {
-        reachMetric.values.forEach((value: any, index: number) => {
+      // Usar a métrica que tiver mais dados como base
+      const baseMetric = reachMetric || impressionsMetric || followerMetric
+
+      if (baseMetric?.values) {
+        baseMetric.values.forEach((value: any, index: number) => {
           const dateStr = value.end_time?.split('T')[0] || new Date().toISOString().split('T')[0]
           dailyData.push({
             date: dateStr,
-            reach: value.value || 0,
+            // Métricas da CONTA (diárias reais do Instagram)
+            impressions: impressionsMetric?.values?.[index]?.value || 0,
+            reach: reachMetric?.values?.[index]?.value || 0,
             follower_count: followerMetric?.values?.[index]?.value || 0,
-            impressions: 0, // Será calculado abaixo
           })
         })
       }
+
+      console.log(`📊 Dados diários processados: ${dailyData.length} dias`)
+      console.log(`   - Impressões disponíveis: ${impressionsMetric ? 'Sim' : 'Não'}`)
+      console.log(`   - Alcance disponível: ${reachMetric ? 'Sim' : 'Não'}`)
+      console.log(`   - Seguidores disponível: ${followerMetric ? 'Sim' : 'Não'}`)
     }
 
-    // Agregar impressões, likes e comentários dos posts por dia
-    const postsByDay = new Map<string, { impressions: number; likes: number; comments: number }>()
+    // Agregar likes e comentários dos posts por dia de PUBLICAÇÃO
+    // (para os gráficos de engajamento, curtidas e comentários)
+    const postsByDay = new Map<string, { likes: number; comments: number; posts_count: number }>()
 
     posts.forEach((post: any) => {
       if (post.timestamp) {
         const dateStr = post.timestamp.split('T')[0]
-        const existing = postsByDay.get(dateStr) || { impressions: 0, likes: 0, comments: 0 }
-
-        // Buscar insights do post
-        const insights = postsWithInsights.get(post.id) || []
-        const impressions = insights.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
+        const existing = postsByDay.get(dateStr) || { likes: 0, comments: 0, posts_count: 0 }
 
         postsByDay.set(dateStr, {
-          impressions: existing.impressions + impressions,
           likes: existing.likes + (post.like_count || 0),
           comments: existing.comments + (post.comments_count || 0),
+          posts_count: existing.posts_count + 1,
         })
       }
     })
 
-    // Adicionar dados dos posts aos dados diários
+    // Adicionar dados de engajamento dos posts aos dados diários
     dailyData.forEach((day: any) => {
       const postData = postsByDay.get(day.date)
       if (postData) {
-        day.impressions = postData.impressions
         day.likes = postData.likes
         day.comments = postData.comments
+        day.posts_count = postData.posts_count
+      } else {
+        day.likes = 0
+        day.comments = 0
+        day.posts_count = 0
       }
     })
 

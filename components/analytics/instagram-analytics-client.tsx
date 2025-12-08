@@ -576,41 +576,15 @@ function AnalyticsCharts({
   const chartData = useMemo(() => {
     const daysCount = timePeriod === 'week' ? 7 : 30
 
-    // Criar mapa de dados diários por data (da API de métricas da conta)
+    // Criar mapa de dados diários por data (da API de métricas da CONTA)
+    // Esses dados são métricas REAIS do Instagram por dia
     const dailyDataMap = new Map<string, any>()
     daily_data.forEach((day: any) => {
       const dateStr = day.date?.split('T')[0] || day.date
       dailyDataMap.set(dateStr, day)
     })
 
-    // Agregar TODOS os dados dos posts por dia (incluindo impressions e reach)
-    const postsByDay = new Map<string, {
-      likes: number
-      comments: number
-      engagement: number
-      impressions: number
-      reach: number
-      posts: number
-    }>()
-
-    top_posts.forEach((post: any) => {
-      if (post.timestamp) {
-        const dateStr = post.timestamp.split('T')[0]
-        const existing = postsByDay.get(dateStr) || {
-          likes: 0, comments: 0, engagement: 0, impressions: 0, reach: 0, posts: 0
-        }
-        postsByDay.set(dateStr, {
-          likes: existing.likes + (post.likes || 0),
-          comments: existing.comments + (post.comments || 0),
-          engagement: existing.engagement + (post.likes || 0) + (post.comments || 0),
-          impressions: existing.impressions + (post.impressions || 0),
-          reach: existing.reach + (post.reach || 0),
-          posts: existing.posts + 1,
-        })
-      }
-    })
-
-    // Gerar array de datas para o período
+    // Gerar array de datas para o período (do mais antigo ao mais recente)
     const dates: string[] = []
     for (let i = daysCount - 1; i >= 0; i--) {
       const date = new Date()
@@ -619,51 +593,54 @@ function AnalyticsCharts({
       dates.push(dateStr)
     }
 
-    // Mapear dados para cada métrica
-    // Prioridade: dados da API da conta > dados agregados dos posts
+    // ALCANCE: dados diários da CONTA (métricas reais do Instagram)
     const reachData = dates.map(date => ({
       date,
-      value: dailyDataMap.get(date)?.reach || postsByDay.get(date)?.reach || 0,
+      value: dailyDataMap.get(date)?.reach || 0,
     }))
 
-    // Impressões: usar dados dos posts (são mais precisos para o dia)
+    // IMPRESSÕES: dados diários da CONTA (métricas reais do Instagram)
     const impressionsData = dates.map(date => ({
       date,
-      value: postsByDay.get(date)?.impressions || dailyDataMap.get(date)?.impressions || 0,
+      value: dailyDataMap.get(date)?.impressions || 0,
     }))
 
-    // Seguidores: dados da API da conta
+    // SEGUIDORES: dados diários da CONTA
     const followersData = dates.map(date => ({
       date,
       value: dailyDataMap.get(date)?.follower_count || 0,
     }))
 
-    // Likes e Comments: dados dos posts
+    // LIKES: dados dos posts por dia de publicação
     const likesData = dates.map(date => ({
       date,
-      value: postsByDay.get(date)?.likes || 0,
+      value: dailyDataMap.get(date)?.likes || 0,
     }))
 
+    // COMENTÁRIOS: dados dos posts por dia de publicação
     const commentsData = dates.map(date => ({
       date,
-      value: postsByDay.get(date)?.comments || 0,
+      value: dailyDataMap.get(date)?.comments || 0,
     }))
 
-    // Engajamento: likes + comments
-    const engagementData = dates.map(date => ({
-      date,
-      value: postsByDay.get(date)?.engagement || 0,
-    }))
+    // ENGAJAMENTO: likes + comments dos posts por dia
+    const engagementData = dates.map(date => {
+      const dayData = dailyDataMap.get(date)
+      return {
+        date,
+        value: (dayData?.likes || 0) + (dayData?.comments || 0),
+      }
+    })
 
     return { reachData, impressionsData, followersData, engagementData, likesData, commentsData }
-  }, [daily_data, top_posts, timePeriod])
+  }, [daily_data, timePeriod])
 
   // Configurações dos gráficos
   const chartConfigs = [
     {
       key: 'reach',
       title: 'Alcance',
-      description: 'Contas alcançadas por dia',
+      description: 'Contas únicas que viram seu conteúdo',
       data: chartData.reachData,
       color: '#8B5CF6',
       gradientFrom: '#3B82F6',
@@ -673,7 +650,7 @@ function AnalyticsCharts({
     {
       key: 'impressions',
       title: 'Impressões',
-      description: 'Visualizações de posts por dia',
+      description: 'Total de visualizações do seu conteúdo',
       data: chartData.impressionsData,
       color: '#3B82F6',
       gradientFrom: '#06B6D4',
@@ -683,7 +660,7 @@ function AnalyticsCharts({
     {
       key: 'engagement',
       title: 'Engajamento',
-      description: 'Interações por dia (likes + comentários)',
+      description: 'Curtidas + comentários em posts publicados',
       data: chartData.engagementData,
       color: '#EC4899',
       gradientFrom: '#EC4899',
@@ -693,7 +670,7 @@ function AnalyticsCharts({
     {
       key: 'likes',
       title: 'Curtidas',
-      description: 'Curtidas recebidas por dia',
+      description: 'Curtidas em posts publicados no dia',
       data: chartData.likesData,
       color: '#EF4444',
       gradientFrom: '#F97316',
@@ -703,7 +680,7 @@ function AnalyticsCharts({
     {
       key: 'comments',
       title: 'Comentários',
-      description: 'Comentários recebidos por dia',
+      description: 'Comentários em posts publicados no dia',
       data: chartData.commentsData,
       color: '#06B6D4',
       gradientFrom: '#06B6D4',
@@ -713,7 +690,7 @@ function AnalyticsCharts({
     {
       key: 'followers',
       title: 'Seguidores',
-      description: 'Evolução diária de seguidores',
+      description: 'Número total de seguidores',
       data: chartData.followersData,
       color: '#10B981',
       gradientFrom: '#10B981',
