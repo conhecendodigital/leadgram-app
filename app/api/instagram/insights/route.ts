@@ -246,36 +246,79 @@ export async function GET(request: NextRequest) {
       console.log(`   - Seguidores disponível: ${followerMetric ? 'Sim' : 'Não'}`)
     }
 
-    // Agregar likes e comentários dos posts por dia de PUBLICAÇÃO
-    // (para os gráficos de engajamento, curtidas e comentários)
-    const postsByDay = new Map<string, { likes: number; comments: number; posts_count: number }>()
+    // Se não houver dados diários da API de conta, criar estrutura baseada nos últimos 30 dias
+    if (dailyData.length === 0) {
+      console.log('⚠️ Sem dados de métricas de conta, criando estrutura baseada em datas')
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date()
+        date.setDate(date.getDate() - i)
+        const dateStr = date.toISOString().split('T')[0]
+        dailyData.push({
+          date: dateStr,
+          impressions: 0,
+          reach: 0,
+          follower_count: validAccount.followers_count || 0,
+        })
+      }
+    }
+
+    // Agregar likes, comentários e impressões dos posts por dia de PUBLICAÇÃO
+    // (para os gráficos de engajamento, curtidas, comentários e impressões)
+    const postsByDay = new Map<string, { likes: number; comments: number; impressions: number; reach: number; posts_count: number }>()
 
     posts.forEach((post: any) => {
       if (post.timestamp) {
         const dateStr = post.timestamp.split('T')[0]
-        const existing = postsByDay.get(dateStr) || { likes: 0, comments: 0, posts_count: 0 }
+        const existing = postsByDay.get(dateStr) || { likes: 0, comments: 0, impressions: 0, reach: 0, posts_count: 0 }
+
+        // Buscar impressões e reach do post no Map de insights
+        const postInsights = postsWithInsights.get(post.id) || []
+        const postImpressions = postInsights.find((i: any) => i.name === 'impressions')?.values?.[0]?.value || 0
+        const postReach = postInsights.find((i: any) => i.name === 'reach')?.values?.[0]?.value || 0
 
         postsByDay.set(dateStr, {
           likes: existing.likes + (post.like_count || 0),
           comments: existing.comments + (post.comments_count || 0),
+          impressions: existing.impressions + postImpressions,
+          reach: existing.reach + postReach,
           posts_count: existing.posts_count + 1,
         })
       }
     })
 
     // Adicionar dados de engajamento dos posts aos dados diários
+    // Se impressões/reach da conta não estiverem disponíveis, usar dados dos posts
     dailyData.forEach((day: any) => {
       const postData = postsByDay.get(day.date)
       if (postData) {
         day.likes = postData.likes
         day.comments = postData.comments
         day.posts_count = postData.posts_count
+        // Usar impressões dos posts se a métrica de conta for 0
+        if (day.impressions === 0 && postData.impressions > 0) {
+          day.impressions = postData.impressions
+        }
+        // Usar reach dos posts se a métrica de conta for 0
+        if (day.reach === 0 && postData.reach > 0) {
+          day.reach = postData.reach
+        }
       } else {
         day.likes = 0
         day.comments = 0
         day.posts_count = 0
       }
     })
+
+    // Log para verificar dados diários finais
+    const daysWithImpressions = dailyData.filter((d: any) => d.impressions > 0).length
+    const daysWithReach = dailyData.filter((d: any) => d.reach > 0).length
+    const totalDailyImpressions = dailyData.reduce((sum: number, d: any) => sum + (d.impressions || 0), 0)
+    const totalDailyReach = dailyData.reduce((sum: number, d: any) => sum + (d.reach || 0), 0)
+    console.log(`📈 Dados diários finais:`)
+    console.log(`   - Dias com impressões: ${daysWithImpressions}/${dailyData.length}`)
+    console.log(`   - Dias com alcance: ${daysWithReach}/${dailyData.length}`)
+    console.log(`   - Total impressões diárias: ${totalDailyImpressions}`)
+    console.log(`   - Total alcance diário: ${totalDailyReach}`)
 
     // PASSO 5: Processar TODOS os posts com métricas
     // media_type: IMAGE, VIDEO, CAROUSEL_ALBUM
