@@ -47,9 +47,11 @@ export class EmailService {
     const { data, error } = await (this.supabase
       .from('email_settings') as any)
       .select('*')
-      .maybeSingle();
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single();
 
-    if (error) throw error;
+    if (error && error.code !== 'PGRST116') throw error;
 
     // Se não existe, criar configuração padrão
     if (!data) {

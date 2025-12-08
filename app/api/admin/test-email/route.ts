@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { getUserRole } from '@/lib/roles';
 import { NextResponse } from 'next/server';
 import { EmailService } from '@/lib/services/email-service';
@@ -35,8 +36,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 
+    // Usar service client para bypass RLS
+    const adminClient = createServiceClient();
+
     // Enviar email de teste
-    const emailService = new EmailService(supabase);
+    const emailService = new EmailService(adminClient);
     const success = await emailService.sendTestEmail(email, {
       test_message: 'Se você está lendo isso, significa que seu sistema de emails está configurado corretamente! 🎉'
     });
