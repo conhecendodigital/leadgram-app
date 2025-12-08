@@ -1308,9 +1308,14 @@ function EmailSettings() {
   const loadSettings = async () => {
     try {
       setError(null);
-      const { emailService } = await import('@/lib/services/email-service');
-      const data = await emailService.instance.getSettings();
-      setSettings(data);
+      const response = await fetch('/api/admin/email-settings');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao carregar configurações');
+      }
+
+      setSettings(data.settings);
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
       setError('Erro ao carregar configurações de email. Por favor, tente novamente.');
@@ -1321,9 +1326,12 @@ function EmailSettings() {
 
   const loadStats = async () => {
     try {
-      const { emailService } = await import('@/lib/services/email-service');
-      const data = await emailService.instance.getStats();
-      setStats(data);
+      const response = await fetch('/api/admin/email-stats');
+      const data = await response.json();
+
+      if (response.ok && data.stats) {
+        setStats(data.stats);
+      }
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
     }
@@ -1333,8 +1341,18 @@ function EmailSettings() {
     setSaving(true);
     setError(null);
     try {
-      const { emailService } = await import('@/lib/services/email-service');
-      await emailService.instance.updateSettings(settings);
+      const response = await fetch('/api/admin/email-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao salvar configurações');
+      }
+
       showSuccess('Configurações salvas com sucesso!');
       await loadStats();
     } catch (error) {
