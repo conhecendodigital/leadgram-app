@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIdeaLimit } from '@/lib/settings'
 import { GoogleDriveService } from '@/lib/services/google-drive-service'
 import { withRateLimit, getRequestIdentifier } from '@/lib/api-middleware'
+import { getUserRole } from '@/lib/roles'
 
 export async function GET() {
   try {
@@ -75,6 +76,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verificar se é admin - admin não tem limites
+    const userRole = await getUserRole(user.id)
+    const isAdmin = userRole === 'admin'
+
     // Verificar plano do usuário
     const { data: subscription } = await (supabase
       .from('user_subscriptions') as any)
@@ -84,26 +89,29 @@ export async function POST(request: NextRequest) {
 
     const planType = subscription?.plan_type || 'free'
 
-    // Contar ideias do usuário
-    const { count: currentIdeasCount } = await (supabase
-      .from('ideas') as any)
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+    // Admin não tem limite de ideias
+    if (!isAdmin) {
+      // Contar ideias do usuário
+      const { count: currentIdeasCount } = await (supabase
+        .from('ideas') as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
 
-    // Verificar limite de ideias
-    const ideaLimit = await getIdeaLimit(planType)
+      // Verificar limite de ideias
+      const ideaLimit = await getIdeaLimit(planType)
 
-    if (ideaLimit !== -1 && currentIdeasCount !== null && currentIdeasCount >= ideaLimit) {
-      return NextResponse.json(
-        {
-          error: 'Limite de ideias atingido',
-          message: `Seu plano ${planType} permite apenas ${ideaLimit} ideias. Faça upgrade para criar mais ideias.`,
-          limit: ideaLimit,
-          current: currentIdeasCount,
-          planType,
-        },
-        { status: 403 }
-      )
+      if (ideaLimit !== -1 && currentIdeasCount !== null && currentIdeasCount >= ideaLimit) {
+        return NextResponse.json(
+          {
+            error: 'Limite de ideias atingido',
+            message: `Seu plano ${planType} permite apenas ${ideaLimit} ideias. Faça upgrade para criar mais ideias.`,
+            limit: ideaLimit,
+            current: currentIdeasCount,
+            planType,
+          },
+          { status: 403 }
+        )
+      }
     }
 
     // Criar ideia

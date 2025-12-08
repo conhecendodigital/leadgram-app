@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getIdeaLimit, getPostLimit } from '@/lib/settings'
+import { getUserRole } from '@/lib/roles'
 
 export async function GET() {
   try {
@@ -14,6 +15,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Verificar se é admin - admin não tem limites
+    const userRole = await getUserRole(user.id)
+    const isAdmin = userRole === 'admin'
+
     // Buscar plano do usuário
     const { data: subscription } = await (supabase
       .from('user_subscriptions') as any)
@@ -21,11 +26,11 @@ export async function GET() {
       .eq('user_id', user.id)
       .single()
 
-    const planType = subscription?.plan_type || 'free'
+    const planType = isAdmin ? 'admin' : (subscription?.plan_type || 'free')
 
-    // Buscar limites do plano
-    const ideaLimit = await getIdeaLimit(planType)
-    const postLimit = await getPostLimit(planType)
+    // Admin tem limites ilimitados (-1)
+    const ideaLimit = isAdmin ? -1 : await getIdeaLimit(planType)
+    const postLimit = isAdmin ? -1 : await getPostLimit(planType)
 
     // Contar ideias atuais do usuário
     const { count: currentIdeas } = await (supabase

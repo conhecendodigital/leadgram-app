@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { withRateLimit, getRequestIdentifier } from '@/lib/api-middleware'
 import { getPostLimit } from '@/lib/settings'
+import { getUserRole } from '@/lib/roles'
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerClient()
@@ -39,6 +40,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verificar se é admin - admin não tem limites
+    const userRole = await getUserRole(user.id)
+    const isAdmin = userRole === 'admin'
+
     // Verificar plano do usuário e limite de posts
     const { data: subscription } = await (supabase
       .from('user_subscriptions') as any)
@@ -46,8 +51,8 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    const planType = subscription?.plan_type || 'free'
-    const postLimit = await getPostLimit(planType)
+    const planType = isAdmin ? 'admin' : (subscription?.plan_type || 'free')
+    const postLimit = isAdmin ? -1 : await getPostLimit(planType)
 
     // Contar posts sincronizados do mês atual
     const firstDayOfMonth = new Date()
@@ -60,9 +65,9 @@ export async function POST(request: NextRequest) {
       .eq('instagram_account_id', account.id)
       .gte('synced_at', firstDayOfMonth.toISOString())
 
-    // Verificar se já atingiu o limite (apenas para novos posts)
-    const canSyncNewPosts = postLimit === -1 || (currentPostsCount || 0) < postLimit
-    const remainingSlots = postLimit === -1 ? Infinity : Math.max(0, postLimit - (currentPostsCount || 0))
+    // Admin sempre pode sincronizar, outros verificam limite
+    const canSyncNewPosts = isAdmin || postLimit === -1 || (currentPostsCount || 0) < postLimit
+    const remainingSlots = isAdmin || postLimit === -1 ? Infinity : Math.max(0, postLimit - (currentPostsCount || 0))
 
     // Verificar se o token ainda é válido
     if (account.token_expires_at) {
