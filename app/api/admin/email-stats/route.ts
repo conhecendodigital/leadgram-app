@@ -1,10 +1,12 @@
 import { createServerClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getUserRole } from '@/lib/roles'
 import { NextResponse } from 'next/server'
 
 // GET - Buscar estatísticas de email
 export async function GET() {
   try {
+    // Usar cliente normal para autenticação
     const supabase = await createServerClient()
 
     const {
@@ -22,14 +24,17 @@ export async function GET() {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
+    // Usar cliente admin para operações no banco (bypass RLS)
+    const adminClient = createServiceClient()
+
     const today = new Date().toISOString().split('T')[0]
 
     // Buscar estatísticas
     const [totalResult, sentResult, failedResult, todayResult] = await Promise.all([
-      (supabase.from('email_logs') as any).select('*', { count: 'exact', head: true }),
-      (supabase.from('email_logs') as any).select('*', { count: 'exact', head: true }).eq('status', 'sent'),
-      (supabase.from('email_logs') as any).select('*', { count: 'exact', head: true }).eq('status', 'failed'),
-      (supabase.from('email_logs') as any).select('*', { count: 'exact', head: true }).gte('created_at', today)
+      (adminClient.from('email_logs') as any).select('*', { count: 'exact', head: true }),
+      (adminClient.from('email_logs') as any).select('*', { count: 'exact', head: true }).eq('status', 'sent'),
+      (adminClient.from('email_logs') as any).select('*', { count: 'exact', head: true }).eq('status', 'failed'),
+      (adminClient.from('email_logs') as any).select('*', { count: 'exact', head: true }).gte('created_at', today)
     ])
 
     return NextResponse.json({

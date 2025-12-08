@@ -1,10 +1,12 @@
 import { createServerClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getUserRole } from '@/lib/roles'
 import { NextResponse } from 'next/server'
 
 // GET - Buscar configurações de email
 export async function GET() {
   try {
+    // Usar cliente normal para autenticação
     const supabase = await createServerClient()
 
     const {
@@ -22,8 +24,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
+    // Usar cliente admin para operações no banco (bypass RLS)
+    const adminClient = createServiceClient()
+
     // Buscar configurações de email
-    const { data, error } = await (supabase
+    const { data, error } = await (adminClient
       .from('email_settings') as any)
       .select('*')
       .maybeSingle()
@@ -35,7 +40,7 @@ export async function GET() {
 
     // Se não existe, criar configuração padrão
     if (!data) {
-      const { data: newSettings, error: insertError } = await (supabase
+      const { data: newSettings, error: insertError } = await (adminClient
         .from('email_settings') as any)
         .insert({
           provider: 'resend',
@@ -78,6 +83,7 @@ export async function GET() {
 // PUT - Atualizar configurações de email
 export async function PUT(request: Request) {
   try {
+    // Usar cliente normal para autenticação
     const supabase = await createServerClient()
 
     const {
@@ -102,8 +108,11 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Settings é obrigatório' }, { status: 400 })
     }
 
+    // Usar cliente admin para operações no banco (bypass RLS)
+    const adminClient = createServiceClient()
+
     // Buscar ID das configurações atuais
-    const { data: current, error: fetchError } = await (supabase
+    const { data: current, error: fetchError } = await (adminClient
       .from('email_settings') as any)
       .select('id')
       .maybeSingle()
@@ -118,7 +127,7 @@ export async function PUT(request: Request) {
     }
 
     // Atualizar configurações
-    const { error: updateError } = await (supabase
+    const { error: updateError } = await (adminClient
       .from('email_settings') as any)
       .update({
         ...settings,
