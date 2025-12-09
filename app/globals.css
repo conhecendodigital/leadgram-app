@@ -1,32 +1,43 @@
 @import "tailwindcss";
 
-/* Força tema claro mesmo quando o sistema está em dark mode */
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: light;
-  }
-}
-
 @layer base {
-  /* TEMA CLARO - Totalmente branco e limpo */
+  /* TEMA CLARO */
   :root {
     --background: 255 255 255;           /* Branco puro */
     --foreground: 17 24 39;              /* Cinza muito escuro (gray-900) */
-    --primary: 139 92 246;               /* Roxo (será alterado dinamicamente) */
+    --primary: 139 92 246;               /* Roxo Leadgram */
     --primary-foreground: 255 255 255;   /* Branco */
     --secondary: 243 244 246;            /* Cinza claro (gray-100) */
     --secondary-foreground: 17 24 39;    /* Cinza escuro */
     --muted: 249 250 251;                /* Cinza muito claro (gray-50) */
     --muted-foreground: 107 114 128;     /* Cinza médio (gray-500) */
-    --accent: 139 92 246;                /* Roxo (será alterado dinamicamente) */
+    --accent: 139 92 246;                /* Roxo Leadgram */
     --accent-foreground: 255 255 255;    /* Branco */
     --card: 255 255 255;                 /* Branco puro */
     --card-foreground: 17 24 39;         /* Cinza escuro */
     --border: 229 231 235;               /* Cinza claro (gray-200) */
     --input: 243 244 246;                /* Cinza claro (gray-100) */
-    --ring: 139 92 246;                  /* Roxo (será alterado dinamicamente) */
+    --ring: 139 92 246;                  /* Roxo Leadgram */
   }
 
+  /* TEMA ESCURO */
+  .dark {
+    --background: 17 24 39;              /* gray-900 */
+    --foreground: 243 244 246;           /* gray-100 */
+    --primary: 167 139 250;              /* purple-400 (mais claro para contraste) */
+    --primary-foreground: 17 24 39;      /* Escuro */
+    --secondary: 31 41 55;               /* gray-800 */
+    --secondary-foreground: 243 244 246; /* gray-100 */
+    --muted: 31 41 55;                   /* gray-800 */
+    --muted-foreground: 156 163 175;     /* gray-400 */
+    --accent: 167 139 250;               /* purple-400 */
+    --accent-foreground: 17 24 39;       /* Escuro */
+    --card: 31 41 55;                    /* gray-800 */
+    --card-foreground: 243 244 246;      /* gray-100 */
+    --border: 55 65 81;                  /* gray-700 */
+    --input: 55 65 81;                   /* gray-700 */
+    --ring: 167 139 250;                 /* purple-400 */
+  }
 }
 
 @theme inline {

@@ -1,70 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Palette, Type, Check } from 'lucide-react'
-
-const accentColors = [
-  {
-    name: 'Roxo',
-    value: 'purple',
-    color: 'from-purple-600 to-pink-600',
-    cssVars: {
-      '--primary': '139 92 246',
-      '--accent': '139 92 246',
-      '--ring': '139 92 246'
-    }
-  },
-  {
-    name: 'Azul',
-    value: 'blue',
-    color: 'from-blue-500 to-cyan-500',
-    cssVars: {
-      '--primary': '59 130 246',
-      '--accent': '59 130 246',
-      '--ring': '59 130 246'
-    }
-  },
-  {
-    name: 'Verde',
-    value: 'green',
-    color: 'from-green-500 to-emerald-500',
-    cssVars: {
-      '--primary': '34 197 94',
-      '--accent': '34 197 94',
-      '--ring': '34 197 94'
-    }
-  },
-  {
-    name: 'Laranja',
-    value: 'orange',
-    color: 'from-orange-500 to-red-500',
-    cssVars: {
-      '--primary': '249 115 22',
-      '--accent': '249 115 22',
-      '--ring': '249 115 22'
-    }
-  },
-  {
-    name: 'Rosa',
-    value: 'pink',
-    color: 'from-pink-500 to-rose-500',
-    cssVars: {
-      '--primary': '236 72 153',
-      '--accent': '236 72 153',
-      '--ring': '236 72 153'
-    }
-  },
-  {
-    name: 'Índigo',
-    value: 'indigo',
-    color: 'from-indigo-500 to-purple-500',
-    cssVars: {
-      '--primary': '99 102 241',
-      '--accent': '99 102 241',
-      '--ring': '99 102 241'
-    }
-  }
-]
+import { Type, Check, Moon, Sun, Monitor } from 'lucide-react'
 
 const fontSizes = [
   { name: 'Pequeno', value: 'small', scale: '14px' },
@@ -72,44 +9,27 @@ const fontSizes = [
   { name: 'Grande', value: 'large', scale: '18px' }
 ]
 
+const themeOptions = [
+  { name: 'Claro', value: 'light', icon: Sun },
+  { name: 'Escuro', value: 'dark', icon: Moon },
+  { name: 'Sistema', value: 'system', icon: Monitor }
+]
+
 export default function AppearanceSettings() {
-  const [accentColor, setAccentColor] = useState('purple')
   const [fontSize, setFontSize] = useState('medium')
+  const [theme, setTheme] = useState('light')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
 
     // Load saved preferences from localStorage
-    const savedAccent = localStorage.getItem('accentColor') || 'purple'
     const savedFontSize = localStorage.getItem('fontSize') || 'medium'
+    const savedTheme = localStorage.getItem('theme') || 'light'
 
-    setAccentColor(savedAccent)
     setFontSize(savedFontSize)
-
-    // Aplicar cores imediatamente
-    applyAccentColor(savedAccent)
+    setTheme(savedTheme)
   }, [])
-
-  const applyAccentColor = (accent: string) => {
-    const root = document.documentElement
-    const colorConfig = accentColors.find(c => c.value === accent)
-
-    if (colorConfig && colorConfig.cssVars) {
-      Object.entries(colorConfig.cssVars).forEach(([key, value]) => {
-        root.style.setProperty(key, value)
-      })
-
-      // Dispara evento para notificar outros componentes
-      window.dispatchEvent(new CustomEvent('accentchange', { detail: { accent } }))
-    }
-  }
-
-  const handleAccentChange = (newAccent: string) => {
-    setAccentColor(newAccent)
-    localStorage.setItem('accentColor', newAccent)
-    applyAccentColor(newAccent)
-  }
 
   const handleFontSizeChange = (newSize: string) => {
     setFontSize(newSize)
@@ -119,58 +39,81 @@ export default function AppearanceSettings() {
     window.dispatchEvent(new CustomEvent('fontsizechange', { detail: { fontSize: newSize } }))
   }
 
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+
+    // Aplicar tema
+    applyTheme(newTheme)
+  }
+
+  const applyTheme = (themeValue: string) => {
+    const root = document.documentElement
+
+    if (themeValue === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      root.classList.toggle('dark', prefersDark)
+    } else {
+      root.classList.toggle('dark', themeValue === 'dark')
+    }
+
+    // Dispara evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: themeValue } }))
+  }
+
   if (!mounted) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-48 bg-gray-200 rounded-2xl"></div>
-        <div className="h-48 bg-gray-200 rounded-2xl"></div>
+        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Accent Color */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      {/* Theme Selection */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl">
-            <Palette className="w-5 h-5 text-white" />
+          <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
+            <Moon className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
-              Cor de Destaque
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Tema
             </h3>
-            <p className="text-sm text-gray-600">
-              Personalize a cor principal da interface
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Escolha o tema da interface
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {accentColors.map((color) => {
-            const isSelected = accentColor === color.value
+        <div className="grid grid-cols-3 gap-3">
+          {themeOptions.map((option) => {
+            const isSelected = theme === option.value
+            const Icon = option.icon
 
             return (
               <button
-                key={color.value}
-                onClick={() => handleAccentChange(color.value)}
-                className="group relative cursor-pointer"
-                title={color.name}
+                key={option.value}
+                onClick={() => handleThemeChange(option.value)}
+                className={`
+                  relative p-4 rounded-xl transition-all cursor-pointer flex flex-col items-center gap-2
+                  ${isSelected
+                    ? 'border-2 border-primary bg-primary/5 dark:bg-primary/10'
+                    : 'border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                  }
+                `}
               >
-                <div className={`
-                  w-full aspect-square rounded-xl bg-gradient-to-br ${color.color}
-                  transition-all group-hover:scale-110 group-hover:shadow-lg
-                  ${isSelected ? 'ring-4 ring-gray-400 scale-110' : ''}
-                `}>
-                  {isSelected && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Check className="w-6 h-6 text-white drop-shadow-lg" />
-                    </div>
-                  )}
-                </div>
-                <div className="text-xs text-center mt-1 text-gray-600">
-                  {color.name}
-                </div>
+                {isSelected && (
+                  <div className="absolute top-2 right-2">
+                    <Check className="w-4 h-4 text-primary" />
+                  </div>
+                )}
+                <Icon className={`w-6 h-6 ${isSelected ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`} />
+                <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                  {option.name}
+                </span>
               </button>
             )
           })}
@@ -178,16 +121,16 @@ export default function AppearanceSettings() {
       </div>
 
       {/* Font Size */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 gradient-primary rounded-xl">
+          <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
             <Type className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
               Tamanho da Fonte
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Ajuste o tamanho do texto
             </p>
           </div>
@@ -204,8 +147,8 @@ export default function AppearanceSettings() {
                 className={`
                   relative p-4 rounded-xl transition-all cursor-pointer
                   ${isSelected
-                    ? 'border-2 border-primary bg-primary/5'
-                    : 'border border-gray-200'
+                    ? 'border-2 border-primary bg-primary/5 dark:bg-primary/10'
+                    : 'border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }
                 `}
               >
@@ -215,10 +158,10 @@ export default function AppearanceSettings() {
                   </div>
                 )}
 
-                <div className={`font-semibold text-gray-900 mb-1`} style={{ fontSize: size.scale }}>
+                <div className="font-semibold text-gray-900 dark:text-white mb-1" style={{ fontSize: size.scale }}>
                   Aa
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   {size.name} ({size.scale})
                 </div>
               </button>
@@ -228,26 +171,26 @@ export default function AppearanceSettings() {
       </div>
 
       {/* Preview */}
-      <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl border-primary/30 p-6 border">
-        <h3 className="text-lg font-bold text-gray-900 mb-3">
+      <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 dark:from-purple-500/20 dark:to-purple-600/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
           Prévia
         </h3>
-        <div className="bg-white rounded-xl p-4 space-y-3">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl gradient-primary"></div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600"></div>
             <div>
-              <div className="font-semibold text-gray-900">
+              <div className="font-semibold text-gray-900 dark:text-white">
                 Leadgram
               </div>
-              <div className="text-sm text-gray-600">
-                Fonte {fontSizes.find(f => f.value === fontSize)?.name} • Cor {accentColors.find(c => c.value === accentColor)?.name}
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Fonte {fontSizes.find(f => f.value === fontSize)?.name} • Tema {themeOptions.find(t => t.value === theme)?.name}
               </div>
             </div>
           </div>
-          <p className="text-gray-700">
+          <p className="text-gray-700 dark:text-gray-300">
             Este é um exemplo de como o texto aparecerá com as suas configurações de aparência.
           </p>
-          <button className="btn-primary w-full shadow-lg hover:shadow-xl transition-all">
+          <button className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all">
             Botão de Exemplo
           </button>
         </div>
