@@ -560,6 +560,14 @@ function OverviewTab({
 // ===== COMPONENTE: Gráficos de Analytics =====
 type TimePeriod = 'week' | 'month'
 
+// Tipo para dados agregados (pode ser dia ou semana)
+interface AggregatedDataPoint {
+  label: string        // Label para exibição (ex: "Seg, 9 Dez" ou "Semana 1")
+  periodStart: string  // Data de início do período
+  periodEnd: string    // Data de fim do período
+  value: number
+}
+
 function AnalyticsCharts({
   daily_data,
 }: {
@@ -568,10 +576,9 @@ function AnalyticsCharts({
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
 
   // Preparar dados para os gráficos baseado no período
-  // Usa dados de curtidas e comentários dos posts publicados em cada dia
+  // Semana: 7 pontos (1 por dia)
+  // Mês: 4-5 pontos (1 por semana)
   const chartData = useMemo(() => {
-    const daysCount = timePeriod === 'week' ? 7 : 30
-
     // Criar mapa de dados diários por data
     const dailyDataMap = new Map<string, any>()
     daily_data.forEach((day: any) => {
@@ -579,45 +586,107 @@ function AnalyticsCharts({
       dailyDataMap.set(dateStr, day)
     })
 
-    // Gerar array de datas para o período selecionado
-    const dates: string[] = []
-    for (let i = daysCount - 1; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0]
-      dates.push(dateStr)
+    if (timePeriod === 'week') {
+      // SEMANA: Mostrar 7 pontos (total por dia)
+      const dates: string[] = []
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date()
+        date.setDate(date.getDate() - i)
+        const dateStr = date.toISOString().split('T')[0]
+        dates.push(dateStr)
+      }
+
+      const likesData: AggregatedDataPoint[] = dates.map(date => {
+        const dayData = dailyDataMap.get(date)
+        const dateObj = new Date(date)
+        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+        return {
+          label: days[dateObj.getDay()],
+          periodStart: date,
+          periodEnd: date,
+          value: dayData?.likes || 0,
+        }
+      })
+
+      const commentsData: AggregatedDataPoint[] = dates.map(date => {
+        const dayData = dailyDataMap.get(date)
+        const dateObj = new Date(date)
+        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+        return {
+          label: days[dateObj.getDay()],
+          periodStart: date,
+          periodEnd: date,
+          value: dayData?.comments || 0,
+        }
+      })
+
+      const engagementData: AggregatedDataPoint[] = dates.map(date => {
+        const dayData = dailyDataMap.get(date)
+        const likes = dayData?.likes || 0
+        const comments = dayData?.comments || 0
+        const dateObj = new Date(date)
+        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+        return {
+          label: days[dateObj.getDay()],
+          periodStart: date,
+          periodEnd: date,
+          value: likes + comments,
+        }
+      })
+
+      return { engagementData, likesData, commentsData }
+    } else {
+      // MÊS: Mostrar 4-5 pontos (total por semana)
+      // Dividir os últimos 30 dias em semanas
+      const weeks: { start: Date; end: Date; label: string }[] = []
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      // Calcular 4 semanas completas (de domingo a sábado) + semana atual
+      for (let i = 4; i >= 0; i--) {
+        const weekEnd = new Date(today)
+        weekEnd.setDate(today.getDate() - (i * 7))
+
+        const weekStart = new Date(weekEnd)
+        weekStart.setDate(weekEnd.getDate() - 6)
+
+        weeks.push({
+          start: weekStart,
+          end: weekEnd,
+          label: `Sem ${5 - i}`,
+        })
+      }
+
+      // Agregar dados por semana
+      const aggregateByWeek = (getValue: (day: any) => number): AggregatedDataPoint[] => {
+        return weeks.map(week => {
+          let total = 0
+          const current = new Date(week.start)
+
+          while (current <= week.end) {
+            const dateStr = current.toISOString().split('T')[0]
+            const dayData = dailyDataMap.get(dateStr)
+            if (dayData) {
+              total += getValue(dayData)
+            }
+            current.setDate(current.getDate() + 1)
+          }
+
+          return {
+            label: week.label,
+            periodStart: week.start.toISOString().split('T')[0],
+            periodEnd: week.end.toISOString().split('T')[0],
+            value: total,
+          }
+        })
+      }
+
+      const likesData = aggregateByWeek(day => day?.likes || 0)
+      const commentsData = aggregateByWeek(day => day?.comments || 0)
+      const engagementData = aggregateByWeek(day => (day?.likes || 0) + (day?.comments || 0))
+
+      return { engagementData, likesData, commentsData }
     }
-
-    // CURTIDAS: Total de curtidas dos posts publicados naquele dia
-    const likesData = dates.map(date => {
-      const dayData = dailyDataMap.get(date)
-      return {
-        date,
-        value: dayData?.likes || 0,
-      }
-    })
-
-    // COMENTÁRIOS: Total de comentários dos posts publicados naquele dia
-    const commentsData = dates.map(date => {
-      const dayData = dailyDataMap.get(date)
-      return {
-        date,
-        value: dayData?.comments || 0,
-      }
-    })
-
-    // ENGAJAMENTO: Soma de likes + comments do dia
-    const engagementData = dates.map(date => {
-      const dayData = dailyDataMap.get(date)
-      const likes = dayData?.likes || 0
-      const comments = dayData?.comments || 0
-      return {
-        date,
-        value: likes + comments,
-      }
-    })
-
-    return { engagementData, likesData, commentsData }
   }, [daily_data, timePeriod])
 
   const periodLabels = {
@@ -626,7 +695,7 @@ function AnalyticsCharts({
   }
 
   // Calcular estatísticas para cada métrica
-  const calculateStats = (data: { date: string; value: number }[]) => {
+  const calculateStats = (data: AggregatedDataPoint[]) => {
     const values = data.map(d => d.value)
     const nonZeroValues = values.filter(v => v > 0)
     const total = values.reduce((a, b) => a + b, 0)
@@ -671,7 +740,7 @@ function AnalyticsCharts({
         {/* 1. Curtidas - Barras Verticais */}
         <ChartCard
           title="Curtidas"
-          description="Curtidas nos posts publicados"
+          description={timePeriod === 'week' ? 'Total por dia' : 'Total por semana'}
           icon={Heart}
           color="#EF4444"
           stats={calculateStats(chartData.likesData)}
@@ -682,13 +751,14 @@ function AnalyticsCharts({
             color="#EF4444"
             height={200}
             showAverage={true}
+            metricLabel="Curtidas"
           />
         </ChartCard>
 
         {/* 2. Engajamento - Gráfico de Barras */}
         <ChartCard
           title="Engajamento"
-          description="Total de interações (curtidas + comentários)"
+          description={timePeriod === 'week' ? 'Curtidas + comentários por dia' : 'Curtidas + comentários por semana'}
           icon={TrendingUp}
           color="#EC4899"
           stats={calculateStats(chartData.engagementData)}
@@ -699,13 +769,14 @@ function AnalyticsCharts({
             color="#EC4899"
             height={200}
             showAverage={true}
+            metricLabel="Engajamento"
           />
         </ChartCard>
 
         {/* 3. Comentários - Lollipop Chart */}
         <ChartCard
           title="Comentários"
-          description="Comentários nos posts publicados"
+          description={timePeriod === 'week' ? 'Total por dia' : 'Total por semana'}
           icon={MessageCircle}
           color="#06B6D4"
           stats={calculateStats(chartData.commentsData)}
@@ -715,6 +786,7 @@ function AnalyticsCharts({
             data={chartData.commentsData}
             color="#06B6D4"
             height={200}
+            metricLabel="Comentários"
           />
         </ChartCard>
       </div>
