@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Bell, Trash2, Check, CheckCheck, Filter, RefreshCw, Search, Calendar, TrendingUp, AlertTriangle, Users, CreditCard, XCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { notificationService } from '@/lib/services/notification-service';
 import type { AdminNotification, NotificationType } from '@/lib/types/notifications';
 import { createClient } from '@/lib/supabase/client';
@@ -230,7 +230,7 @@ export default function NotificationsPage() {
           { label: 'Últimas 24h', value: stats.last24h, icon: Calendar, gradient: 'from-green-500 to-green-600' },
           { label: 'Erros', value: stats.errors, icon: AlertTriangle, gradient: 'from-red-500 to-red-600', highlight: stats.errors > 0 },
         ].map((stat, index) => (
-          <motion.div
+          <m.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -246,14 +246,14 @@ export default function NotificationsPage() {
                 <p className="text-xs text-gray-500">{stat.label}</p>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 
       {/* Success Message */}
       <AnimatePresence>
         {successMessage && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -265,14 +265,14 @@ export default function NotificationsPage() {
               </div>
               <p className="text-sm font-medium text-green-900">{successMessage}</p>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* Error Message */}
       <AnimatePresence>
         {error && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -289,7 +289,7 @@ export default function NotificationsPage() {
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -405,7 +405,7 @@ export default function NotificationsPage() {
                 const metadata = formatMetadata(notif.metadata);
 
                 return (
-                  <motion.div
+                  <m.div
                     key={notif.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -489,7 +489,7 @@ export default function NotificationsPage() {
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </AnimatePresence>
@@ -499,14 +499,14 @@ export default function NotificationsPage() {
 
       {/* Load More */}
       {!loading && hasMore && (
-        <motion.button
+        <m.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           onClick={() => setDisplayLimit(prev => prev + 15)}
           className="w-full py-4 bg-white border border-gray-200 rounded-2xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"
         >
           Carregar mais ({notifications.length - displayLimit} restantes)
-        </motion.button>
+        </m.button>
       )}
 
       {/* Footer Stats */}

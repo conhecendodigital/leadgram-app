@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Shield, CreditCard, Palette, Bell, Lock, Zap } from 'lucide-react'
+import { User, Shield, Bell, Lock, Zap } from 'lucide-react'
 import ProfileSettings from './profile-edit-settings'
 import AccountSecuritySettings from './account-security-settings'
 import PlanSettings from './plan-settings'
-import AppearanceSettings from './appearance-settings'
 import NotificationPreferencesSettings from './notification-preferences-settings'
 import PrivacySettings from './privacy-settings'
 
@@ -19,7 +18,6 @@ const tabs = [
   { id: 'profile', label: 'Perfil', icon: User },
   { id: 'account', label: 'Conta', icon: Shield },
   { id: 'plan', label: 'Plano', icon: Zap },
-  { id: 'appearance', label: 'Aparência', icon: Palette },
   { id: 'notifications', label: 'Notificações', icon: Bell },
   { id: 'privacy', label: 'Privacidade', icon: Lock },
 ]
@@ -59,7 +57,6 @@ export default function SettingsTabs({ user, profile, subscription }: SettingsTa
         {activeTab === 'profile' && <ProfileSettings profile={profile} />}
         {activeTab === 'account' && <AccountSecuritySettings user={user} />}
         {activeTab === 'plan' && <PlanSettings subscription={subscription} />}
-        {activeTab === 'appearance' && <AppearanceSettings />}
         {activeTab === 'notifications' && <NotificationPreferencesSettings />}
         {activeTab === 'privacy' && <PrivacySettings />}
       </div>
