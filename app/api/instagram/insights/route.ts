@@ -425,10 +425,10 @@ export async function GET(request: NextRequest) {
       ? dailyData[dailyData.length - 1].follower_count - dailyData[0].follower_count
       : 0
 
-    // Calcular métricas médias
+    // Calcular métricas médias (com 1 casa decimal para valores pequenos)
     const avgLikesPerPost = totalPosts > 0 ? Math.round(totalLikes / totalPosts) : 0
     const avgCommentsPerPost = totalPosts > 0 ? Math.round(totalComments / totalPosts) : 0
-    const avgSavedPerPost = totalPosts > 0 ? Math.round(totalSaved / totalPosts) : 0
+    const avgSavedPerPost = totalPosts > 0 ? parseFloat((totalSaved / totalPosts).toFixed(1)) : 0
     const avgEngagementPerPost = totalPosts > 0 ? Math.round(totalEngagement / totalPosts) : 0
 
     // Métricas de Reels
