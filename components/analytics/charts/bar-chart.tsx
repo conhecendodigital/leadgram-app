@@ -103,13 +103,13 @@ export default function BarChartComponent({
             return (
               <div className="bg-gray-900 text-white rounded-xl px-4 py-3 shadow-xl">
                 <p className="text-xs text-gray-400 mb-1">
-                  {formatDateRange(dataPoint.periodStart, dataPoint.periodEnd)}
+                  {isPeriod ? `Até ${formatDateRange(dataPoint.periodStart, dataPoint.periodEnd).split(' - ')[1]}` : formatDateRange(dataPoint.periodStart, dataPoint.periodEnd)}
                 </p>
                 <p className="text-xl font-bold" style={{ color }}>
                   {formatValue(dataPoint.value)}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {metricLabel} {isPeriod ? 'na semana' : 'no dia'}
+                  {metricLabel} acumuladas
                 </p>
               </div>
             )
