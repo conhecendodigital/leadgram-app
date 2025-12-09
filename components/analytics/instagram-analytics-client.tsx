@@ -578,79 +578,82 @@ function AnalyticsCharts({
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
 
   // Preparar dados para os gráficos baseado no período
-  // Usa TODOS os posts para calcular o engajamento total do perfil
-  // Semana: 7 pontos (engajamento acumulado dos posts publicados até cada dia)
-  // Mês: 4-5 pontos (engajamento acumulado dos posts publicados até cada semana)
+  // Mostra apenas períodos que tiveram posts (remove zeros)
+  // Semana: dias que tiveram posts nos últimos 7 dias
+  // Mês: semanas que tiveram posts nos últimos 30 dias
   const chartData = useMemo(() => {
-    // Ordenar posts por data de publicação (mais antigo primeiro)
-    const sortedPosts = [...top_posts].sort((a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    )
-
     if (timePeriod === 'week') {
-      // SEMANA: Mostrar 7 pontos
-      // Cada ponto mostra o engajamento ACUMULADO de todos os posts publicados até aquele dia
+      // SEMANA: Mostrar apenas dias com posts nos últimos 7 dias
       const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-      const dates: { date: Date; dateStr: string; label: string }[] = []
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setHours(0, 0, 0, 0)
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date()
-        date.setHours(0, 0, 0, 0)
-        date.setDate(date.getDate() - i)
-        dates.push({
-          date,
-          dateStr: date.toISOString().split('T')[0],
-          label: days[date.getDay()],
-        })
-      }
+      // Filtrar posts dos últimos 7 dias
+      const recentPosts = top_posts.filter(post => {
+        const postDate = new Date(post.timestamp)
+        return postDate >= sevenDaysAgo
+      })
 
-      // Calcular engajamento acumulado até cada dia
-      const likesData: AggregatedDataPoint[] = []
-      const commentsData: AggregatedDataPoint[] = []
-      const engagementData: AggregatedDataPoint[] = []
+      // Agrupar por dia
+      const postsByDay = new Map<string, { likes: number; comments: number; date: Date }>()
 
-      dates.forEach(({ date, dateStr, label }) => {
-        // Somar engajamento de todos os posts publicados ATÉ este dia
-        const postsUntilDate = sortedPosts.filter(post => {
-          const postDate = new Date(post.timestamp)
-          postDate.setHours(0, 0, 0, 0)
-          return postDate <= date
-        })
+      recentPosts.forEach(post => {
+        const postDate = new Date(post.timestamp)
+        const dateStr = postDate.toISOString().split('T')[0]
 
-        const totalLikes = postsUntilDate.reduce((sum, post) => sum + (post.likes || 0), 0)
-        const totalComments = postsUntilDate.reduce((sum, post) => sum + (post.comments || 0), 0)
-
-        likesData.push({
-          label,
-          periodStart: dateStr,
-          periodEnd: dateStr,
-          value: totalLikes,
-        })
-
-        commentsData.push({
-          label,
-          periodStart: dateStr,
-          periodEnd: dateStr,
-          value: totalComments,
-        })
-
-        engagementData.push({
-          label,
-          periodStart: dateStr,
-          periodEnd: dateStr,
-          value: totalLikes + totalComments,
+        const existing = postsByDay.get(dateStr) || { likes: 0, comments: 0, date: postDate }
+        postsByDay.set(dateStr, {
+          likes: existing.likes + (post.likes || 0),
+          comments: existing.comments + (post.comments || 0),
+          date: postDate,
         })
       })
 
+      // Converter para array e ordenar por data
+      const sortedDays = Array.from(postsByDay.entries())
+        .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+
+      const likesData: AggregatedDataPoint[] = sortedDays.map(([dateStr, data]) => ({
+        label: days[data.date.getDay()],
+        periodStart: dateStr,
+        periodEnd: dateStr,
+        value: data.likes,
+      }))
+
+      const commentsData: AggregatedDataPoint[] = sortedDays.map(([dateStr, data]) => ({
+        label: days[data.date.getDay()],
+        periodStart: dateStr,
+        periodEnd: dateStr,
+        value: data.comments,
+      }))
+
+      const engagementData: AggregatedDataPoint[] = sortedDays.map(([dateStr, data]) => ({
+        label: days[data.date.getDay()],
+        periodStart: dateStr,
+        periodEnd: dateStr,
+        value: data.likes + data.comments,
+      }))
+
       return { engagementData, likesData, commentsData }
     } else {
-      // MÊS: Mostrar 5 pontos (1 por semana)
-      // Cada ponto mostra o engajamento ACUMULADO de todos os posts publicados até aquela semana
-      const weeks: { start: Date; end: Date; label: string }[] = []
+      // MÊS: Mostrar semanas que tiveram posts nos últimos 30 dias
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setHours(0, 0, 0, 0)
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+      // Filtrar posts dos últimos 30 dias
+      const recentPosts = top_posts.filter(post => {
+        const postDate = new Date(post.timestamp)
+        return postDate >= thirtyDaysAgo
+      })
+
+      // Definir as 5 semanas
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      // Calcular 5 semanas
+      const weeks: { start: Date; end: Date; label: string; likes: number; comments: number }[] = []
+
       for (let i = 4; i >= 0; i--) {
         const weekEnd = new Date(today)
         weekEnd.setDate(today.getDate() - (i * 7))
@@ -662,46 +665,48 @@ function AnalyticsCharts({
           start: weekStart,
           end: weekEnd,
           label: `Sem ${5 - i}`,
+          likes: 0,
+          comments: 0,
         })
       }
 
-      // Calcular engajamento acumulado até cada semana
-      const likesData: AggregatedDataPoint[] = []
-      const commentsData: AggregatedDataPoint[] = []
-      const engagementData: AggregatedDataPoint[] = []
+      // Agrupar posts por semana
+      recentPosts.forEach(post => {
+        const postDate = new Date(post.timestamp)
+        postDate.setHours(0, 0, 0, 0)
 
-      weeks.forEach(week => {
-        // Somar engajamento de todos os posts publicados ATÉ o fim desta semana
-        const postsUntilWeek = sortedPosts.filter(post => {
-          const postDate = new Date(post.timestamp)
-          postDate.setHours(0, 0, 0, 0)
-          return postDate <= week.end
-        })
-
-        const totalLikes = postsUntilWeek.reduce((sum, post) => sum + (post.likes || 0), 0)
-        const totalComments = postsUntilWeek.reduce((sum, post) => sum + (post.comments || 0), 0)
-
-        likesData.push({
-          label: week.label,
-          periodStart: week.start.toISOString().split('T')[0],
-          periodEnd: week.end.toISOString().split('T')[0],
-          value: totalLikes,
-        })
-
-        commentsData.push({
-          label: week.label,
-          periodStart: week.start.toISOString().split('T')[0],
-          periodEnd: week.end.toISOString().split('T')[0],
-          value: totalComments,
-        })
-
-        engagementData.push({
-          label: week.label,
-          periodStart: week.start.toISOString().split('T')[0],
-          periodEnd: week.end.toISOString().split('T')[0],
-          value: totalLikes + totalComments,
-        })
+        for (const week of weeks) {
+          if (postDate >= week.start && postDate <= week.end) {
+            week.likes += post.likes || 0
+            week.comments += post.comments || 0
+            break
+          }
+        }
       })
+
+      // Filtrar apenas semanas com posts
+      const weeksWithPosts = weeks.filter(week => week.likes > 0 || week.comments > 0)
+
+      const likesData: AggregatedDataPoint[] = weeksWithPosts.map(week => ({
+        label: week.label,
+        periodStart: week.start.toISOString().split('T')[0],
+        periodEnd: week.end.toISOString().split('T')[0],
+        value: week.likes,
+      }))
+
+      const commentsData: AggregatedDataPoint[] = weeksWithPosts.map(week => ({
+        label: week.label,
+        periodStart: week.start.toISOString().split('T')[0],
+        periodEnd: week.end.toISOString().split('T')[0],
+        value: week.comments,
+      }))
+
+      const engagementData: AggregatedDataPoint[] = weeksWithPosts.map(week => ({
+        label: week.label,
+        periodStart: week.start.toISOString().split('T')[0],
+        periodEnd: week.end.toISOString().split('T')[0],
+        value: week.likes + week.comments,
+      }))
 
       return { engagementData, likesData, commentsData }
     }
@@ -758,7 +763,7 @@ function AnalyticsCharts({
         {/* 1. Curtidas - Barras Verticais */}
         <ChartCard
           title="Curtidas"
-          description="Evolução do total de curtidas"
+          description={timePeriod === 'week' ? 'Por dia de publicação' : 'Por semana de publicação'}
           icon={Heart}
           color="#EF4444"
           stats={calculateStats(chartData.likesData)}
@@ -768,7 +773,7 @@ function AnalyticsCharts({
             data={chartData.likesData}
             color="#EF4444"
             height={200}
-            showAverage={false}
+            showAverage={true}
             metricLabel="Curtidas"
           />
         </ChartCard>
@@ -776,7 +781,7 @@ function AnalyticsCharts({
         {/* 2. Engajamento - Gráfico de Barras */}
         <ChartCard
           title="Engajamento"
-          description="Evolução do total de interações"
+          description={timePeriod === 'week' ? 'Interações por dia' : 'Interações por semana'}
           icon={TrendingUp}
           color="#EC4899"
           stats={calculateStats(chartData.engagementData)}
@@ -786,7 +791,7 @@ function AnalyticsCharts({
             data={chartData.engagementData}
             color="#EC4899"
             height={200}
-            showAverage={false}
+            showAverage={true}
             metricLabel="Engajamento"
           />
         </ChartCard>
@@ -794,7 +799,7 @@ function AnalyticsCharts({
         {/* 3. Comentários - Lollipop Chart */}
         <ChartCard
           title="Comentários"
-          description="Evolução do total de comentários"
+          description={timePeriod === 'week' ? 'Por dia de publicação' : 'Por semana de publicação'}
           icon={MessageCircle}
           color="#06B6D4"
           stats={calculateStats(chartData.commentsData)}

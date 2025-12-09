@@ -104,13 +104,13 @@ export default function LollipopChart({
             return (
               <div className="bg-gray-900 text-white rounded-xl px-4 py-3 shadow-xl">
                 <p className="text-xs text-gray-400 mb-1">
-                  {isPeriod ? `Até ${formatDateRange(dataPoint.periodStart, dataPoint.periodEnd).split(' - ')[1]}` : formatDateRange(dataPoint.periodStart, dataPoint.periodEnd)}
+                  {formatDateRange(dataPoint.periodStart, dataPoint.periodEnd)}
                 </p>
                 <p className="text-xl font-bold" style={{ color: dataPoint.isPeak ? '#F97316' : color }}>
                   {formatValue(dataPoint.value)}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {metricLabel} acumulados
+                  {dataPoint.isPeak ? `Pico de ${metricLabel.toLowerCase()}!` : `${metricLabel} ${isPeriod ? 'na semana' : 'no dia'}`}
                 </p>
               </div>
             )
