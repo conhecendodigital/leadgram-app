@@ -431,8 +431,8 @@ function OverviewTab({
         />
       </div>
 
-      {/* Segunda linha de métricas */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Segunda linha de métricas - Impressões e Alcance */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <MetricCard
           icon={<Eye className="w-5 h-5" />}
           label="Impressões"
@@ -447,51 +447,7 @@ function OverviewTab({
           change={metrics.reachGrowth}
           color="indigo"
         />
-        <MetricCard
-          icon={<Grid3X3 className="w-5 h-5" />}
-          label="Posts Feed"
-          value={formatNumber(summary.feed_count || 0)}
-          change={0}
-          color="orange"
-        />
-        <MetricCard
-          icon={<Play className="w-5 h-5" />}
-          label="Reels"
-          value={formatNumber(summary.reels_count || 0)}
-          change={0}
-          color="pink"
-        />
       </div>
-
-      {/* Métricas de Reels (se houver) - Apenas Pro/Premium */}
-      {hasFullAccess && (summary.reels_count || 0) > 0 && (
-        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border border-pink-100">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-pink-100 rounded-lg">
-              <Film className="w-5 h-5 text-pink-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Métricas de Reels</h3>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Total de Visualizações</p>
-              <p className="text-2xl font-bold text-pink-600">{formatNumber(summary.total_video_views || 0)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Total de Plays</p>
-              <p className="text-2xl font-bold text-purple-600">{formatNumber(summary.total_plays || 0)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Média Views/Reel</p>
-              <p className="text-2xl font-bold text-pink-600">{formatNumber(summary.reels_avg_views || 0)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Média Plays/Reel</p>
-              <p className="text-2xl font-bold text-purple-600">{formatNumber(summary.reels_avg_plays || 0)}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Métricas Médias por Post - Apenas Pro/Premium */}
       {hasFullAccess ? (
