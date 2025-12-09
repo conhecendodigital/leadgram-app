@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { TrendingUp, Users, Eye, Heart, MessageCircle, Calendar, Clock, List, Filter, Grid3X3, Film, Play, Lock, Zap, BarChart3, Image as ImageIcon } from 'lucide-react'
+import { TrendingUp, Users, Eye, Heart, MessageCircle, Calendar, Clock, List, Filter, Grid3X3, Film, Play, Lock, Zap, BarChart3, Image as ImageIcon, Bookmark } from 'lucide-react'
 import {
   calculateGrowthPercentage,
   findBestTimeToPost,
@@ -399,86 +399,132 @@ function OverviewTab({
 
   return (
     <div className="space-y-6">
-      {/* Cards de Métricas Principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          icon={<Eye className="w-5 h-5" />}
-          label="Impressões (30d)"
-          value={formatNumber(summary.total_impressions)}
-          change={metrics.reachGrowth}
-          color="blue"
-        />
-        <MetricCard
-          icon={<Users className="w-5 h-5" />}
-          label="Alcance (30d)"
-          value={formatNumber(summary.total_reach)}
-          change={metrics.reachGrowth}
-          color="purple"
-        />
+      {/* Cards de Métricas Principais - 2 linhas de 4 cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           icon={<Heart className="w-5 h-5" />}
-          label="Taxa de Engajamento"
-          value={formatPercentage(summary.engagement_rate)}
+          label="Total Curtidas"
+          value={formatNumber(summary.total_likes || 0)}
           change={metrics.engagementGrowth}
-          color="pink"
+          color="red"
         />
         <MetricCard
           icon={<MessageCircle className="w-5 h-5" />}
           label="Total Comentários"
-          value={formatNumber(summary.total_comments)}
+          value={formatNumber(summary.total_comments || 0)}
           change={metrics.commentsGrowth}
+          color="blue"
+        />
+        <MetricCard
+          icon={<Bookmark className="w-5 h-5" />}
+          label="Total Salvamentos"
+          value={formatNumber(summary.total_saved || 0)}
+          change={0}
+          color="purple"
+        />
+        <MetricCard
+          icon={<TrendingUp className="w-5 h-5" />}
+          label="Taxa de Engajamento"
+          value={formatPercentage(summary.engagement_rate || 0)}
+          change={metrics.engagementGrowth}
           color="green"
         />
       </div>
 
-      {/* Métricas Diárias Médias - Apenas Pro/Premium */}
+      {/* Segunda linha de métricas */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <MetricCard
+          icon={<Eye className="w-5 h-5" />}
+          label="Impressões"
+          value={formatNumber(summary.total_impressions || 0)}
+          change={metrics.reachGrowth}
+          color="cyan"
+        />
+        <MetricCard
+          icon={<Users className="w-5 h-5" />}
+          label="Alcance"
+          value={formatNumber(summary.total_reach || 0)}
+          change={metrics.reachGrowth}
+          color="indigo"
+        />
+        <MetricCard
+          icon={<Grid3X3 className="w-5 h-5" />}
+          label="Posts Feed"
+          value={formatNumber(summary.feed_count || 0)}
+          change={0}
+          color="orange"
+        />
+        <MetricCard
+          icon={<Play className="w-5 h-5" />}
+          label="Reels"
+          value={formatNumber(summary.reels_count || 0)}
+          change={0}
+          color="pink"
+        />
+      </div>
+
+      {/* Métricas de Reels (se houver) - Apenas Pro/Premium */}
+      {hasFullAccess && (summary.reels_count || 0) > 0 && (
+        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border border-pink-100">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-pink-100 rounded-lg">
+              <Film className="w-5 h-5 text-pink-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Métricas de Reels</h3>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Total de Visualizações</p>
+              <p className="text-2xl font-bold text-pink-600">{formatNumber(summary.total_video_views || 0)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Total de Plays</p>
+              <p className="text-2xl font-bold text-purple-600">{formatNumber(summary.total_plays || 0)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Média Views/Reel</p>
+              <p className="text-2xl font-bold text-pink-600">{formatNumber(summary.reels_avg_views || 0)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Média Plays/Reel</p>
+              <p className="text-2xl font-bold text-purple-600">{formatNumber(summary.reels_avg_plays || 0)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Métricas Médias por Post - Apenas Pro/Premium */}
       {hasFullAccess ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Eye className="w-5 h-5 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900">Média Diária de Impressões</h3>
-            </div>
-            <p className="text-3xl font-bold text-blue-600">
-              {formatNumber(Math.round(metrics.avgDailyImpressions))}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <p className="text-sm text-gray-600 mb-1">Média Curtidas/Post</p>
+            <p className="text-2xl sm:text-3xl font-bold text-red-500">
+              {formatNumber(summary.avg_likes_per_post || 0)}
             </p>
-            <p className="text-sm text-gray-600 mt-1">Últimos 30 dias</p>
           </div>
-
-          <div className="bg-gray-50 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="w-5 h-5 text-purple-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900">Média Diária de Alcance</h3>
-            </div>
-            <p className="text-3xl font-bold text-purple-600">
-              {formatNumber(Math.round(metrics.avgDailyReach))}
+          <div className="bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <p className="text-sm text-gray-600 mb-1">Média Comentários/Post</p>
+            <p className="text-2xl sm:text-3xl font-bold text-blue-500">
+              {formatNumber(summary.avg_comments_per_post || 0)}
             </p>
-            <p className="text-sm text-gray-600 mt-1">Últimos 30 dias</p>
           </div>
-
-          <div className="bg-gray-50 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900">Taxa de Alcance</h3>
-            </div>
-            <p className="text-3xl font-bold text-green-600">
-              {account.followers_count > 0
-                ? formatPercentage((metrics.avgDailyReach / account.followers_count) * 100)
-                : formatPercentage(0)}
+          <div className="bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <p className="text-sm text-gray-600 mb-1">Média Salvamentos/Post</p>
+            <p className="text-2xl sm:text-3xl font-bold text-purple-500">
+              {formatNumber(summary.avg_saved_per_post || 0)}
             </p>
-            <p className="text-sm text-gray-600 mt-1">Do total de seguidores</p>
+          </div>
+          <div className="bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <p className="text-sm text-gray-600 mb-1">Média Engajamento/Post</p>
+            <p className="text-2xl sm:text-3xl font-bold text-green-500">
+              {formatNumber(summary.avg_engagement_per_post || 0)}
+            </p>
           </div>
         </div>
       ) : (
         <PremiumFeatureLock
-          title="Métricas Diárias Detalhadas"
-          description="Veja a média diária de impressões, alcance e taxa de alcance dos seus posts."
+          title="Métricas Médias por Post"
+          description="Veja a média de curtidas, comentários e salvamentos por post."
           requiredPlan="pro"
         />
       )}
@@ -1163,29 +1209,32 @@ function MetricCard({
   change: number
   color: string
 }) {
-  const colorClasses = {
+  const colorClasses: Record<string, string> = {
     blue: 'bg-blue-100 text-blue-600',
     purple: 'bg-purple-100 text-purple-600',
     pink: 'bg-pink-100 text-pink-600',
     green: 'bg-green-100 text-green-600',
+    red: 'bg-red-100 text-red-600',
+    orange: 'bg-orange-100 text-orange-600',
+    cyan: 'bg-cyan-100 text-cyan-600',
+    indigo: 'bg-indigo-100 text-indigo-600',
   }
 
   return (
-    <div className="bg-gray-50 rounded-2xl p-6">
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`p-2 rounded-lg ${colorClasses[color as keyof typeof colorClasses]}`}>
+    <div className="bg-gray-50 rounded-2xl p-4 sm:p-6">
+      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+        <div className={`p-1.5 sm:p-2 rounded-lg ${colorClasses[color] || colorClasses.blue}`}>
           {icon}
         </div>
-        <h3 className="text-sm font-medium text-gray-600">{label}</h3>
+        <h3 className="text-xs sm:text-sm font-medium text-gray-600">{label}</h3>
       </div>
-      <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
+      <p className="text-xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{value}</p>
       {change !== 0 && (
         <div className="flex items-center gap-1">
-          <TrendingUp className={`w-4 h-4 ${change > 0 ? 'text-green-600' : 'text-red-600'}`} />
-          <span className={`text-sm font-medium ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <TrendingUp className={`w-3 h-3 sm:w-4 sm:h-4 ${change > 0 ? 'text-green-600' : 'text-red-600'}`} />
+          <span className={`text-xs sm:text-sm font-medium ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {change > 0 ? '+' : ''}{formatPercentage(change)}
           </span>
-          <span className="text-xs text-gray-500">vs 7 dias atrás</span>
         </div>
       )}
     </div>

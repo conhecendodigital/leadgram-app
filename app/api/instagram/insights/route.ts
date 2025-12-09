@@ -152,6 +152,8 @@ export async function GET(request: NextRequest) {
 
     // PASSO 2.5: Buscar insights para cada post em batches
     // Fazemos isso separadamente para não perder posts que não têm insights
+    // Para REELS (VIDEO): buscar também video_views e plays
+    // Para FEED (IMAGE/CAROUSEL): buscar impressions, reach, saved
     console.log('📈 Buscando insights individuais dos posts...')
 
     const postsWithInsights = new Map<string, any>()
@@ -163,16 +165,24 @@ export async function GET(request: NextRequest) {
       // Buscar insights em paralelo para o batch
       const insightsPromises = batch.map(async (post: any) => {
         try {
-          const insightsUrl = `https://graph.facebook.com/v18.0/${post.id}/insights?metric=impressions,reach,saved&access_token=${validAccount.access_token}`
+          // Métricas diferentes para VIDEO (Reels) vs IMAGE/CAROUSEL (Feed)
+          const isVideo = post.media_type === 'VIDEO'
+          // Para vídeos: adicionar video_views e plays
+          // Para imagens: impressions, reach, saved
+          const metrics = isVideo
+            ? 'impressions,reach,saved,video_views,plays'
+            : 'impressions,reach,saved'
+
+          const insightsUrl = `https://graph.facebook.com/v18.0/${post.id}/insights?metric=${metrics}&access_token=${validAccount.access_token}`
           const response = await fetch(insightsUrl)
 
           if (response.ok) {
             const data = await response.json()
-            return { postId: post.id, insights: data.data || [] }
+            return { postId: post.id, mediaType: post.media_type, insights: data.data || [] }
           }
-          return { postId: post.id, insights: [] }
+          return { postId: post.id, mediaType: post.media_type, insights: [] }
         } catch {
-          return { postId: post.id, insights: [] }
+          return { postId: post.id, mediaType: post.media_type, insights: [] }
         }
       })
 
@@ -191,7 +201,7 @@ export async function GET(request: NextRequest) {
     const totalLikes = posts.reduce((sum: number, post: any) => sum + (post.like_count || 0), 0)
     const totalComments = posts.reduce((sum: number, post: any) => sum + (post.comments_count || 0), 0)
 
-    // Calcular total de impressions e reach dos posts usando o Map de insights
+    // Calcular total de impressions, reach, saved e video metrics usando o Map de insights
     const totalPostImpressions = posts.reduce((sum: number, post: any) => {
       const insights = postsWithInsights.get(post.id) || []
       const impressions = insights.find((i: any) => i.name === 'impressions')
@@ -204,7 +214,28 @@ export async function GET(request: NextRequest) {
       return sum + (reach?.values?.[0]?.value || 0)
     }, 0)
 
-    const totalEngagement = totalLikes + totalComments
+    const totalSaved = posts.reduce((sum: number, post: any) => {
+      const insights = postsWithInsights.get(post.id) || []
+      const saved = insights.find((i: any) => i.name === 'saved')
+      return sum + (saved?.values?.[0]?.value || 0)
+    }, 0)
+
+    // Métricas específicas de vídeo (Reels)
+    const totalVideoViews = posts.reduce((sum: number, post: any) => {
+      if (post.media_type !== 'VIDEO') return sum
+      const insights = postsWithInsights.get(post.id) || []
+      const videoViews = insights.find((i: any) => i.name === 'video_views')
+      return sum + (videoViews?.values?.[0]?.value || 0)
+    }, 0)
+
+    const totalPlays = posts.reduce((sum: number, post: any) => {
+      if (post.media_type !== 'VIDEO') return sum
+      const insights = postsWithInsights.get(post.id) || []
+      const plays = insights.find((i: any) => i.name === 'plays')
+      return sum + (plays?.values?.[0]?.value || 0)
+    }, 0)
+
+    const totalEngagement = totalLikes + totalComments + totalSaved
     const engagementRate = validAccount.followers_count > 0 && totalPosts > 0
       ? ((totalEngagement / totalPosts) / validAccount.followers_count) * 100
       : 0
@@ -348,10 +379,14 @@ export async function GET(request: NextRequest) {
         const reach = insights.find((i: any) => i.name === 'reach')?.values?.[0]?.value || 0
         const saved = insights.find((i: any) => i.name === 'saved')?.values?.[0]?.value || 0
 
-        // Calcular engagement manualmente: likes + comments
+        // Métricas específicas de vídeo (Reels)
+        const videoViews = insights.find((i: any) => i.name === 'video_views')?.values?.[0]?.value || 0
+        const plays = insights.find((i: any) => i.name === 'plays')?.values?.[0]?.value || 0
+
+        // Calcular engagement: likes + comments + saved
         const likes = post.like_count || 0
         const comments = post.comments_count || 0
-        const engagement = likes + comments
+        const engagement = likes + comments + saved
 
         // Determinar categoria: feed (IMAGE, CAROUSEL_ALBUM) ou reels (VIDEO)
         const mediaType = post.media_type || 'IMAGE'
@@ -372,6 +407,8 @@ export async function GET(request: NextRequest) {
           reach,
           engagement,
           saved,
+          video_views: videoViews,
+          plays,
           engagement_rate: reach > 0 ? (engagement / reach) * 100 : 0,
         }
       })
@@ -388,6 +425,20 @@ export async function GET(request: NextRequest) {
       ? dailyData[dailyData.length - 1].follower_count - dailyData[0].follower_count
       : 0
 
+    // Calcular métricas médias
+    const avgLikesPerPost = totalPosts > 0 ? Math.round(totalLikes / totalPosts) : 0
+    const avgCommentsPerPost = totalPosts > 0 ? Math.round(totalComments / totalPosts) : 0
+    const avgSavedPerPost = totalPosts > 0 ? Math.round(totalSaved / totalPosts) : 0
+    const avgEngagementPerPost = totalPosts > 0 ? Math.round(totalEngagement / totalPosts) : 0
+
+    // Métricas de Reels
+    const reelsAvgViews = reelsPosts.length > 0
+      ? Math.round(reelsPosts.reduce((sum: number, p: any) => sum + (p.video_views || 0), 0) / reelsPosts.length)
+      : 0
+    const reelsAvgPlays = reelsPosts.length > 0
+      ? Math.round(reelsPosts.reduce((sum: number, p: any) => sum + (p.plays || 0), 0) / reelsPosts.length)
+      : 0
+
     // Resposta final
     const response = {
       success: true,
@@ -398,16 +449,32 @@ export async function GET(request: NextRequest) {
         posts: validAccount.media_count,
       },
       summary: {
+        // Totais gerais
         total_posts: totalPosts,
         total_likes: totalLikes,
         total_comments: totalComments,
+        total_saved: totalSaved,
         total_impressions: totalPostImpressions,
         total_reach: totalPostReach,
+        total_engagement: totalEngagement,
         engagement_rate: isNaN(engagementRate) ? 0 : parseFloat(engagementRate.toFixed(2)),
         follower_growth: followerGrowth,
+
+        // Médias por post
+        avg_likes_per_post: avgLikesPerPost,
+        avg_comments_per_post: avgCommentsPerPost,
+        avg_saved_per_post: avgSavedPerPost,
+        avg_engagement_per_post: avgEngagementPerPost,
+
         // Estatísticas por categoria
         feed_count: feedPosts.length,
         reels_count: reelsPosts.length,
+
+        // Métricas de Reels
+        total_video_views: totalVideoViews,
+        total_plays: totalPlays,
+        reels_avg_views: reelsAvgViews,
+        reels_avg_plays: reelsAvgPlays,
       },
       daily_data: dailyData,
       // Retornar TODOS os posts (não mais limitado a 10)
@@ -432,6 +499,7 @@ export async function GET(request: NextRequest) {
         engagement_rate: isNaN(engagementRate) ? 0 : parseFloat(engagementRate.toFixed(2)),
         total_likes: totalLikes,
         total_comments: totalComments,
+        total_saves: totalSaved,
         media_count: totalPosts,
       }, {
         onConflict: 'instagram_account_id,date',
